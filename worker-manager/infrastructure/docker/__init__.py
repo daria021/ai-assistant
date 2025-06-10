@@ -6,6 +6,7 @@ from typing import Any
 from uuid import UUID
 
 from aiodocker import Docker
+from dotenv import dotenv_values
 from shared.abstractions.singleton import Singleton
 
 from abstractions.services.container_manager import ContainerManagerInterface, WorkerContainer
@@ -17,7 +18,7 @@ logger = getLogger(__name__)
 class AsyncDockerAPIRepository(
     ContainerManagerInterface,
     Singleton,
-):  # todo
+):
     host_root_config_path: Path
     host_upload_dir: Path
     app_upload_dir: Path
@@ -27,7 +28,7 @@ class AsyncDockerAPIRepository(
     worker_image: str = 'account-worker'
     network_name: str = "assistant_bridge"
     config_file_destination: Path = Path("/app/settings.json")
-    # fluentd_address: str = "localhost:24224"
+    # fluentd_address: str = "localhost:24224"   # todo: logging
 
     max_restarts: int = 3
 
@@ -64,7 +65,11 @@ class AsyncDockerAPIRepository(
         container_name = f"{self.worker_image}-{worker_id}"
         container = await self.client.containers.create_or_replace(
             name=container_name,
-            config=self._get_container_config(self.worker_image, config_path, worker_id)
+            config=self._get_container_config(
+                self.worker_image,
+                config_path,
+                worker_id,
+            )
         )
         await container.start()
 
@@ -82,14 +87,18 @@ class AsyncDockerAPIRepository(
         return container.id
 
     def _get_container_config(self, image: str, config_path: Path, worker_id: UUID) -> dict[str, Any]:
+        env_map = dotenv_values(str('.env'))
+        env_list = [f"{k}={v}" for k, v in env_map.items() if v is not None]
+
         return {
             "Image": image,
+            "Env": env_list,
             "HostConfig": {
                 "Binds": [
                     f"{self.host_root_config_path / config_path.name}:{self.config_file_destination}:ro",
                     f"{self.host_upload_dir}:{self.app_upload_dir}"
                 ],
-                # "LogConfig": {
+                # "LogConfig": {  # todo: logging
                 #     "Type": "fluentd",
                 #     "Config": {
                 #         "fluentd-address": self.fluentd_address,
@@ -98,14 +107,6 @@ class AsyncDockerAPIRepository(
                 # },
                 "NetworkMode": self.network_name,
             },
-            # "Mounts": [
-            #     {
-            #         "Type": "bind",
-            #         "Source": str(self.host_root_config_path / config_path.name),
-            #         "Destination": str(self.config_file_destination),
-            #         "Mode": "ro"
-            #     }
-            # ],
         }
 
     async def stop_container(self, worker_id: UUID) -> None:

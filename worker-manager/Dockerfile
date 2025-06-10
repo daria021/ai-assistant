@@ -30,5 +30,6 @@ COPY --from=builder /install /usr/local
 # copy your service code
 COPY worker-manager/ .
 
+COPY .env ./.env
+
 ENTRYPOINT ["python3", "main.py"]
-#ENTRYPOINT ["python3", "test.py"]

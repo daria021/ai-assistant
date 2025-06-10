@@ -134,5 +134,4 @@ src/shared/settings/jwt.py
 src/shared/settings/merged_source.py
 src/shared/settings/miniapp.py
 src/shared/settings/scheduler.py
-src/shared/settings/upload.py
 src/shared/settings/worker.py
