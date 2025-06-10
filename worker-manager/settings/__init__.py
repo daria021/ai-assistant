@@ -9,7 +9,7 @@ from shared.services.upload.settings import UploadSettings
 from shared.services.watcher_client import WatcherSettings
 from shared.settings import AbstractSettings, DockerSettings
 
-from user_bot.settings import CommonWorkerSettings
+from settings import CommonWorkerSettings
 
 
 class Settings(AbstractSettings):

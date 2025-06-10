@@ -1,6 +1,6 @@
 from abstractions.services.telegram import TelegramServiceInterface
 from services.telegram import TelegramService
-from user_bot.settings import settings
+from settings import settings
 
 
 def get_telegram_service() -> TelegramServiceInterface:

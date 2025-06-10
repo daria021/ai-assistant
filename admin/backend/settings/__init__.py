@@ -6,7 +6,7 @@ from pydantic_settings import SettingsConfigDict
 from shared.settings import AbstractSettings, JwtSettings, EnvironmentSettings, BotSettings
 from shared.infrastructure.main_db import MainDBSettings
 
-from user_bot.settings import ServiceAccountSettings
+from settings import ServiceAccountSettings
 
 
 class Settings(AbstractSettings):

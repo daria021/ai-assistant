@@ -1,6 +1,6 @@
 from abstractions.repositories import TelegramMessagesRepositoryInterface
 from infrastructure.repositories.telegram import TelethonTelegramMessagesRepository
-from user_bot.settings import settings
+from settings import settings
 
 
 def get_telegram_message_repository() -> TelegramMessagesRepositoryInterface:

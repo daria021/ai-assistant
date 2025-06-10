@@ -11,7 +11,7 @@ from jwt import (
 from abstractions.services.auth.tokens import TokenServiceInterface
 from domain.responses.auth import AuthTokens
 from services.auth.exceptions import InvalidTokenException, ExpiredTokenException
-from user_bot.settings import JwtSettings
+from settings import JwtSettings
 
 logger = logging.getLogger(__name__)
 

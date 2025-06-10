@@ -14,7 +14,7 @@ from telethon.tl.types import MessageEntityCustomEmoji
 from abstractions.repositories import TelegramMessagesRepositoryInterface
 from shared.domain.models import UserWithSessionString
 
-from user_bot.settings import settings
+from settings import settings
 from .exceptions import ChatJoinError, UnhandlableError
 
 logger = logging.getLogger(__name__)

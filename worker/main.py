@@ -4,7 +4,7 @@ from shared.infrastructure.main_db import init_db
 
 from dependencies.services.message_consumer import get_message_consumer
 from services.exceptions import NoMessagesShutdown
-from user_bot.settings import settings
+from settings import settings
 
 logging.basicConfig(
     level=logging.INFO,

@@ -3,7 +3,7 @@ from shared.dependencies.services.get_scheduler import get_scheduler
 
 from abstractions.services.posting import PostingServiceInterface
 from services.posting import PostingService
-from user_bot.settings import settings
+from settings import settings
 
 
 def get_posting_service() -> PostingServiceInterface:

@@ -4,17 +4,18 @@ from dataclasses import dataclass
 from datetime import timezone
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from backend.abstractions.services.analytics_service import AnalyticsServiceServiceInterface
+from backend.abstractions.services.gpt import GPTServiceInterface
+from backend.abstractions.services.mailing import MailingServiceInterface
+from backend.abstractions.services.user import UserServiceInterface
 from telethon import TelegramClient
 
-from backend.abstractions.services.analytics_service import AnalyticsServiceServiceInterface
-from backend.abstractions.services.mailing import MailingServiceInterface
 from user_bot.settings import settings
-from backend.abstractions.services.gpt import GPTServiceInterface
-from backend.abstractions.services.user import UserServiceInterface
 
 logger = logging.getLogger(__name__)
 # Инициализация планировщика
 scheduler = AsyncIOScheduler(timezone=timezone.utc)
+
 
 @dataclass
 class MailingService(MailingServiceInterface):
@@ -35,7 +36,6 @@ class MailingService(MailingServiceInterface):
             except Exception:
                 logger.error(f"Error sending to {user.telegram_id}", exc_info=True)
             await asyncio.sleep(1)
-
 
     async def job_a(self):
         logger.info("зашли в джобу A")
@@ -58,7 +58,6 @@ class MailingService(MailingServiceInterface):
             )
             await self.send_batch([user], message)
 
-
     # async def job_b(self):
     #     logger.info("зашли в джобу B")
     #     instructions = "ты исследователь белок"
@@ -74,7 +73,6 @@ class MailingService(MailingServiceInterface):
     #         )
     #         await self.send_batch([user], message)
 
-
     # async def job_c(self):
     #     logger.info("зашли в джобу C")
     #     instructions = "ты исследователь китов"
@@ -89,7 +87,6 @@ class MailingService(MailingServiceInterface):
     #             user_input=prompt
     #         )
     #         await self.send_batch([user], message)
-
 
     def schedule_jobs(self):
         scheduler.add_job(self.job_a,

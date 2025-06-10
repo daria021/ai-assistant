@@ -8,7 +8,7 @@ from shared.infrastructure.main_db import init_db
 from routes import (
     watch_router,
 )
-from user_bot.settings import settings
+from settings import settings
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(

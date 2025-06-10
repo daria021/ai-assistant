@@ -2,7 +2,7 @@ from abstractions.services.auth.service import AuthServiceInterface
 from dependencies.services.auth.token import get_token_service
 from dependencies.services.user import get_user_service
 from services.auth.service import AuthService
-from user_bot.settings import settings
+from settings import settings
 
 
 def get_auth_service() -> AuthServiceInterface:

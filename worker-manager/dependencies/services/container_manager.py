@@ -2,7 +2,7 @@ from pathlib import Path
 
 from abstractions.services.container_manager import ContainerManagerInterface
 from infrastructure.docker import AsyncDockerAPIRepository
-from user_bot.settings import settings
+from settings import settings
 
 
 def get_container_manager() -> ContainerManagerInterface:

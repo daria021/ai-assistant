@@ -1,6 +1,6 @@
 from abstractions.services.auth.tokens import TokenServiceInterface
 from services.auth.tokens import TokenService
-from user_bot.settings import settings
+from settings import settings
 
 
 def get_token_service() -> TokenServiceInterface:

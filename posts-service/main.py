@@ -4,7 +4,7 @@ import logging
 from shared.infrastructure.main_db import init_db
 
 from dependencies.services.consumer import get_posts_consumer
-from user_bot.settings import settings
+from settings import settings
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(

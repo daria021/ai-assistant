@@ -7,7 +7,7 @@ from abstractions.services.manager import AccountManagerInterface
 from dependencies.services.container_manager import get_container_manager
 from dependencies.services.watcher_client import get_watcher_client
 from services.account_manager import AccountManager
-from user_bot.settings import settings
+from settings import settings
 
 
 def get_account_manager() -> AccountManagerInterface:

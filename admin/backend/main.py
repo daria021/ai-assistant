@@ -12,7 +12,7 @@ from middlewares.auth_middleware import check_for_auth
 from routes import (
     api_router,
 )
-from user_bot.settings import settings
+from settings import settings
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
