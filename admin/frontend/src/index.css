@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@import 'react-datepicker/dist/react-datepicker.css';
+@theme {
+    --color-brand:       #4B3935;
+    --color-brand-pink: #ffecdd;
+    --color-brandlight:  #CBDFEA;
+    --color-brand2:      #53161D;
+    --color-brandlight2: #FFFBF0;
+    --color-white:       #f9fcff;
+    --color-white2:      #e3e4da;
+}

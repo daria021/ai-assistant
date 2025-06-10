@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    // …
+    "jsx": "react-jsx",            // ← важно, чтобы TS знал о JSX
+    // если у тебя ещё нет, можно также указать:
+    // "jsxImportSource": "react"  // для нового JSX-трансформа React 18+
+  },
+  "include": [
+    "src/**/*",                    // ← чтобы захватывать .tsx
+//    "FileUploader.tsx",
+//    "PostsControlPage.tsx"
+  ],
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}

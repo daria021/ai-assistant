@@ -1,0 +1,16 @@
+Metadata-Version: 2.4
+Name: shared
+Version: 0.1.0
+Summary: Shared DB models, repositories and utilities
+Requires-Python: >=3.12
+Requires-Dist: pydantic>=2.11
+Requires-Dist: pydantic-settings>=2.9.1
+Requires-Dist: sqlalchemy>=2.0
+Requires-Dist: asyncpg>=0.30
+Requires-Dist: alembic>=1.15
+Requires-Dist: alembic-postgresql-enum>=1.7
+Requires-Dist: greenlet>=3.2.2
+Requires-Dist: fastapi>=0.115.12
+Requires-Dist: aiofiles>=24.1.0
+Requires-Dist: apscheduler>=3.11.0
+Requires-Dist: httpx>=0.28.1

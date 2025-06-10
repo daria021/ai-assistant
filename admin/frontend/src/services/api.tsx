@@ -1,0 +1,231 @@
+import {apiClient} from "./apiClient";
+import type {MeResponse} from "../types/MeResponse";
+import type {UserRole} from "../types/UserRole";
+
+export interface Emoji {
+    id: string;
+    name: string;
+    img_url: string;
+    custom_emoji_id: string
+}
+
+export interface User {
+    id: string;
+    telegram_username: string;
+    role: UserRole
+}
+
+export interface ChatItem {
+    id: string;
+    name: string;
+}
+
+export interface Post {
+    id: string;
+    name: string;
+    text: string;
+    image_path: string | null;
+    html?: string | null;
+    entities?: MessageEntityDTO[];
+}
+
+export interface PostToPublish {
+    id: string;
+    post_id: string;
+    manager_id: string;
+    scheduled_type: "everyday" | "single";
+    scheduled_date: string | null;
+    scheduled_time: string;
+    status: string;
+    chats: { id: string; chat_id: string; name: string }[];  // если сервер отдаёт объекты
+    post: Post;
+}
+
+export interface CreatePostToPublishDTO {
+    post_id: string;
+    scheduled_type: "everyday" | "single";
+    scheduled_date?: string | null;
+    scheduled_time: string;
+    chats?: string[];
+}
+
+// export interface Chat {
+//     id: string;
+//     name: string;
+//     chat_id: string;
+//     invite_link: string;
+// }
+
+
+/** Сущность для обновления записи «пост в расписании» */
+export interface UpdatePostToPublishDTO {
+    /** ID сущности «пост в расписании», берётся из записи, а не из тела запроса */
+    post_id: string;
+    manager_id?: string;
+    scheduled_type?: "single" | "everyday";
+    /** формат YYYY-MM-DD */
+    scheduled_date?: string | null;
+    /** формат HH:mm */
+    scheduled_time?: string;
+    chat_ids?: string[];
+    status?: string;
+}
+
+/** Сущность для обновления самого поста */
+export interface UpdatePostDTO {
+    /** ID поста, берётся из записи и используется только для URL */
+    post_id: string;
+    name?: string;
+    text?: string;
+    /** путь к изображению, если нужно заменить или убрать */
+    image_path?: string | null;
+    /** HTML версия текста (если используете rich editor) */
+    html?: string | null;
+    /** массив MessageEntityDTO, если есть эмодзи/разметка */
+    entities?: MessageEntityDTO[];
+}
+
+/** Тип для сущности в тексте (копируйте из вашего MessageEntityDTO) */
+export interface MessageEntityDTO {
+    type: "custom_emoji" | "bold" | "italic" | "underline";
+    offset: number;
+    length: number;
+    custom_emoji_id?: string;
+}
+
+
+export async function updatePostToPublish(id: string, payload: UpdatePostToPublishDTO): Promise<void> {
+    await apiClient.patch(`/post-to-publish/${id}`, payload);
+}
+
+
+/** 1) Создать сущность Post (multipart/form-data) */
+export async function createPost(
+    name: string,
+    text: string,
+    html: string,
+    entities: MessageEntityDTO[],
+    imageFile?: File,
+): Promise<string> {
+    const form = new FormData();
+    form.append("name", name);
+    form.append("text", text);
+    form.append("html", html);
+    form.append("entities", JSON.stringify(entities));
+    if (imageFile) form.append("image", imageFile);
+
+    // Вернёт UUID созданного поста
+    const response = await apiClient.post<string>("post", form, {
+        headers: {"Content-Type": "multipart/form-data"},
+    });
+    return response.data;
+}
+
+export async function updatePost(
+    postId: string,
+    title?: string | null,
+    editorText?: string | null,
+    editorHtml?: string | null,
+    editorEntities?: MessageEntityDTO[] | null,
+    photoFile?: File | null
+) {
+    const form = new FormData()
+    if (title) form.append("name", title);
+    if (editorText) form.append("text", editorText);
+    if (editorHtml) form.append("html", editorHtml);
+    if (editorEntities) form.append('entities', JSON.stringify(editorEntities));
+    if (photoFile) form.append('image', photoFile);
+
+    return apiClient.patch(`/post/${postId}`, form, {
+        headers: {"Content-Type": "multipart/form-data"},
+    });
+}
+
+
+/** 2) Создать запись поста для публикации */
+export async function createPostToPublish(dto: CreatePostToPublishDTO): Promise<string> {
+    // Вернёт UUID записи в post-to-publish
+    const response = await apiClient.post<string>("post-to-publish", dto);
+    return response.data;
+}
+
+export async function deletePostToPublish(postToPublishId: string) {
+    await apiClient.delete("/post-to-publish", {
+        params: {post_to_publish_id: postToPublishId},
+    });
+}
+
+export async function getMe(): Promise<MeResponse> {
+    return (await apiClient.get<MeResponse>(`users/me`)).data;
+}
+
+export async function getUsers(): Promise<User[]> {
+    return (await apiClient.get(`users/all`)).data;
+}
+
+export async function deleteUser(userId: string) {
+  // формируем URL с query-параметром user_id
+  return (await apiClient.delete(`/users`, {
+    params: { user_id: userId }
+  })).data;
+}
+
+export async function getPostsToPublish(): Promise<PostToPublish[]> {
+    return (await apiClient.get("/post-to-publish/all")).data;
+}
+
+export async function getPost(postId: string): Promise<Post> {
+    return (await apiClient.get("post", {params: {post_id: postId}})).data;
+}
+
+export async function getChats(): Promise<ChatItem[]> {
+    return (await apiClient.get("chat")).data;
+}
+
+export async function createChatByLink(link: string): Promise<ChatItem> {
+    const response = await apiClient.post<ChatItem>(
+        "chat",
+        {
+            invite_link: link,
+        }
+    );
+    return response.data;
+}
+
+export async function getAuthCode(phone: string): Promise<void> {
+    await apiClient.get("/users/code", {
+        params: {
+            phone,
+        }
+    });
+}
+
+export async function sendAuthCode(phone: string, code: string, password?: string): Promise<void> {
+    await apiClient.post("/users/code",
+        {
+            phone,
+            code,
+            password,
+        }
+    );
+}
+
+export async function listEmojis(): Promise<Emoji[]> {
+    return (await apiClient.get<Emoji[]>('emoji')).data
+}
+
+
+/** Получить одну запись «PostToPublish» по её ID */
+export async function getPostToPublish(
+    postToPublishId: string
+): Promise<PostToPublish> {
+    // backend: @router.get('') async def get_post_to_publish(post_to_publish_id: UUID)
+    // обычно это GET /post-to-publish?post_to_publish_id=...
+    return (
+        await apiClient.get<PostToPublish>("/post-to-publish", {
+            params: {post_to_publish_id: postToPublishId},
+        })
+    ).data;
+}
+
+

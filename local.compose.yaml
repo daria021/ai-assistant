@@ -1,0 +1,136 @@
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: bot/Dockerfile
+    container_name: bot
+    restart: unless-stopped
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./upload/:/app/upload/
+    networks:
+      - assistant_bridge
+
+  db:
+    image: postgres:17
+    container_name: db
+    env_file: .env
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    networks:
+      - assistant_bridge
+
+  admin-backend:
+    build:
+      context: .
+      dockerfile: admin/backend/Dockerfile
+    container_name: admin-backend
+    restart: unless-stopped
+    ports:
+      - "9090:8080"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./upload/:/app/upload/
+    networks:
+      - assistant_bridge
+    depends_on:
+      - db
+      - migrator
+
+  admin-frontend:
+    build:
+      context: admin/frontend
+      dockerfile: Dockerfile
+    container_name: admin-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+
+  worker-manager:
+    build:
+      context: .
+      dockerfile: worker-manager/Dockerfile
+    container_name: worker-manager
+    restart: unless-stopped
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./worker-manager/infrastructure/docker/worker-settings:/app/infrastructure/docker/worker-settings
+    networks:
+      - assistant_bridge
+  #    depends_on:
+  #      - db
+  #      - migrator
+
+  #  worker:
+  #    build:
+  #      context: .
+  #      dockerfile: worker/Dockerfile
+  #    container_name: worker
+  #    restart: no
+  #    volumes:
+  #      - /etc/localtime:/etc/localtime:ro
+  #      - /etc/timezone:/etc/timezone:ro
+  #      - ./upload/:/app/upload/
+  #    networks:
+  #      - assistant_bridge
+
+  posts:
+    build:
+      context: .
+      dockerfile: posts-service/Dockerfile
+    container_name: posts-service
+    restart: unless-stopped
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./posts-service/jobs.sqlite:/app/jobs.sqlite
+    networks:
+      - assistant_bridge
+
+  watcher:
+    build:
+      context: .
+      dockerfile: watcher/Dockerfile
+    container_name: watcher
+    restart: unless-stopped
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    networks:
+      - assistant_bridge
+
+  migrator:
+    build:
+      context: .
+      dockerfile: migrator/Dockerfile
+    container_name: migrator
+    restart: no
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./migrator/migrations/:/app/migrations/
+    depends_on:
+      - db
+    networks:
+      - assistant_bridge
+
+volumes:
+  postgres_data:
+
+
+networks:
+  assistant_bridge:
+    external: true
+    name: assistant_bridge

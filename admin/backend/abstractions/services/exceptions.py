@@ -1,0 +1,6 @@
+class WrongCredentialsException(Exception):
+    ...
+
+
+class InvalidTokensException(Exception):
+    ...

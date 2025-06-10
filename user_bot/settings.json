@@ -1,0 +1,36 @@
+{
+  "db": {
+    "host": "db",
+    "port": 5432,
+    "user": "postgres",
+    "password": "postgres",
+    "name": "postgres"
+  },
+  "jwt": {
+    "secret_key": "very-secret-wb-key-innit",
+    "issuer": "wb-back",
+    "audience": "wb-front",
+    "access_expire": 18000,
+    "refresh_expire": 6000
+  },
+  "account": {
+    "phone": "+79817331201",
+    "api_id": 27878010,
+    "api_hash": "a8c3c7628be9f25001bd387bd713f6f8"
+  },
+  "assistant": {
+    "openai_api_key": "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",
+    "assistant_id": "asst_Jisza8Ao9NgO9FMy9KQplW2f"
+  },
+  "mailing": {
+    "a_days": "thu",
+    "b_days": "thu",
+    "c_days": "thu",
+    "a_hour": 17,
+    "a_minute": 32,
+    "b_hour": 16,
+    "b_minute": 21,
+    "c_hour": 16,
+    "c_minute": 22
+    }
+}

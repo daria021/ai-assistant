@@ -1,0 +1,27 @@
+{
+  "jwt": {
+    "secret_key": "very-secret-assistant-key",
+    "issuer": "assistant-admin-back",
+    "audience": "assistant-admin-front",
+    "allowed_origins": [
+      "http://localhost:3000",
+      "http://localhost:9090",
+      "https://b2a1-45-150-33-208.ngrok-free.app",
+      "https://9ca2-45-150-33-208.ngrok-free.app",
+      "https://8af6-45-150-33-208.ngrok-free.app",
+      "https://517e-45-150-33-208.ngrok-free.app"
+    ]
+  },
+  "environment": {
+    "env_name": "local",
+    "host": "https://709e-45-150-33-208.ngrok-free.app/api"
+  },
+  "bot": {
+    "token": "8180960031:AAGCWu2bPs9Kfrd06942B7xcWR-vyEZ1uV8"
+  },
+  "service_account": {
+    "api_id": 27878010,
+    "api_hash": "a8c3c7628be9f25001bd387bd713f6f8",
+    "session_string": "1ApWapzMBuxgXLxA6YIK0yCsW9F-BeClRGkfbPSY9FY4X6NCSkjF_8D6BvI0egqxsgYRxfkfBgahx7WDMAJXPvWxv2Owsy-B-5skD2BHlA8WCDyBq6TTd0uVEBA_Em44E0hDGM5inq2ecszfupREVUrCGgg9yNrrKiV6AUdW1JbFelCZpZ1Ti1tAjkbrmVQZxX8UyprTpi4LiBABJ17yVCRW1ijHdNd519Ro9YeMUxNiaeuRl25Hl3aL3UlguIQmTq8Lh5yU6PqP_VxWyg4jWuyj2OufZGJUsWtPRsG_RAT39bPktTleLv-aJuSp9hzw_PeCHpUsq8xWQCdyl-ccZPY7_vtVEJdg="
+  }
+}

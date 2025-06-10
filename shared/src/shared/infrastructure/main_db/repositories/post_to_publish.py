@@ -1,0 +1,125 @@
+from dataclasses import dataclass, field
+from typing import Optional
+from uuid import UUID
+
+from sqlalchemy import select
+
+from shared.abstractions.repositories import PostToPublishRepositoryInterface
+from shared.domain.dto import CreatePostToPublishDTO, UpdatePostToPublishDTO
+from shared.domain.dto.post_to_publish import MessageEntityDTO
+from shared.domain.enums import PublicationStatus
+from shared.domain.models import PostToPublish as PostToPublishModel, User as UserModel, Chat as ChatModel, Post as PostModel
+from shared.infrastructure.main_db.entities import PostToPublish, User, Chat, Post
+from .abstract import AbstractMainDBRepository
+
+
+@dataclass
+class PostToPublishRepository(
+    AbstractMainDBRepository[PostToPublish, PostToPublishModel, CreatePostToPublishDTO, UpdatePostToPublishDTO],
+    PostToPublishRepositoryInterface,
+):
+    joined_fields: dict[str, Optional[list[str]]] = field(default_factory=lambda: {
+        "manager": None,
+        "chats": None,
+        "post": None,
+    })
+
+    async def get_queued_post(self) -> Optional[PostToPublish]:
+        async with self.session_maker() as session:
+            result = await session.execute(
+                select(self.entity)
+                .where(self.entity.status == PublicationStatus.PENDING)
+                .order_by(self.entity.created_at)
+                .options(*self.options)
+                .limit(1)
+            )
+
+            post = result.unique().scalars().one_or_none()
+
+        return self.entity_to_model(post) if post else None
+
+    async def set_status(self, post_id: UUID, status: PublicationStatus) -> None:
+        async with self.session_maker() as session:
+            async with session.begin():
+                post = await session.get(self.entity, post_id)
+                post.status = status
+
+
+    async def create(self, obj: CreatePostToPublishDTO) -> UUID:
+        async with self.session_maker() as session:
+            async with session.begin():
+                chats = await session.execute(
+                    select(Chat)
+                    .where(Chat.id.in_(obj.chat_ids))
+                )
+
+                post = self.create_dto_to_entity(obj)
+                post.chats = chats.scalars().all()
+                session.add(post)
+
+        return post.id
+
+    def create_dto_to_entity(self, dto: CreatePostToPublishDTO) -> PostToPublish:
+        return PostToPublish(
+            id=dto.id,
+            post_id=dto.post_id,
+            manager_id=dto.manager_id,
+            scheduled_type=dto.scheduled_type,
+            scheduled_date=dto.scheduled_date,
+            scheduled_time=dto.scheduled_time,
+            status=dto.status,
+            created_at=dto.created_at,
+            updated_at=dto.updated_at
+        )
+
+    def entity_to_model(self, entity: PostToPublish) -> PostToPublishModel:
+        def _map_user(user: User) -> UserModel:
+            return UserModel(
+                id=user.id,
+                telegram_id=user.telegram_id,
+                telegram_username=user.telegram_username,
+                telegram_last_name=user.telegram_last_name,
+                telegram_first_name=user.telegram_first_name,
+                telegram_language_code=user.telegram_language_code,
+                role=user.role,
+                assistant_enabled=user.assistant_enabled,
+                created_at=user.created_at,
+                updated_at=user.updated_at,
+            )
+
+        def _map_chat(chat: Chat) -> ChatModel:
+            return ChatModel(
+                id=chat.id,
+                chat_id=chat.chat_id,
+                name=chat.name,
+                invite_link=chat.invite_link,
+                created_at=chat.created_at,
+                updated_at=chat.updated_at,
+            )
+
+        def _map_post(post: Post) -> PostModel:
+            return PostModel(
+                id=post.id,
+                text=post.text,
+                name=post.name,
+                html=post.html,
+                entities=[MessageEntityDTO.model_validate(x) for x in post.entities] if post.entities else None,
+                image_path=post.image_path,
+                created_at=post.created_at,
+                updated_at=post.updated_at,
+            )
+
+        return PostToPublishModel(
+            id=entity.id,
+            post_id=entity.post_id,
+            manager_id=entity.manager_id,
+            scheduled_type=entity.scheduled_type,
+            scheduled_date=entity.scheduled_date,
+            scheduled_time=entity.scheduled_time,
+            status=entity.status,
+            manager=_map_user(entity.manager),
+            chats=[_map_chat(x) for x in entity.chats],
+            post=_map_post(entity.post),
+            created_at=entity.created_at,
+            updated_at=entity.updated_at,
+        )
