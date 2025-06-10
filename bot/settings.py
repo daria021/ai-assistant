@@ -5,12 +5,14 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 from shared.infrastructure.main_db import MainDBSettings
-from shared.settings import AbstractSettings
+from shared.settings import AbstractSettings, EnvironmentSettings, BotSettings, MiniappSettings
 
 
 class Settings(AbstractSettings):
     main_db: MainDBSettings = Field(default_factory=MainDBSettings)
-    public_backend_base_url: str
+    env: EnvironmentSettings = Field(default_factory=EnvironmentSettings)
+    bot: BotSettings
+    miniapp: MiniappSettings
 
     model_config = SettingsConfigDict(
         extra="ignore",

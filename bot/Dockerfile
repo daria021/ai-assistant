@@ -28,6 +28,4 @@ COPY --from=builder /install /usr/local
 # copy your service code
 COPY bot/ .
 
-ENV ENVIRONMENT=local
-
 ENTRYPOINT [ "python3", "main.py" ]

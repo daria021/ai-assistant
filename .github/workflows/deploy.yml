@@ -15,9 +15,26 @@ jobs:
       "self-hosted",
       "prod"
     ]
+    env:
+      DEPLOY_ENV: production
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Prepare environment
+        run: |
+          touch .env
+          
+          if [ "$DEPLOY_ENV" = "production" ]; then
+            cp prod.env .env
+
+            DOMAIN="https://ai.avocado.ceo"
+
+            echo "APP_HOST=${DOMAIN}" >> .env
+            echo "MINIAPP_URL=${DOMAIN}" >> .env
+
+            echo "VITE_API_BASE=${DOMAIN}/api" > admin/frontend/.env
+          fi
 
       - name: Compose up
         run: |

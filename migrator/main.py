@@ -15,7 +15,6 @@ logging.basicConfig(
 
 
 class MigratorSettings(AbstractSettings):
-    file: str
     main_db: MainDBSettings = Field(default_factory=MainDBSettings)
 
     model_config = SettingsConfigDict(

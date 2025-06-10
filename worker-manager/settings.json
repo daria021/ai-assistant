@@ -1,9 +1,8 @@
 {
-  "file": "Test",
   "docker": {
     "workers_network_name": "assistant_bridge",
     "app_root_config_path": "/app/infrastructure/docker/worker-settings/",
-    "host_root_config_path": "/Users/daria/Downloads/ai_assistant 4/worker-manager/infrastructure/docker/worker-settings/",
+    "host_root_config_path": "/Users/daria/PycharmProjects/ai_assistant/worker-manager/infrastructure/docker/worker-settings/",
     "worker_image": "account-worker"
   },
   "worker": {

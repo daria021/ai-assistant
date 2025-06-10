@@ -7,7 +7,7 @@ from shared.settings import AbstractSettings
 
 
 class UploadSettings(AbstractSettings):
-    host_upload_dir: str = Field('/Users/daria/Downloads/ai_assistant 4/upload/')
+    host_upload_dir: str = Field('/Users/daria/PycharmProject/ai_assistant/upload/', alias='HOST_UPLOAD_DIR')
     app_upload_dir: str = Field('/app/upload/')
 
     model_config = SettingsConfigDict(

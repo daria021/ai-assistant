@@ -3,4 +3,4 @@ from pydantic_settings import BaseSettings
 
 
 class MiniappSettings(BaseSettings):
-    miniapp_url: str
+    url: str = Field(..., alias="MINIAPP_URL")

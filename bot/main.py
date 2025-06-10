@@ -1,33 +1,26 @@
 import asyncio
 import logging
-import os
 
 from aiogram import Bot, Dispatcher, types
 from aiogram import F
 from aiogram.filters import CommandStart, Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo, ContentType
-from dotenv import load_dotenv
 from httpx import AsyncClient
 from shared.dependencies.repositories import get_proxy_repository
-from shared.dependencies.services import get_upload_service
 from shared.dependencies.services.emoji import get_emoji_service
 from shared.domain.dto import CreateProxyDTO
 from shared.domain.dto.emoji import CreateEmojiDTO
 from shared.infrastructure.main_db import init_db
 
-from user_bot.settings import settings
-
-load_dotenv(dotenv_path=f'{os.getenv("ENVIRONMENT", "local")}.env')
-
-TOKEN = os.getenv('TOKEN')
-WEB_APP_URL = os.getenv('WEB_APP_URL')
+from dependencies.service.upload import get_upload_service
+from settings import settings
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
-bot = Bot(token=TOKEN)
+bot = Bot(token=settings.bot.token)
 dp = Dispatcher()
 logger = logging.getLogger(__name__)
 
@@ -35,7 +28,7 @@ logger = logging.getLogger(__name__)
 @dp.message(CommandStart(deep_link=True))
 async def handler_start_deep(message: types.Message):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Открыть админку", web_app=WebAppInfo(url=WEB_APP_URL))]
+        [InlineKeyboardButton(text="Открыть админку", web_app=WebAppInfo(url=settings.miniapp.url))]
     ])
     await message.answer(
         "Привет! ♡\n\nЭто админ-панель…\n\n*✧･ﾟ: *✧･ﾟ:*",
@@ -48,7 +41,7 @@ async def handler_start_deep(message: types.Message):
 @dp.message(CommandStart(deep_link=False))
 async def handler_start_plain(message: types.Message):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Открыть админку", web_app=WebAppInfo(url=WEB_APP_URL))]
+        [InlineKeyboardButton(text="Открыть админку", web_app=WebAppInfo(url=settings.miniapp.url))]
     ])
     await message.answer(
         "Привет! ♡\n\nЭто админ-панель…",
@@ -71,9 +64,9 @@ async def cmd_add_emoji(message: types.Message):
         sticker_entity = (await bot.get_custom_emoji_stickers([sticker.custom_emoji_id]))[0]
         file = await bot.get_file(sticker_entity.file_id)
         file_path = file.file_path
-        url = f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"
+        url = f"https://api.telegram.org/file/bot{settings.bot.token}/{file_path}"
 
-        upload_service = get_upload_service(settings.public_backend_base_url)
+        upload_service = get_upload_service()
 
         async with AsyncClient() as client:
             file_response = await client.get(url)
