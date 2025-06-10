@@ -1,0 +1,22 @@
+name: REBOOT NGINX
+
+
+on:
+  workflow_dispatch:
+
+
+jobs:
+  reboot:
+    name: Reboot nginx docker service
+    runs-on: [
+      "self-hosted",
+      "dev"
+    ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Reboot
+        run: |
+          docker compose stop nginx
+          docker compose up --build -d nginx
