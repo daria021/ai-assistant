@@ -11,6 +11,9 @@ services:
       - ./upload/:/app/upload/
     networks:
       - assistant_bridge
+    depends_on:
+      - db
+      - migrator
 
   db:
     image: postgres:17
@@ -69,9 +72,9 @@ services:
       - ./worker-manager/infrastructure/docker/worker-settings:/app/infrastructure/docker/worker-settings
     networks:
       - assistant_bridge
-  #    depends_on:
-  #      - db
-  #      - migrator
+    depends_on:
+      - db
+      - migrator
 
   #  worker:
   #    build:
@@ -98,6 +101,9 @@ services:
       - ./posts-service/jobs.sqlite:/app/jobs.sqlite
     networks:
       - assistant_bridge
+    depends_on:
+      - db
+      - migrator
 
   watcher:
     build:
@@ -110,6 +116,9 @@ services:
       - /etc/timezone:/etc/timezone:ro
     networks:
       - assistant_bridge
+    depends_on:
+      - db
+      - migrator
 
   migrator:
     build:

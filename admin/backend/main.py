@@ -6,13 +6,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 # from fastapi.openapi.utils import get_openapi
 from shared.infrastructure.main_db import init_db
-
+from settings import settings
 from middlewares.auth_middleware import check_for_auth
 # from middlewares import check_for_auth
 from routes import (
     api_router,
 )
-from settings import settings
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(

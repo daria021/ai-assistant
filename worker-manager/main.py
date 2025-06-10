@@ -3,15 +3,16 @@ import logging
 
 from shared.infrastructure.main_db import init_db
 
+from settings import settings
 from dependencies.services.consumer import get_consumer
 from dependencies.services.container_manager import get_container_manager
-from settings import settings
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
+
 
 async def main():
     logger.info("Initializing service...")

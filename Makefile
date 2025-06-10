@@ -6,4 +6,4 @@ mn:
 	  docker network create assistant_bridge
 
 localup:
-	docker compose -f local.compose.yml up --build -d
+	docker compose -f local.compose.yaml up --build -d

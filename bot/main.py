@@ -20,7 +20,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
-bot = Bot(token=settings.bot.token)
+bot = Bot(token=settings.bot.token.get_secret_value())
 dp = Dispatcher()
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ async def cmd_add_emoji(message: types.Message):
         sticker_entity = (await bot.get_custom_emoji_stickers([sticker.custom_emoji_id]))[0]
         file = await bot.get_file(sticker_entity.file_id)
         file_path = file.file_path
-        url = f"https://api.telegram.org/file/bot{settings.bot.token}/{file_path}"
+        url = f"https://api.telegram.org/file/bot{settings.bot.token.get_secret_value()}/{file_path}"
 
         upload_service = get_upload_service()
 
