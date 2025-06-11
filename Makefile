@@ -1,5 +1,5 @@
 bw:
-	docker build -f worker/Dockerfile -t account-worker .
+	docker build -f worker/Dockerfile -t account-worker --label keep=yes .
 
 mn:
 	@docker network inspect assistant_bridge >/dev/null 2>&1 || \

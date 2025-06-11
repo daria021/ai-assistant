@@ -45,4 +45,4 @@ jobs:
 
       - name: Cleanup
         run: |
-          sudo docker system prune -a -f
+          sudo docker system prune -a -f --filter "label!=keep"
