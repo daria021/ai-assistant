@@ -11,10 +11,11 @@ phone = '+79776721730'  # your phone number in international format
 
 # Session file will be created as 'user.session'
 session_name = 'service'
+proxy = ('socks5', '91.236.79.114', '80', True, 'silent', 'bob',  )
 
 
 async def main():
-    client = TelegramClient(session_name, api_id, api_hash)
+    client = TelegramClient(session_name, api_id, api_hash, proxy=proxy)
     await client.connect()
     h = await client.send_code_request(phone)
     h = h.phone_code_hash

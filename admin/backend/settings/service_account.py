@@ -6,3 +6,4 @@ class ServiceAccountSettings(AbstractSettings):
     api_id: int
     api_hash: str
     session_string: SecretStr
+    proxy: str
