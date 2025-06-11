@@ -40,3 +40,5 @@ __all__ = [
     "Story",
     "Proxy"
 ]
+
+Proxy.model_rebuild()

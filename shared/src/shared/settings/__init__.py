@@ -5,6 +5,7 @@ from .environment import EnvironmentSettings
 from .bot import BotSettings
 from .abstract import AbstractSettings
 from .docker import DockerSettings
+from .worker import WorkerSettings
 
 __all__ = [
     "MiniappSettings",
@@ -14,4 +15,5 @@ __all__ = [
     "BotSettings",
     "AbstractSettings",
     "DockerSettings",
+    "WorkerSettings",
 ]

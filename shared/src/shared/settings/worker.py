@@ -1,5 +1,3 @@
-from typing import Optional
-
 from shared.domain.models.user import UserWithSessionString
 from shared.settings import AbstractSettings
 

@@ -19,5 +19,4 @@ class Settings(WorkerSettings):
         json_file_encoding="utf-8",
     )
 
-
 settings = Settings()

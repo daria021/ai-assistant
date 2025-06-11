@@ -136,4 +136,5 @@ class TelegramService(
 
         # PySocks/Telethon-compatible format
         proxy = (proxy_type, host, port, True, username, password)
+        print(proxy)
         return proxy

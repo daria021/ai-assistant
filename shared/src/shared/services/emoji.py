@@ -17,4 +17,3 @@ class EmojiService(EmojiServiceInterface):
 
     async def create_emoji(self, emoji: CreateEmojiDTO) -> UUID:
         return await self.emoji_repository.create(emoji)
-

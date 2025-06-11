@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 
 class EnvironmentSettings(BaseSettings):
     env_name: str = Field('local', alias='ENVIRONMENT')
-    host: str = Field('localhost:8080', alias='APP_HOST')
+    host: str = Field('localhost:9090', alias='APP_HOST')
 
     @property
     def is_debug(self) -> bool:

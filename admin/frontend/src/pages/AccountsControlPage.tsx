@@ -10,8 +10,8 @@ const roles = ['admin', 'moderator1', 'moderator2'] as const;
 type Role = typeof roles[number];
 
 interface Account {
-  userId: string;       // Реальный UUID из базы
-  username: string;     // Telegram-username
+  userId: string;
+  username: string;
   role: Role;
 }
 
@@ -43,9 +43,8 @@ export default function AccountsControlPage() {
     setProxyError(false);
   };
 
-  useEffect(() => {
-    (async () => {
-      try {
+  const fetchAccounts = async () => {
+          try {
         const users: User[] = await getUsers();
         const mapped: Account[] = users.map(u => ({
           userId: u.id,
@@ -56,7 +55,10 @@ export default function AccountsControlPage() {
       } catch (e) {
         console.error('Не удалось получить пользователей', e);
       }
-    })();
+  };
+
+  useEffect(() => {
+    fetchAccounts();
   }, []);
 
   const closeModal = () => {
@@ -101,13 +103,9 @@ const handleSendCode = async () => {
     setError('');
     try {
       await sendAuthCode(phone, code, cloudPassword);
-      // Допустим, при успешном подключении мы получаем обратно корректный объект User.
-      // Но здесь, чтобы не усложнять, просто добавляем новый entry с phone как username и
-      // временным UUID (если реальный придёт от API, замените эту часть на корректный userId).
-      const tempId = phone; // если реальный id придёт из бэка, лучше заменить
-      setAccounts(prev => [...prev, { userId: tempId, username: phone, role: 'moderator2' }]);
       alert('Ваш аккаунт подключен!');
       closeModal();
+      await fetchAccounts();
     } catch (e) {
       console.error(e);
       setError('Ошибка подтверждения. Проверьте код и пароль.');
