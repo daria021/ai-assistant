@@ -149,25 +149,18 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
 
                 if (p.scheduled_type === "single" && p.scheduled_date) {
                     const d = new Date(p.scheduled_date);
-                    const dayStr = d.toLocaleDateString("ru-RU", {
-                        day: "2-digit",
-                        month: "long",
-                        year: "numeric",
-                    });
-                    map[dayStr] = (map[dayStr] || []).concat(item);
+                    const isoKey = d.toISOString().slice(0, 10);           // "YYYY-MM-DD"
+                    map[isoKey] = (map[isoKey] || []).concat(item);
                 } else {
-                    // everyday — show for the next 7 days
                     for (let i = 0; i < 7; i++) {
                         const d = new Date(today);
                         d.setDate(d.getDate() + i);
-                        const dayStr = d.toLocaleDateString("ru-RU", {
-                            day: "2-digit",
-                            month: "long",
-                            year: "numeric",
-                        });
-                        map[dayStr] = (map[dayStr] || []).concat(item);
+                        const isoKey = d.toISOString().slice(0, 10);
+                        map[isoKey] = (map[isoKey] || []).concat(item);
                     }
                 }
+
+
             }
 
             // sort inside each day
@@ -251,26 +244,41 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
             // 2. Создаём сам пост
             const postId = await createPost(title, editorText, editorHtml, editorEntities, photoFile ?? undefined);
 
-            // 3. Готовим дату и время
             let scheduled_date: string | null = null;
             let scheduled_time: string;
-            if (scheduleType === "once" && scheduledAt) {
-                const iso = scheduledAt.toISOString();
-                scheduled_date = iso.slice(0, 10);
-                scheduled_time = iso.slice(11, 16);
-                console.log("here 1");
-            } else {
-                scheduled_time = timeOnly!.toISOString().slice(11, 16);
-                console.log("here 2");
-            }
-            console.log(scheduled_time);
 
-            // 4. Формируем DTO
+            // если «в указанный день»
+            if (scheduleType === "once") {
+                if (!scheduledAt) {
+                    alert("Выберите дату и время");
+                    return;
+                }
+                // дата в формате YYYY-MM-DD
+                scheduled_date = scheduledAt.toISOString().slice(0, 10);
+                // локальное время, например "15:30"
+                scheduled_time = scheduledAt.toLocaleTimeString('ru-RU', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } else {
+                // ежедневная рассылка
+                if (!timeOnly) {
+                    alert("Выберите время для ежедневной рассылки");
+                    return;
+                }
+                // не меняем дату, только время
+                scheduled_time = timeOnly.toLocaleTimeString('ru-RU', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            // дальше формируем DTO с использованием именно этой переменной
             const dto: CreatePostToPublishDTO = {
                 post_id: postId,
                 scheduled_type: scheduleType === "once" ? "single" : "everyday",
-                scheduled_date,
-                scheduled_time,
+                scheduled_date,     // либо "2025-06-11", либо null
+                scheduled_time,     // например "15:30"
                 chat_ids: selectedChats,
                 manager_id: userId,
                 status: "pending",
@@ -529,47 +537,51 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
             {activeTab === "schedule" && (
                 <div className="space-y-4 text-brand">
                     {Object.keys(schedule)
-                        .sort(
-                            (a, b) =>
-                                new Date(a.split(" ").reverse().join("-")).getTime() -
-                                new Date(b.split(" ").reverse().join("-")).getTime(),
-                        )
-                        .map((day) => (
-                            <div key={day} className="bg-brand-pink p-4 rounded-lg shadow">
-                                <div
-                                    className="flex justify-between items-center cursor-pointer"
-                                    onClick={() => toggleDay(day)}
-                                >
-                                    <h2 className="text-xl font-semibold">{day}</h2>
-                                    {openDays[day] ? <FiChevronUp/> : <FiChevronDown/>}
-                                </div>
+                        .sort() // ISO-строки сортируются лексикографически
+                        .map((iso) => {
+                            const label = new Date(iso).toLocaleDateString("ru-RU", {
+                                day: "2-digit",
+                                month: "long",
+                                year: "numeric",
+                            });
+                            return (
+                                <div key={iso} className="bg-brand-pink p-4 rounded-lg shadow">
+                                    <div
+                                        className="flex justify-between items-center cursor-pointer"
+                                        onClick={() => toggleDay(iso)}
+                                    >
+                                        <h2 className="text-xl font-semibold">{label}</h2>
+                                        {openDays[iso] ? <FiChevronUp/> : <FiChevronDown/>}
+                                    </div>
 
-                                {openDays[day] && (
-                                    <ul className="mt-4 space-y-2">
-                                        {schedule[day].map((ev) => (
-                                            <li
-                                                key={ev.id}
-                                                className="flex items-center justify-between p-2 hover:bg-gray-100 rounded cursor-pointer"
-                                                onClick={() => navigate(`/post-details/${ev.id}`)}
-                                            >
-                        <span>
-                          <span className="font-medium">{ev.time}</span> — {ev.title}
-                        </span>
-                                                <img
-                                                    src="/icons/trash.png"
-                                                    alt="Удалить"
-                                                    className="h-5 w-5 opacity-60 hover:opacity-100"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDelete(day, ev);
-                                                    }}
-                                                />
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
-                        ))}
+                                    {openDays[iso] && (
+                                        <ul className="mt-4 space-y-2">
+                                            {schedule[iso].map((ev) => (
+                                                <li
+                                                    key={ev.id}
+                                                    className="flex items-center justify-between p-2 hover:bg-gray-100 rounded cursor-pointer"
+                                                    onClick={() => navigate(`/post-details/${ev.id}`)}
+                                                >
+                <span>
+                  <span className="font-medium">{ev.time}</span> — {ev.title}
+                </span>
+                                                    <img
+                                                        src="/icons/trash.png"
+                                                        alt="Удалить"
+                                                        className="h-5 w-5 opacity-60 hover:opacity-100"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDelete(iso, ev);
+                                                        }}
+                                                    />
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+                            );
+                        })}
+
                 </div>
             )}
         </div>
