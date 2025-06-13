@@ -24,6 +24,7 @@ jobs:
       - name: Prepare environment
         run: |
           touch .env
+          touch ./posts-service/jobs.sqlite
 
           make bw
           make mn
