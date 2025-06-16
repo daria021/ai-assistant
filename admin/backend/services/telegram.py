@@ -102,6 +102,7 @@ class TelegramService(
     async def get_service_client(self) -> AsyncGenerator[TelegramClient, None]:
         if self.use_bot_for_service:
             client = TelegramClient('bot', self.api_id, self.api_hash)
+            await client.connect()
             client.start(self.service_bot_token)
 
             yield client
