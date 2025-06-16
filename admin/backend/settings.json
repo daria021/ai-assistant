@@ -23,6 +23,8 @@
     "api_id": 27878010,
     "api_hash": "a8c3c7628be9f25001bd387bd713f6f8",
     "session_string": "1ApWapzMBu6MCtPstA_LrDXZmFzFGzxn0ixUD8nVV-djbcFb4u5Myr3vlGud0E3bP18BlbDYqtKMMtv1npkD5XI55hVjzvqB7m4fp0pn7bvReQ435f1KnQgbb5WoOiq03pJJ8HrK_c_7wT770fFiYUK4sln0_ldqSBZZaOVKT09N62v7Uo9vmN3Id0DQstk9Ab2rkosbl5O19x85vfjcGOMicm1PG91Q8vqX1Y_vixPSZcgkyDv4FoRECnwmqTKo347hRCipFDcKbBccQTNnidhUDqVUZbl4kXGUIrbHpW-1riJcnTPsSK33DfDKWGbwIA77yyWGkixReb5S8ZYHa1Tf0lZT_oBI=",
-    "proxy": "socks5://silent:bob@91.236.79.114:80"
+    "proxy": "socks5://silent:bob@91.236.79.114:80",
+    "service_bot_token": "7782070677:AAHtu78aPEQSf15dYsXJbBhcbfMoz7bDXQg",
+    "use_bot_for_service": true
   }
 }

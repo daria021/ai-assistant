@@ -27,6 +27,9 @@ class TelegramService(
     api_id: int
     api_hash: str
     service_session_string: str
+    proxy: str
+    service_bot_token: str
+    use_bot_for_service: bool = False
 
     phone_code_hashes: dict[  # todo: possible memory leak, needs interval cleaning
         Annotated[str, 'phone'],
@@ -97,8 +100,15 @@ class TelegramService(
 
     @asynccontextmanager
     async def get_service_client(self) -> AsyncGenerator[TelegramClient, None]:
+        if self.use_bot_for_service:
+            async with TelegramClient('bot', self.api_id, self.api_hash) as client:
+                await client.start(self.service_bot_token)
+
+                yield client
+            return
+
         session = StringSession(self.service_session_string)
-        async with TelegramClient(session, self.api_id, self.api_hash) as client:
+        async with TelegramClient(session, self.api_id, self.api_hash, proxy=self.parse_proxy(self.proxy)) as client:
             await client.start()
 
             yield client
