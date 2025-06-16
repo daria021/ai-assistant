@@ -19,7 +19,6 @@ class SendingConsumer(SendingConsumerInterface):
     global_delay: float = 5
 
     async def execute(self) -> NoReturn:
-        logger.info(f"Consumer started, {id(self.account_manager.container_manager)}")
         while True:
             message_to_send = await self.sending_request_service.get_queued_message()
             if message_to_send is None:

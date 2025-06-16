@@ -7,8 +7,9 @@ from pydantic_settings import (
 from shared.infrastructure.main_db import MainDBSettings
 from shared.services.upload.settings import UploadSettings
 from shared.services.watcher_client import WatcherSettings
-from shared.settings import AbstractSettings, DockerSettings
+from shared.settings import AbstractSettings, DockerSettings, BotSettings
 
+from .posting_bot import PostingBotSettings
 from .worker import CommonWorkerSettings
 
 
@@ -18,6 +19,7 @@ class Settings(AbstractSettings):
     watcher: WatcherSettings = Field(default_factory=WatcherSettings)
     docker: DockerSettings
     worker: CommonWorkerSettings
+    posting_bot: PostingBotSettings
 
     model_config = SettingsConfigDict(
         extra="ignore",

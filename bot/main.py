@@ -29,6 +29,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+logger.info(f'starting bot with token: {settings.bot.token.get_secret_value()}')
+
 bot = Bot(token=settings.bot.token.get_secret_value())
 dp = Dispatcher(storage=MemoryStorage())  # <-- attach FSM storage
 

@@ -12,8 +12,10 @@ from shared.domain.models import SendPostRequest, UserWithSessionString
 from shared.domain.enums import WorkerMessageType, WorkerMessageStatus
 from shared.settings.worker import WorkerSettings
 
+from abstractions.services.bot_service import BotServiceInterface
 from abstractions.services.container_manager import ContainerManagerInterface
 from abstractions.services.manager import AccountManagerInterface
+from dependencies.services.bot_service import get_bot_service
 from services.exceptions import UnknownRequestTypeException
 
 logger = logging.getLogger(__name__)
@@ -23,7 +25,7 @@ class AccountManager(AccountManagerInterface):
     container_manager: ContainerManagerInterface
     worker_message_repository: WorkerMessageRepositoryInterface
     user_repository: UserRepositoryInterface
-
+    bot_service: BotServiceInterface
     watcher_client: WatcherClientInterface
 
     app_root_config_path: Path
@@ -38,23 +40,12 @@ class AccountManager(AccountManagerInterface):
         raise UnknownRequestTypeException(f"{type(request)} requests are not supported")
 
     async def _send_post(self, request: SendPostRequest) -> None:
-        worker_message_dto = CreateWorkerMessageDTO(
-            user_id=request.user_id,
-            type=WorkerMessageType.POST,
-            text=request.post.text,
-            entities=request.post.entities,
-            media_path=request.post.image_path,
-            status=WorkerMessageStatus.PENDING,
-            chat_id=request.chat.chat_id,
-            request_id=request.id,
-        )
-
-        logger.info(f"Sending post request {worker_message_dto}")
-        logger.info(f"Request was {request}")
-
-        await self.worker_message_repository.create(worker_message_dto)
-
-        await self.ensure_worker_running(request.user_id)
+                await self.bot_service.send_post(
+                        chat_id = request.chat.chat_id,
+                    text = request.post.text,
+                    entities = request.post.entities,
+                    media_path = request.post.image_path,
+                )
 
     async def ensure_worker_running(self, user_id: UUID) -> None:
         user = await self.user_repository.get(user_id)
