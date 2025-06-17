@@ -254,7 +254,7 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                     return;
                 }
                 // дата в формате YYYY-MM-DD
-                scheduled_date = scheduledAt.toISOString().slice(0, 10);
+                scheduled_date = scheduledAt.toLocaleDateString('sv-SE');
                 // локальное время, например "15:30"
                 scheduled_time = scheduledAt.toLocaleTimeString('ru-RU', {
                     hour: '2-digit',
