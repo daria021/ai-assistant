@@ -98,28 +98,59 @@ class TelegramService(
         string = StringSession.save(client.session)
         return string
 
+    # @asynccontextmanager
+    # async def get_service_client(self) -> AsyncGenerator[TelegramClient, None]:
+    #     if self.use_bot_for_service:
+    #         client = TelegramClient('bot', self.api_id, self.api_hash)
+    #         await client.connect()
+    #         logger.info("self.service_bot_token")
+    #         logger.info(self.service_bot_token)
+    #         await client.start(bot_token=self.service_bot_token) # noqa
+    #         logger.info(await client.get_me())
+    #         # logger.info(await client.get_dialogs())
+    #
+    #         yield client
+    #
+    #         await client.disconnect()
+    #         return
+    #
+    #     session = StringSession(self.service_session_string)
+    #     async with TelegramClient(session, self.api_id, self.api_hash, proxy=self.parse_proxy(self.proxy)) as client:
+    #         await client.start()
+    #
+    #         yield client
+
     @asynccontextmanager
     async def get_service_client(self) -> AsyncGenerator[TelegramClient, None]:
         if self.use_bot_for_service:
-            client = TelegramClient('bot', self.api_id, self.api_hash)
-            await client.connect()
-            logger.info("self.service_bot_token")
-            logger.info(self.service_bot_token)
-            await client.start(bot_token=self.service_bot_token) # noqa
+            # In-memory session, чтобы не создавать sqlite-файл и не блокировать БД
+            bot_session = StringSession()
+            client = TelegramClient(
+                bot_session,
+                self.api_id,
+                self.api_hash,
+                proxy=self.parse_proxy(self.proxy) if self.proxy else None
+            )
+
+            # start() сам подключится и залогинится как бот
+            await client.start(bot_token=self.service_bot_token) #noqa
             logger.info(await client.get_me())
-            logger.info(await client.get_dialogs())
 
             yield client
 
             await client.disconnect()
             return
 
-        session = StringSession(self.service_session_string)
-        async with TelegramClient(session, self.api_id, self.api_hash, proxy=self.parse_proxy(self.proxy)) as client:
+        # Обычный пользовательский режим через сохранённую строку сессии
+        user_session = StringSession(self.service_session_string)
+        async with TelegramClient(
+            user_session,
+            self.api_id,
+            self.api_hash,
+            proxy=self.parse_proxy(self.proxy) if self.proxy else None
+        ) as client:
             await client.start()
-
             yield client
-
     @staticmethod
     def parse_proxy(proxy_string: Optional[str] = None) -> Optional[tuple]:
         if not proxy_string:
