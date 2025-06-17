@@ -24,6 +24,7 @@ async def publish(post_id: UUID) -> None:
     try:
         child_requests: list[UUID] = []
         for chat in post.chats:
+            logger.info(f"создание CreateSendPostRequestDTO")
             post_request_dto = CreateSendPostRequestDTO(
                 post_id=post.post_id,
                 chat_id=chat.id,

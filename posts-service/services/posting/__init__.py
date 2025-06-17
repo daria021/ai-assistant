@@ -41,6 +41,8 @@ class PostingService(
                     if post.scheduled_time > datetime.now().time() \
                     else date.today() + timedelta(days=1)
 
+                logger.info("jobs")
+                logger.info("Next run date: %s", next_run_date)
                 self._schedule_post(
                     post_id=post.id,
                     schedule_at=datetime.combine(
@@ -50,6 +52,7 @@ class PostingService(
                 )
 
     def _schedule_post(self, post_id: UUID, schedule_at: datetime) -> None:
+        logger.info(f"_scheduling post {post_id}")
         self.scheduler.schedule_once(
             callback=publish,
             runs_on=schedule_at,
