@@ -39,19 +39,52 @@ class TelegramService(
         ]
     ] = field(default_factory=dict)
 
+    # async def get_chat_info(self, invite_link: str) -> TelegramChatInfo:
+    #     try:
+    #         async with self.get_service_client() as client:
+    #             chat: types.Chat = await client.get_entity(invite_link)
+    #             chat_id = get_peer_id(chat)
+    #             return TelegramChatInfo(
+    #                 id=chat_id,
+    #                 title=chat.title,
+    #                 members_count=chat.participants_count,
+    #             )
+    #
+    #     except Exception as e:
+    #         logger.error("Не удалось получить title для %s: %s", invite_link, e, exc_info=True)
+    #         raise UnableToGetChatException
+
     async def get_chat_info(self, invite_link: str) -> TelegramChatInfo:
         try:
             async with self.get_service_client() as client:
-                chat: types.Chat = await client.get_entity(invite_link)
-                chat_id = get_peer_id(chat)
+                # Получаем любой Peer (Chat, Channel или User)
+                entity = await client.get_entity(invite_link)
+                chat_id = get_peer_id(entity)
+
+                # Title: для чата/канала — .title, для юзера — .username
+                if isinstance(entity, (types.Channel, types.Chat)):
+                    title = entity.title or ""
+                else:
+                    title = getattr(entity, "username", "") or ""
+
+                # Попытка взять participants_count, и если он None, сделать fallback
+                members = getattr(entity, "participants_count", None)
+                if members is None:
+                    try:
+                        # получаем реальный список участников (работает только для публичных чатов/каналов)
+                        participants = await client.get_participants(entity)
+                        members = len(participants)
+                    except Exception:
+                        members = 0
+
                 return TelegramChatInfo(
                     id=chat_id,
-                    title=chat.title,
-                    members_count=chat.participants_count,
+                    title=title,
+                    members_count=members,
                 )
 
         except Exception as e:
-            logger.error("Не удалось получить title для %s: %s", invite_link, e, exc_info=True)
+            logger.error("Не удалось получить информацию по %s: %s", invite_link, e, exc_info=True)
             raise UnableToGetChatException
 
     async def send_auth_code(self, phone: str, proxy: Optional[str] = None) -> None:
