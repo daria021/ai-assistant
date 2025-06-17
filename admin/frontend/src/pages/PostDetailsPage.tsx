@@ -67,42 +67,28 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
         );
 
     // Загрузка одной записи PostToPublish (вместе с entry.post и entry.chats)
-    useEffect(() => {
-        if (!postToPublishId) return;
-        (async () => {
-            try {
-                const e = await getPostToPublish(postToPublishId);
-                setEntry(e);
+useEffect(() => {
+  if (!postToPublishId) return;
+  (async () => {
+    const e = await getPostToPublish(postToPublishId);
+    setEntry(e);
+    // …остальной код заполнения полей…
 
-                // 1) Заполняем поля поста из вложенного entry.post
-                setTitle(e.post.name);
-                setEditorHtml(e.post.html || e.post.text); // если бекенд хранит HTML
-                setEditorText(e.post.text);
-                setEditorEntities(e.post.entities || []);
+    if (e.scheduled_type === "single" && e.scheduled_date) {
+      // вместо new Date(string)
+      const [Y, M, D] = e.scheduled_date.split("-").map(Number);
+      const [H, Min]  = e.scheduled_time .split(":").map(Number);
+      setScheduledAt(new Date(Y, M - 1, D, H, Min));
+    } else {
+      const now = new Date();
+      const [H, Min] = e.scheduled_time.split(":").map(Number);
+      now.setHours(H, Min, 0, 0);
+      setTimeOnly(now);
+    }
+    // …
+  })();
+}, [postToPublishId, navigate]);
 
-                if (e.post.image_path) setPhotoPreview(e.post.image_path);
-
-                // 2) Тип рассылки и дата/время
-                setScheduleType(e.scheduled_type === "single" ? "once" : "daily");
-                if (e.scheduled_type === "single" && e.scheduled_date) {
-                    setScheduledAt(
-                        new Date(`${e.scheduled_date}T${e.scheduled_time}`)
-                    );
-                } else {
-                    const now = new Date();
-                    const [h, m] = e.scheduled_time.split(":").map(Number);
-                    now.setHours(h, m, 0, 0);
-                    setTimeOnly(now);
-                }
-
-                // 3) Отмечаем чаты из entry.chats (список объектов Chat)
-                setSelectedChats(e.chats.map((c) => c.id));
-            } catch {
-                alert("Не удалось загрузить данные для редактирования");
-                navigate(-1);
-            }
-        })();
-    }, [postToPublishId, navigate]);
 
     // кнопка «назад» в телеге
     useEffect(() => {
