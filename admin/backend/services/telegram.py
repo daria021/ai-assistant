@@ -105,7 +105,7 @@ class TelegramService(
             await client.connect()
             logger.info("self.service_bot_token")
             logger.info(self.service_bot_token)
-            await client.start(self.service_bot_token) # noqa
+            await client.start(bot_token=self.service_bot_token) # noqa
             logger.info(await client.get_me())
             logger.info(await client.get_dialogs())
 
