@@ -104,6 +104,8 @@ class TelegramService(
             client = TelegramClient('bot', self.api_id, self.api_hash)
             await client.connect()
             client.start(self.service_bot_token)
+            logger.info(await client.get_me())
+            logger.info(await client.get_dialogs())
 
             yield client
 
