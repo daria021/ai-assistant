@@ -38,6 +38,10 @@ class AiogramBotService(BotServiceInterface):
         if media_path:
             logger.info(f"BotService: send_photo to {chat_id}")
             media_url = self.upload.get_file_url(media_path)
+            logger.info(media_url)
+            logger.info(media_url)
+            logger.info(text)
+            logger.info(entities)
             await self.bot.send_photo(chat_id, photo=media_url, caption=text, caption_entities=entities)
         else:
             logger.info(f"BotService: send_message to {chat_id}")
