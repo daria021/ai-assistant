@@ -34,6 +34,7 @@ jobs:
 
             DOMAIN="https://ai.avocado.ceo"
 
+            echo "" >> .env
             echo "APP_HOST=${DOMAIN}" >> .env
             echo "MINIAPP_URL=${DOMAIN}" >> .env
 
