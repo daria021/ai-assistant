@@ -6,8 +6,6 @@ services:
     container_name: bot
     restart: unless-stopped
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
       - ./upload/:/app/upload/
     networks:
       - assistant_bridge
@@ -24,8 +22,6 @@ services:
     restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data/
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
     networks:
       - assistant_bridge
 
@@ -39,8 +35,6 @@ services:
       - "9090:8080"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
-      - ./upload/:/app/upload/
     networks:
       - assistant_bridge
     depends_on:
@@ -55,9 +49,6 @@ services:
     restart: unless-stopped
     ports:
       - "3000:80"
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
 
   worker-manager:
     build:
@@ -66,8 +57,6 @@ services:
     container_name: worker-manager
     restart: unless-stopped
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - ./worker-manager/infrastructure/docker/worker-settings:/app/infrastructure/docker/worker-settings
     networks:
@@ -83,8 +72,6 @@ services:
   #    container_name: worker
   #    restart: no
   #    volumes:
-  #      - /etc/localtime:/etc/localtime:ro
-  #      - /etc/timezone:/etc/timezone:ro
   #      - ./upload/:/app/upload/
   #    networks:
   #      - assistant_bridge
@@ -96,8 +83,6 @@ services:
     container_name: posts-service
     restart: unless-stopped
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
       - ./posts-service/jobs.sqlite:/app/jobs.sqlite
     networks:
       - assistant_bridge
@@ -111,9 +96,6 @@ services:
       dockerfile: watcher/Dockerfile
     container_name: watcher
     restart: unless-stopped
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
     networks:
       - assistant_bridge
     depends_on:
@@ -127,8 +109,6 @@ services:
     container_name: migrator
     restart: no
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
       - ./migrator/migrations/:/app/migrations/
     depends_on:
       - db

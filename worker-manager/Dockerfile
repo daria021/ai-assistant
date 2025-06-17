@@ -22,6 +22,16 @@ RUN pip install --prefix=/install ./shared
 # ─── runtime ────────────────────────────────────────────────────
 FROM python:${PYTHON_VERSION}-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+# Set the TZ environment variable
+ENV TZ=Europe/Moscow
+
+# Install tzdata, configure the timezone, and clean up
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata \
+ && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
+ && echo $TZ > /etc/timezone \
+ && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # bring in installed packages
