@@ -47,6 +47,8 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
     const [editorEntities, setEditorEntities] = useState<MessageEntityDTO[]>([]);
 
 
+
+
     // загрузить все чаты из API
     useEffect(() => {
         getChats().then(setChats).catch(() => alert("Не удалось загрузить чаты"));
@@ -107,47 +109,59 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
         return on("back_button_pressed", () => navigate(-1));
     }, [navigate]);
 
-    // сохранение изменений
-    const handleSave = async () => {
-        if (!entry || !userId) return;
+    function formatLocalDate(d: Date): string {
+      const Y = d.getFullYear();
+      const M = String(d.getMonth() + 1).padStart(2, "0");
+      const D = String(d.getDate()).padStart(2, "0");
+      return `${Y}-${M}-${D}`;        // "YYYY-MM-DD"
+    }
 
-        await updatePost(
-            entry.post.id,
-            title != entry.post.name ? title : null,
-            editorText != entry.post.text ? editorText : null,
-            editorHtml != entry.post.html ? editorHtml : null,
-            editorEntities != entry.post.entities ? entry.post.entities : null,
-            photoFile ?? null,
-        );
-
-        // обновляем запись в расписании
-        let scheduled_date: string | null = null;
-        let scheduled_time: string;
-        if (scheduleType === "once" && scheduledAt) {
-            scheduled_date = scheduledAt.toISOString().slice(0, 10);
-            scheduled_time = scheduledAt.toISOString().slice(11, 16);
-        } else if (scheduleType === "daily" && timeOnly) {
-            scheduled_time = timeOnly.toISOString().slice(11, 16);
-        } else {
-            alert("Выберите дату и время");
-            return;
+    function formatLocalTime(d: Date): string {
+      const h = String(d.getHours()).padStart(2, "0");
+      const m = String(d.getMinutes()).padStart(2, "0");
+      return `${h}:${m}`;             // "HH:mm"
         }
+    const handleSave = async () => {
+      if (!entry || !userId) return;
 
-        await updatePostToPublish(entry.id, {
-            post_id: entry.post.id,
-            manager_id: userId,
+      // 1) Обновляем содержимое поста
+      await updatePost(
+        entry.post.id,
+        title !== entry.post.name ? title : null,
+        editorText !== entry.post.text ? editorText : null,
+        editorHtml !== entry.post.html ? editorHtml : null,
+        editorEntities !== entry.post.entities ? editorEntities : null,
+        photoFile ?? null
+      );
 
-            scheduled_type:
-                scheduleType === "once" ? "single" : "everyday",
-            scheduled_date,
-            scheduled_time,
-            chat_ids: selectedChats,
-            status: entry.status,
-        })
+      // 2) Готовим поля расписания
+      let scheduled_date: string | null = null;
+      let scheduled_time: string;
 
-        alert("Изменения сохранены");
-        navigate(-1);
-    };
+      if (scheduleType === "once" && scheduledAt) {
+        scheduled_date = formatLocalDate(scheduledAt);   // "YYYY-MM-DD" локально
+        scheduled_time = formatLocalTime(scheduledAt);   // "HH:mm" локально
+      } else if (scheduleType === "daily" && timeOnly) {
+        scheduled_time = formatLocalTime(timeOnly);      // "HH:mm" локально
+      } else {
+        alert("Выберите дату и время");
+        return;
+      }
+
+  // 3) Обновляем запись в расписании через API
+  await updatePostToPublish(entry.id, {
+    post_id: entry.post.id,
+    manager_id: userId,
+    scheduled_type: scheduleType === "once" ? "single" : "everyday",
+    scheduled_date,
+    scheduled_time,
+    chat_ids: selectedChats,
+    status: entry.status,
+  });
+
+  alert("Изменения сохранены");
+  navigate(-1);
+};
 
     if (!entry) {
         return <div>Загрузка…</div>;
