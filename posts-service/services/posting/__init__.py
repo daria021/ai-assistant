@@ -53,6 +53,7 @@ class PostingService(
 
     def _schedule_post(self, post_id: UUID, schedule_at: datetime) -> None:
         logger.info(f"_scheduling post {post_id}")
+        logger.info(f"_scheduling post at {schedule_at}, now is {datetime.now()}")
         self.scheduler.schedule_once(
             callback=publish,
             runs_on=schedule_at,
