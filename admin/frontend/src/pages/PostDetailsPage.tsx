@@ -109,27 +109,32 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
         return on("back_button_pressed", () => navigate(-1));
     }, [navigate]);
 
-    function formatLocalDate(d: Date): string {
-      const Y = d.getFullYear();
-      const M = String(d.getMonth() + 1).padStart(2, "0");
-      const D = String(d.getDate()).padStart(2, "0");
-      return `${Y}-${M}-${D}`;        // "YYYY-MM-DD"
-    }
+    // Возвращает ISO-дату YYYY-MM-DD для локального времени
+function formatLocalISODate(d: Date): string {
+  // d.getTimezoneOffset() — разница в минутах между UTC и локальным временем
+  const utcTimestamp = d.getTime() - d.getTimezoneOffset() * 60_000;
+  return new Date(utcTimestamp)
+    .toISOString()
+    .slice(0, 10);  // YYYY-MM-DD
+}
 
-    function formatLocalTime(d: Date): string {
-      const h = String(d.getHours()).padStart(2, "0");
-      const m = String(d.getMinutes()).padStart(2, "0");
-      return `${h}:${m}`;             // "HH:mm"
-        }
+// Возвращает время HH:mm для локального времени
+function formatLocalTime(d: Date): string {
+  const h = String(d.getHours()).padStart(2, "0");
+  const m = String(d.getMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
+}
+
+
     const handleSave = async () => {
       if (!entry || !userId) return;
 
-      // 1) Обновляем содержимое поста
+      // 1) Сначала обновляем содержимое поста
       await updatePost(
         entry.post.id,
-        title !== entry.post.name ? title : null,
-        editorText !== entry.post.text ? editorText : null,
-        editorHtml !== entry.post.html ? editorHtml : null,
+        title    !== entry.post.name    ? title    : null,
+        editorText  !== entry.post.text    ? editorText  : null,
+        editorHtml  !== entry.post.html    ? editorHtml  : null,
         editorEntities !== entry.post.entities ? editorEntities : null,
         photoFile ?? null
       );
@@ -139,29 +144,31 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
       let scheduled_time: string;
 
       if (scheduleType === "once" && scheduledAt) {
-        scheduled_date = formatLocalDate(scheduledAt);   // "YYYY-MM-DD" локально
-        scheduled_time = formatLocalTime(scheduledAt);   // "HH:mm" локально
+        // используем преобразование с учётом смещения
+        scheduled_date = formatLocalISODate(scheduledAt);  // "2025-06-18"
+        scheduled_time = formatLocalTime(scheduledAt);     // "01:00"
       } else if (scheduleType === "daily" && timeOnly) {
-        scheduled_time = formatLocalTime(timeOnly);      // "HH:mm" локально
+        scheduled_date = null;
+        scheduled_time = formatLocalTime(timeOnly);
       } else {
         alert("Выберите дату и время");
         return;
       }
 
-  // 3) Обновляем запись в расписании через API
-  await updatePostToPublish(entry.id, {
-    post_id: entry.post.id,
-    manager_id: userId,
-    scheduled_type: scheduleType === "once" ? "single" : "everyday",
-    scheduled_date,
-    scheduled_time,
-    chat_ids: selectedChats,
-    status: entry.status,
-  });
+      // 3) Отправляем запрос на обновление расписания
+      await updatePostToPublish(entry.id, {
+        post_id:        entry.post.id,
+        manager_id:     userId,
+        scheduled_type: scheduleType === "once" ? "single" : "everyday",
+        scheduled_date,
+        scheduled_time,
+        chat_ids:       selectedChats,
+        status:         entry.status,
+      });
 
-  alert("Изменения сохранены");
-  navigate(-1);
-};
+      alert("Изменения сохранены");
+      navigate(-1);
+    };
 
     if (!entry) {
         return <div>Загрузка…</div>;
