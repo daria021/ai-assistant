@@ -30,24 +30,24 @@ class PostsConsumer(PostsConsumerInterface):
                 await sleep(self.idle_delay)
                 continue
 
-        logger.info("Scheduling post")
-        await self.posts_to_publish_repository.set_status(
-            post_id=post_to_publish.id,
-            status=PublicationStatus.SCHEDULING,
-        )
-        try:
-            await self.posting_service.schedule_post(post_to_publish)
-        except Exception as e:
-            logger.error(f"Failed to schedule post: {e}", exc_info=True)
+            logger.info("Scheduling post")
             await self.posts_to_publish_repository.set_status(
                 post_id=post_to_publish.id,
-                status=PublicationStatus.FAILED,
+                status=PublicationStatus.SCHEDULING,
             )
-        else:
-            logger.info("Post scheduled successfully")
-            await self.posts_to_publish_repository.set_status(
-                post_id=post_to_publish.id,
-                status=PublicationStatus.SCHEDULED,
-            )
+            try:
+                await self.posting_service.schedule_post(post_to_publish)
+            except Exception as e:
+                logger.error(f"Failed to schedule post: {e}", exc_info=True)
+                await self.posts_to_publish_repository.set_status(
+                    post_id=post_to_publish.id,
+                    status=PublicationStatus.FAILED,
+                )
+            else:
+                logger.info("Post scheduled successfully")
+                await self.posts_to_publish_repository.set_status(
+                    post_id=post_to_publish.id,
+                    status=PublicationStatus.SCHEDULED,
+                )
 
-        await sleep(self.global_delay)
+            await sleep(self.global_delay)
