@@ -30,6 +30,11 @@ async def get_users():
     user_service = get_user_service()
     return await user_service.get_all_users()
 
+@router.get('/managers')
+async def get_managers():
+    user_service = get_user_service()
+    return await user_service.get_managers()
+
 
 @router.get('')
 async def get_user(user_id: UUID):
@@ -37,8 +42,8 @@ async def get_user(user_id: UUID):
     return await user_service.get_user(user_id=user_id)
 
 
-@router.patch('')
-async def update_user(user: UpdateUserDTO, user_id: UUID):
+@router.patch('/{user_id}')
+async def update_user(user: UpdateUserDTO, user_id: UUID) -> User:
     user_service = get_user_service()
     return await user_service.update_user(user_id=user_id, user=user)
 

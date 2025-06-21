@@ -19,10 +19,23 @@ class PostToPublishRepository(
     PostToPublishRepositoryInterface,
 ):
     joined_fields: dict[str, Optional[list[str]]] = field(default_factory=lambda: {
-        "manager": None,
+        "creator": None,
+        "responsible_manager": None,
         "chats": None,
         "post": None,
     })
+
+    async def get_posts_by_manager(self, responsible_manager_id: UUID) -> list[PostToPublishModel]:
+        async with self.session_maker() as session:
+            result = await session.execute(
+                select(self.entity)
+                .where(self.entity.responsible_manager_id == responsible_manager_id)
+                .options(*self.options)
+            )
+
+            posts = result.unique().scalars().all()
+
+        return [self.entity_to_model(post) for post in posts]
 
     async def get_queued_post(self) -> Optional[PostToPublish]:
         async with self.session_maker() as session:
@@ -63,7 +76,8 @@ class PostToPublishRepository(
         return PostToPublish(
             id=dto.id,
             post_id=dto.post_id,
-            manager_id=dto.manager_id,
+            creator_id=dto.creator_id,
+            responsible_manager_id=dto.responsible_manager_id,
             scheduled_type=dto.scheduled_type,
             scheduled_date=dto.scheduled_date,
             scheduled_time=dto.scheduled_time,
@@ -92,6 +106,8 @@ class PostToPublishRepository(
                 id=chat.id,
                 chat_id=chat.chat_id,
                 name=chat.name,
+                responsible_manager_id=chat.responsible_manager_id,
+                chat_type_id=chat.chat_type_id,
                 invite_link=chat.invite_link,
                 created_at=chat.created_at,
                 updated_at=chat.updated_at,
@@ -112,12 +128,14 @@ class PostToPublishRepository(
         return PostToPublishModel(
             id=entity.id,
             post_id=entity.post_id,
-            manager_id=entity.manager_id,
+            creator_id=entity.creator_id,
+            responsible_manager_id=entity.responsible_manager_id,
             scheduled_type=entity.scheduled_type,
             scheduled_date=entity.scheduled_date,
             scheduled_time=entity.scheduled_time,
             status=entity.status,
-            manager=_map_user(entity.manager),
+            creator=_map_user(entity.creator),
+            responsible_manager=_map_user(entity.responsible_manager),
             chats=[_map_chat(x) for x in entity.chats],
             post=_map_post(entity.post),
             created_at=entity.created_at,

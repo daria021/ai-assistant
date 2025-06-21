@@ -1,8 +1,8 @@
 """init
 
-Revision ID: e46147ee5c0e
+Revision ID: 0b9fd1f0f1e4
 Revises: 
-Create Date: 2025-05-21 18:35:14.124632
+Create Date: 2025-06-20 00:52:18.111040
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'e46147ee5c0e'
+revision: str = '0b9fd1f0f1e4'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -27,7 +27,7 @@ def upgrade() -> None:
     sa.Enum('PLANNED', 'IN_PROGRESS', 'SENT', 'FAILED', 'CANCELLED', name='sendpostrequeststatus').create(op.get_bind())
     sa.Enum('PENDING', 'SCHEDULED', 'SCHEDULING', 'IN_PROGRESS', 'POSTED', 'FAILED', 'CANCELED', name='publicationstatus').create(op.get_bind())
     sa.Enum('EVERYDAY', 'SINGLE', name='scheduledtype').create(op.get_bind())
-    sa.Enum('MANAGER', 'ADMIN', name='userrole').create(op.get_bind())
+    sa.Enum('MANAGER', 'ADMIN', 'PUBLICATIONS_MANAGER', name='userrole').create(op.get_bind())
     op.create_table('chats',
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('invite_link', sa.String(), nullable=True),
@@ -38,14 +38,35 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('chat_id')
     )
-    op.create_table('posts',
+    op.create_table('emojis',
     sa.Column('name', sa.String(), nullable=False),
-    sa.Column('text', sa.String(), nullable=False),
-    sa.Column('image_path', sa.String(), nullable=True),
+    sa.Column('custom_emoji_id', sa.String(), nullable=False),
+    sa.Column('img_url', sa.String(), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('posts',
+    sa.Column('name', sa.String(), nullable=False),
+    sa.Column('text', sa.String(), nullable=False),
+    sa.Column('image_path', sa.String(), nullable=True),
+    sa.Column('html', sa.String(), nullable=True),
+    sa.Column('entities', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('proxies',
+    sa.Column('proxy_string', sa.String(), nullable=False),
+    sa.Column('is_free', sa.Boolean(), nullable=False),
+    sa.Column('is_deprecated', sa.Boolean(), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('proxy_string')
     )
     op.create_table('stories',
     sa.Column('name', sa.String(), nullable=False),
@@ -62,18 +83,22 @@ def upgrade() -> None:
     sa.Column('telegram_first_name', sa.String(), nullable=True),
     sa.Column('telegram_last_name', sa.String(), nullable=True),
     sa.Column('telegram_language_code', sa.String(), nullable=True),
-    sa.Column('role', postgresql.ENUM('MANAGER', 'ADMIN', name='userrole', create_type=False), nullable=False),
+    sa.Column('role', postgresql.ENUM('MANAGER', 'ADMIN', 'PUBLICATIONS_MANAGER', name='userrole', create_type=False), nullable=False),
     sa.Column('session_string', sa.String(), nullable=True),
+    sa.Column('proxy_id', sa.UUID(), nullable=True),
     sa.Column('assistant_enabled', sa.Boolean(), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['proxy_id'], ['proxies.id'], ),
     sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('proxy_id'),
     sa.UniqueConstraint('telegram_id')
     )
     op.create_table('posts_to_publish',
     sa.Column('post_id', sa.UUID(), nullable=False),
-    sa.Column('manager_id', sa.UUID(), nullable=False),
+    sa.Column('creator_id', sa.UUID(), nullable=True),
+    sa.Column('responsible_manager_id', sa.UUID(), nullable=True),
     sa.Column('scheduled_type', postgresql.ENUM('EVERYDAY', 'SINGLE', name='scheduledtype', create_type=False), nullable=False),
     sa.Column('scheduled_date', sa.Date(), nullable=True),
     sa.Column('scheduled_time', sa.Time(), nullable=False),
@@ -81,36 +106,9 @@ def upgrade() -> None:
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['manager_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['creator_id'], ['users.id'], ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['post_id'], ['posts.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('publish_story_requests',
-    sa.Column('story_id', sa.UUID(), nullable=False),
-    sa.Column('user_id', sa.UUID(), nullable=False),
-    sa.Column('scheduled_at', sa.DateTime(), nullable=True),
-    sa.Column('status', postgresql.ENUM('PLANNED', 'IN_PROGRESS', 'PUBLISHED', 'FAILED', 'CANCELLED', name='publishstoryrequeststatus', create_type=False), nullable=False),
-    sa.Column('published_at', sa.DateTime(), nullable=True),
-    sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['story_id'], ['stories.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('send_post_requests',
-    sa.Column('post_id', sa.UUID(), nullable=False),
-    sa.Column('chat_id', sa.UUID(), nullable=False),
-    sa.Column('user_id', sa.UUID(), nullable=False),
-    sa.Column('scheduled_at', sa.DateTime(), nullable=True),
-    sa.Column('status', postgresql.ENUM('PLANNED', 'IN_PROGRESS', 'SENT', 'FAILED', 'CANCELLED', name='sendpostrequeststatus', create_type=False), nullable=False),
-    sa.Column('sent_at', sa.DateTime(), nullable=True),
-    sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['chat_id'], ['chats.id'], ),
-    sa.ForeignKeyConstraint(['post_id'], ['posts.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['responsible_manager_id'], ['users.id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('stories_to_publish',
@@ -123,22 +121,24 @@ def upgrade() -> None:
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['manager_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['manager_id'], ['users.id'], ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['story_id'], ['stories.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('worker_messages',
-    sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.Column('user_id', sa.UUID(), nullable=True),
     sa.Column('chat_id', sa.BigInteger(), nullable=False),
     sa.Column('type', postgresql.ENUM('POST', 'STORY', name='workermessagetype', create_type=False), nullable=False),
     sa.Column('text', sa.String(), nullable=True),
+    sa.Column('entities', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('media_path', sa.String(), nullable=True),
+    sa.Column('request_id', sa.UUID(), nullable=True),
     sa.Column('status', postgresql.ENUM('PENDING', 'IN_PROGRESS', 'SENT', 'FAILED', name='workermessagestatus', create_type=False), nullable=False),
     sa.Column('sent_at', sa.DateTime(), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('post_to_publish_chat_association',
@@ -148,14 +148,36 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['post_to_publish_id'], ['posts_to_publish.id'], ),
     sa.PrimaryKeyConstraint('post_to_publish_id', 'chat_id')
     )
-    op.create_table('posts_to_publish_chat_secondary',
+    op.create_table('publish_story_requests',
+    sa.Column('story_id', sa.UUID(), nullable=False),
+    sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.Column('scheduled_at', sa.DateTime(), nullable=True),
+    sa.Column('publication_id', sa.UUID(), nullable=False),
+    sa.Column('status', postgresql.ENUM('PLANNED', 'IN_PROGRESS', 'PUBLISHED', 'FAILED', 'CANCELLED', name='publishstoryrequeststatus', create_type=False), nullable=False),
+    sa.Column('published_at', sa.DateTime(), nullable=True),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['publication_id'], ['stories_to_publish.id'], ),
+    sa.ForeignKeyConstraint(['story_id'], ['stories.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('send_post_requests',
     sa.Column('post_id', sa.UUID(), nullable=False),
     sa.Column('chat_id', sa.UUID(), nullable=False),
+    sa.Column('user_id', sa.UUID(), nullable=True),
+    sa.Column('scheduled_at', sa.DateTime(), nullable=True),
+    sa.Column('publication_id', sa.UUID(), nullable=False),
+    sa.Column('status', postgresql.ENUM('PLANNED', 'IN_PROGRESS', 'SENT', 'FAILED', 'CANCELLED', name='sendpostrequeststatus', create_type=False), nullable=False),
+    sa.Column('sent_at', sa.DateTime(), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['chat_id'], ['chats.id'], ),
-    sa.ForeignKeyConstraint(['post_id'], ['posts_to_publish.id'], ),
+    sa.ForeignKeyConstraint(['post_id'], ['posts.id'], ),
+    sa.ForeignKeyConstraint(['publication_id'], ['posts_to_publish.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###
@@ -164,18 +186,19 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_table('posts_to_publish_chat_secondary')
+    op.drop_table('send_post_requests')
+    op.drop_table('publish_story_requests')
     op.drop_table('post_to_publish_chat_association')
     op.drop_table('worker_messages')
     op.drop_table('stories_to_publish')
-    op.drop_table('send_post_requests')
-    op.drop_table('publish_story_requests')
     op.drop_table('posts_to_publish')
     op.drop_table('users')
     op.drop_table('stories')
+    op.drop_table('proxies')
     op.drop_table('posts')
+    op.drop_table('emojis')
     op.drop_table('chats')
-    sa.Enum('MANAGER', 'ADMIN', name='userrole').drop(op.get_bind())
+    sa.Enum('MANAGER', 'ADMIN', 'PUBLICATIONS_MANAGER', name='userrole').drop(op.get_bind())
     sa.Enum('EVERYDAY', 'SINGLE', name='scheduledtype').drop(op.get_bind())
     sa.Enum('PENDING', 'SCHEDULED', 'SCHEDULING', 'IN_PROGRESS', 'POSTED', 'FAILED', 'CANCELED', name='publicationstatus').drop(op.get_bind())
     sa.Enum('PLANNED', 'IN_PROGRESS', 'SENT', 'FAILED', 'CANCELLED', name='sendpostrequeststatus').drop(op.get_bind())

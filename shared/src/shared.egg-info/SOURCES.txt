@@ -13,6 +13,7 @@ src/shared/abstractions/singleton.py
 src/shared/abstractions/repositories/__init__.py
 src/shared/abstractions/repositories/abstract.py
 src/shared/abstractions/repositories/chat.py
+src/shared/abstractions/repositories/chat_type.py
 src/shared/abstractions/repositories/emojis.py
 src/shared/abstractions/repositories/post.py
 src/shared/abstractions/repositories/post_request.py
@@ -33,6 +34,7 @@ src/shared/abstractions/services/watcher_client.py
 src/shared/dependencies/__init__.py
 src/shared/dependencies/repositories/__init__.py
 src/shared/dependencies/repositories/chat.py
+src/shared/dependencies/repositories/chat_type.py
 src/shared/dependencies/repositories/emoji.py
 src/shared/dependencies/repositories/post.py
 src/shared/dependencies/repositories/post_request.py
@@ -53,6 +55,7 @@ src/shared/domain/__init__.py
 src/shared/domain/dto/__init__.py
 src/shared/domain/dto/abstract.py
 src/shared/domain/dto/chat.py
+src/shared/domain/dto/chat_type.py
 src/shared/domain/dto/emoji.py
 src/shared/domain/dto/post.py
 src/shared/domain/dto/post_request.py
@@ -76,6 +79,7 @@ src/shared/domain/models/__init__.py
 src/shared/domain/models/abstract.py
 src/shared/domain/models/analytics_service.py
 src/shared/domain/models/chat.py
+src/shared/domain/models/chat_type.py
 src/shared/domain/models/emoji.py
 src/shared/domain/models/post.py
 src/shared/domain/models/post_request.py
@@ -102,6 +106,7 @@ src/shared/infrastructure/main_db/settings.py
 src/shared/infrastructure/main_db/repositories/__init__.py
 src/shared/infrastructure/main_db/repositories/abstract.py
 src/shared/infrastructure/main_db/repositories/chat.py
+src/shared/infrastructure/main_db/repositories/chat_type.py
 src/shared/infrastructure/main_db/repositories/emoji.py
 src/shared/infrastructure/main_db/repositories/exceptions.py
 src/shared/infrastructure/main_db/repositories/post.py

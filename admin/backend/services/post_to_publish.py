@@ -4,18 +4,25 @@ from uuid import UUID
 
 from shared.abstractions.repositories.post_to_publish import PostToPublishRepositoryInterface
 from shared.domain.dto.post_to_publish import CreatePostToPublishDTO, UpdatePostToPublishDTO
+from shared.domain.enums import UserRole
 from shared.domain.models.post_to_publish import PostToPublish
 
 from abstractions.services.post_to_publish import PostToPublishServiceInterface
 from shared.abstractions.services import UploadServiceInterface
 
+from abstractions.services.user import UserServiceInterface
+
 
 @dataclass
 class PostToPublishService(PostToPublishServiceInterface):
     post_to_publish_repository: PostToPublishRepositoryInterface
+    user_service: UserServiceInterface
     upload_service: UploadServiceInterface
 
-    async def get_all_posts_to_publish(self) -> List[PostToPublish]:
+    async def get_posts_to_publish(self, user_id: UUID) -> List[PostToPublish]:
+        user = await self.user_service.get_user(user_id)
+        if user.role == UserRole.MANAGER:
+            return await self.post_to_publish_repository.get_posts_by_manager(user_id)
         return await self.post_to_publish_repository.get_all()
 
     async def create_post_to_publish(self, post_to_publish: CreatePostToPublishDTO) -> UUID:

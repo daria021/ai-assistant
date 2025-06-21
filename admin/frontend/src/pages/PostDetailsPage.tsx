@@ -46,9 +46,6 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
     const [editorText, setEditorText] = useState<string>('');
     const [editorEntities, setEditorEntities] = useState<MessageEntityDTO[]>([]);
 
-
-
-
     // загрузить все чаты из API
     useEffect(() => {
         getChats().then(setChats).catch(() => alert("Не удалось загрузить чаты"));

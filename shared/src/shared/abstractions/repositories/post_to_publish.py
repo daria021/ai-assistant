@@ -19,3 +19,8 @@ class PostToPublishRepositoryInterface(
     @abstractmethod
     async def set_status(self, post_id: UUID, status: PublicationStatus) -> None:
         ...
+
+    @abstractmethod
+    async def get_posts_by_manager(self, responsible_manager_id: UUID) -> list[PostToPublish]:
+        ...
+

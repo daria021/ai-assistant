@@ -1,6 +1,8 @@
 import logging
+from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
+from shared.domain.dto import UpdateChatDTO
 from shared.domain.models import Chat
 from shared.domain.requests.chat import CreateChatRequest
 
@@ -21,6 +23,21 @@ async def get_chats() -> list[Chat]:
     return await chat_service.get_chats()
 
 
+@router.get('/type/{chat_type_id}')
+async def get_chats_by_chat_type_id(chat_type_id: UUID) -> list[Chat]:
+    chat_service = get_chat_service()
+    return await chat_service.get_chats_by_type(type_id=chat_type_id)
+
+
+@router.patch('/{chat_id}')
+async def update_chat(chat_id: UUID, request: UpdateChatDTO) -> Chat:
+    """
+    Обновляет запись чата.
+    """
+    chat_service = get_chat_service()
+    return await chat_service.update_chat(chat_id=chat_id, chat=request)
+
+
 @router.post("")
 async def create_chat(request: CreateChatRequest) -> Chat:
     """
@@ -28,7 +45,11 @@ async def create_chat(request: CreateChatRequest) -> Chat:
     """
     chat_service = get_chat_service()
     try:
-        new_chat_id = await chat_service.create_chat_by_link(request.invite_link)
+        new_chat_id = await chat_service.create_chat_by_link(
+            invite_link=request.invite_link,
+            type_id=request.chat_type_id,
+            manager_id=request.manager_id,
+        )
         return new_chat_id
     except ChatAlreadyExistsError:
         # если чат с таким invite_link уже есть

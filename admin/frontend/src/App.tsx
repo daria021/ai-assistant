@@ -12,6 +12,8 @@ import BackButtonManager from "./components/BackButtonManager";
 import {useEffect, useState} from "react";
 import {type Emoji, listEmojis} from "./services/api";
 import {expandViewport, init, mountViewport} from '@telegram-apps/sdk';
+import PostTemplatesPage from "./pages/PostTemplatesPage";
+import ChatTypesControlPage from "./pages/ChatTypesControlPage";
 
 
 export default function App() {
@@ -47,6 +49,8 @@ export default function App() {
                     <Route path="/posts" element={<PostsControl emojis={emojis}/>}/>
                     <Route path="/post-details/:postToPublishId" element={<PostDetailsPage emojis={emojis}/>}/>
                     <Route path="/accounts" element={<AccountsControlPage/>}/>
+                    <Route path="/posts/templates" element={<PostTemplatesPage />} />
+                    <Route path="/chats" element={<ChatTypesControlPage />} />
                     {/*<Route path="/assistant" element={<AssistantControl />} />*/}
                 </Routes>
             </BrowserRouter>

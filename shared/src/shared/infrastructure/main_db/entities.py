@@ -33,6 +33,20 @@ class AbstractBase(Base):
     )
 
 
+class UserChat(AbstractBase):
+    __tablename__ = "user_chat"
+
+    # составной PK из двух FK
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    chat_id: Mapped[UUID] = mapped_column(
+        ForeignKey("chats.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+
+
 class User(AbstractBase):
     __tablename__ = "users"
 
@@ -47,27 +61,49 @@ class User(AbstractBase):
     session_string: Mapped[Optional[str]]
     proxy_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey('proxies.id'), unique=True)
 
+    is_banned: Mapped[bool] = mapped_column(default=False, server_default='false')
     assistant_enabled: Mapped[bool] = mapped_column(default=False)
 
     proxy: Mapped[Optional['Proxy']] = relationship('Proxy')
 
+    # все чаты, в которых он участвует
+    chats: Mapped[list["Chat"]] = relationship(
+        "Chat",
+        secondary="user_chat",
+        back_populates="users",
+    )
 
-class Proxy(AbstractBase):
-    __tablename__ = "proxies"
 
-    proxy_string: Mapped[str] = mapped_column(unique=True)
-    is_free: Mapped[bool] = mapped_column(default=True)
-    is_deprecated: Mapped[bool] = mapped_column(default=False)
+class ChatType(AbstractBase):
+    __tablename__ = "chat_type"
 
-    user: Mapped[User] = relationship('User')
+    name: Mapped[str]
+    description: Mapped[Optional[str]] = mapped_column(default=None)
+    chats: Mapped[Optional[list['Chat']]] = relationship("Chat", back_populates="chat_type")
 
 
 class Chat(AbstractBase):
     __tablename__ = "chats"
 
+    chat_type_id: Mapped[UUID] = mapped_column(ForeignKey('chat_type.id'), nullable=True)
     name: Mapped[str]
     invite_link: Mapped[Optional[str]]
     chat_id: Mapped[int] = mapped_column(BigInteger, unique=True)
+    responsible_manager_id: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+    responsible_manager: Mapped["User"] = relationship("User", foreign_keys=[responsible_manager_id],
+                                                       passive_deletes="all")
+
+    chat_type: Mapped[Optional["ChatType"]] = relationship(
+        "ChatType",
+        back_populates="chats",
+        foreign_keys=[chat_type_id]
+    )
+    # все пользователи в этом чате
+    users: Mapped[list[User]] = relationship(
+        "User",
+        secondary="user_chat",
+        back_populates="chats",
+    )
 
 
 class Post(AbstractBase):
@@ -93,14 +129,17 @@ class PostToPublish(AbstractBase):
     __tablename__ = "posts_to_publish"
 
     post_id: Mapped[pyUUID] = mapped_column(ForeignKey("posts.id"))
-    manager_id: Mapped[pyUUID] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"),
-    nullable=True)
+    creator_id: Mapped[pyUUID] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"),
+                                               nullable=True)
+    responsible_manager_id: Mapped[Optional[pyUUID]] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     scheduled_type: Mapped[ScheduledType]
     scheduled_date: Mapped[Optional[date]]
     scheduled_time: Mapped[time]
     status: Mapped[PublicationStatus]
 
-    manager: Mapped[User] = relationship("User", passive_deletes="all")
+    responsible_manager: Mapped[User] = relationship("User", foreign_keys=[responsible_manager_id],
+                                                     passive_deletes="all")
+    creator: Mapped[User] = relationship("User", foreign_keys=[creator_id], passive_deletes="all")
     post: Mapped[Post] = relationship("Post")
     chats: Mapped[list[Chat]] = relationship("Chat", secondary=post_to_publish_chat_association)
 
@@ -111,7 +150,7 @@ class SendPostRequest(AbstractBase):
     post_id: Mapped[pyUUID] = mapped_column(ForeignKey("posts.id"))
     chat_id: Mapped[pyUUID] = mapped_column(ForeignKey("chats.id"))
     user_id: Mapped[pyUUID] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"),
-    nullable=True)
+                                            nullable=True)
     scheduled_at: Mapped[Optional[datetime]]
 
     publication_id: Mapped[pyUUID] = mapped_column(ForeignKey("posts_to_publish.id"))
@@ -187,3 +226,13 @@ class WorkerMessage(AbstractBase):
     sent_at: Mapped[Optional[datetime]]
 
     user: Mapped["User"] = relationship("User", passive_deletes="all")
+
+
+class Proxy(AbstractBase):
+    __tablename__ = "proxies"
+
+    proxy_string: Mapped[str] = mapped_column(unique=True)
+    is_free: Mapped[bool] = mapped_column(default=True)
+    is_deprecated: Mapped[bool] = mapped_column(default=False)
+
+    user: Mapped[User] = relationship('User')

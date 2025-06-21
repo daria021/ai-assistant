@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from abc import ABC, abstractmethod
 from uuid import UUID
 
@@ -13,6 +13,10 @@ class UserRepositoryInterface(
 ):
     @abstractmethod
     async def get_by_username(self, username: str) -> User:
+        ...
+
+    @abstractmethod
+    async def get_managers(self) -> List[User]:
         ...
 
     @abstractmethod

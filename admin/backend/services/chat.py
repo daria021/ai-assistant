@@ -1,10 +1,11 @@
 import logging
 import re
 from dataclasses import dataclass
+from typing import Optional
 from uuid import UUID
 
 from shared.abstractions.repositories import ChatRepositoryInterface
-from shared.domain.dto import CreateChatDTO
+from shared.domain.dto import CreateChatDTO, UpdateChatDTO
 from shared.domain.models import Chat
 
 from abstractions.services.chat import ChatServiceInterface
@@ -22,7 +23,18 @@ class ChatService(ChatServiceInterface):
     async def get_chats(self) -> list[Chat]:
         return await self.chats_repository.get_all()
 
-    async def create_chat_by_link(self, invite_link: str) -> Chat:
+    async def update_chat(self, chat_id: UUID, chat: UpdateChatDTO) -> Chat:
+        return await self.chats_repository.update(chat_id, chat)
+
+    async def get_chats_by_type(self, type_id: UUID) -> list[Chat]:
+        return await self.chats_repository.get_by_type(type_id)
+
+    async def create_chat_by_link(
+            self,
+            invite_link: str,
+            manager_id: UUID,
+            type_id: Optional[UUID] = None,
+    ) -> Chat:
         """
         Проверяет invite_link, запрашивает у репозитория дубликаты,
         резолвит информацию о чате и сохраняет новую запись.
@@ -46,7 +58,9 @@ class ChatService(ChatServiceInterface):
         new_chat = CreateChatDTO(
             name=chat_info.title,
             chat_id=int(chat_info.id),
-            invite_link=link
+            invite_link=link,
+            chat_type_id=type_id,
+            responsible_manager_id=manager_id,
         )
         new_chat_id = await self.chats_repository.create(new_chat)
         return await self.chats_repository.get(new_chat_id)

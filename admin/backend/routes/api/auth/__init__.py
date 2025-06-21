@@ -16,7 +16,7 @@ router = APIRouter(
 # templates = Jinja2Templates(directory='templates')
 
 @router.post("/telegram")
-async def telegram_auth(payload: TelegramAuthRequest):
+async def telegram_auth(payload: TelegramAuthRequest) :
     auth_service = get_auth_service()
 
     tokens = await auth_service.create_token(init_data=payload.initData)

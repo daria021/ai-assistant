@@ -20,9 +20,11 @@ class UserService(UserServiceInterface):
     telegram_service: TelegramServiceInterface
     proxy_repository: ProxyRepositoryInterface
 
-
     async def get_all_users(self) -> List[User]:
         return await self.user_repository.get_all()
+
+    async def get_managers(self) -> List[User]:
+        return await self.user_repository.get_managers()
 
     async def create_user(self, user: CreateUserDTO) -> UUID:
         return await self.user_repository.create(user)
@@ -33,7 +35,7 @@ class UserService(UserServiceInterface):
     async def get_user_by_telegram_id(self, telegram_id: int) -> User:
         return await self.user_repository.get_by_telegram_id(telegram_id)
 
-    async def update_user(self, user_id: UUID, user: UpdateUserDTO) -> None:
+    async def update_user(self, user_id: UUID, user: UpdateUserDTO) -> User:
         return await self.user_repository.update(user_id, user)
 
     async def delete_user(self, user_id: UUID) -> None:

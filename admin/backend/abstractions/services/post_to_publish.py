@@ -9,7 +9,7 @@ from shared.domain.models.post_to_publish import PostToPublish
 class PostToPublishServiceInterface(ABC):
 
     @abstractmethod
-    async def get_all_posts_to_publish(self) -> List[PostToPublish]:
+    async def get_posts_to_publish(self, user_id: UUID) -> List[PostToPublish]:
         ...
 
     @abstractmethod

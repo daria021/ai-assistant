@@ -13,13 +13,15 @@ from .user import User
 
 class PostToPublish(Model):
     post_id: UUID
-    manager_id: UUID
+    creator_id: UUID
+    responsible_manager_id: UUID
     scheduled_type: ScheduledType
     scheduled_date: Optional[date]
     scheduled_time: time
     status: PublicationStatus
 
-    manager: User
+    creator: User
+    responsible_manager: User
     chats: list[Chat] = []
     post: Post
 

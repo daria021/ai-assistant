@@ -20,7 +20,8 @@ class MessageEntityDTO(BaseModel):
 
 class CreatePostToPublishDTO(CreateDTO):
     post_id: UUID
-    manager_id: UUID
+    creator_id: Optional[UUID] = None
+    responsible_manager_id: UUID
     scheduled_type: ScheduledType
     scheduled_date: Optional[date] = None
     scheduled_time: time
@@ -30,7 +31,8 @@ class CreatePostToPublishDTO(CreateDTO):
 
 class UpdatePostToPublishDTO(UpdateDTO):
     post_id: Optional[UUID] = None
-    manager_id: Optional[UUID] = None
+    creator_id: Optional[UUID] = None
+    responsible_manager_id: Optional[UUID] = None
     scheduled_type: Optional[ScheduledType] = None
     scheduled_date: Optional[date] = None
     scheduled_time: Optional[time] = None

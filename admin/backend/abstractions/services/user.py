@@ -9,6 +9,10 @@ from shared.domain.models import User
 class UserServiceInterface(ABC):
     @abstractmethod
     async def get_all_users(self) -> List[User]:
+        (...
+
+    @abstractmethod)
+    async def get_managers(self) -> List[User]:
         ...
 
     @abstractmethod
@@ -24,7 +28,7 @@ class UserServiceInterface(ABC):
         ...
 
     @abstractmethod
-    async def update_user(self, user_id: UUID, user: UpdateUserDTO) -> None:
+    async def update_user(self, user_id: UUID, user: UpdateUserDTO) -> User:
         ...
 
     @abstractmethod

@@ -166,7 +166,7 @@ class TelegramService(
             )
 
             # start() сам подключится и залогинится как бот
-            await client.start(bot_token=self.service_bot_token) #noqa
+            await client.start(bot_token=self.service_bot_token) # noqa
             logger.info(await client.get_me())
 
             yield client
@@ -175,15 +175,19 @@ class TelegramService(
             return
 
         # Обычный пользовательский режим через сохранённую строку сессии
-        user_session = StringSession(self.service_session_string)
-        async with TelegramClient(
-            user_session,
-            self.api_id,
-            self.api_hash,
+        client = TelegramClient(
+            session=StringSession(self.service_session_string),
+            api_id=self.api_id,
+            api_hash=self.api_hash,
             proxy=self.parse_proxy(self.proxy) if self.proxy else None
-        ) as client:
-            await client.start()
-            yield client
+        )
+        await client.connect()
+
+        yield client
+        await client.disconnect()
+        return
+
+
     @staticmethod
     def parse_proxy(proxy_string: Optional[str] = None) -> Optional[tuple]:
         if not proxy_string:

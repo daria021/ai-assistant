@@ -29,11 +29,9 @@ interface Props {
     onChange: (p: { html: string; text: string; entities: EmojiEntity[] }) => void
 }
 
-/* ── Inline-нода для <img> / <video> ────────────────────────── */
 
 const EmojiNode = Node.create({
     name: 'emoji',
-
     inline: true,
     group: 'inline',
     atom: true,
@@ -235,7 +233,6 @@ function getPlainWithPlaceholders(doc: PMNode): string {
   )
 }
 
-/* ── React-компонент RichEditor ────────────────────────────────── */
 export function RichEditor({emojis, initialContent = '', onChange}: Props) {
     const editor = useEditor({
         extensions: [StarterKit, EmojiNode, EmojiSuggestionExt.configure({emojis})],

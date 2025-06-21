@@ -2,14 +2,15 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 from uuid import UUID
 
-from sqlalchemy import select
+from shared.abstractions.repositories import UserRepositoryInterface
+from shared.domain.dto import CreateUserDTO, UpdateUserDTO
+from shared.domain.enums import UserRole
+from shared.domain.models import User as UserModel, Proxy as ProxyModel
+from shared.infrastructure.main_db.entities import User, Proxy
+from sqlalchemy import select, or_
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import joinedload
 
-from shared.abstractions.repositories import UserRepositoryInterface
-from shared.domain.dto import CreateUserDTO, UpdateUserDTO
-from shared.domain.models import User as UserModel, Proxy as ProxyModel
-from shared.infrastructure.main_db.entities import User, Proxy
 from .abstract import AbstractMainDBRepository
 from .exceptions import ProxyIsUnavailable, NoResultFoundException
 
@@ -19,10 +20,10 @@ class UserRepository(
     AbstractMainDBRepository[User, UserModel, CreateUserDTO, UpdateUserDTO],
     UserRepositoryInterface,
 ):
-
     joined_fields: dict[str, Optional[List[str]]] = field(
         default_factory=lambda: {
             "proxy": None,
+            "chats": None,
         },
     )
 
@@ -61,6 +62,21 @@ class UserRepository(
             return None
 
         return self.entity_to_model(user)
+
+    async def get_managers(self) -> List[User]:
+        async with self.session_maker() as session:
+            stmt = select(self.entity).where(
+                or_(
+                    self.entity.role == UserRole.MANAGER,
+                    self.entity.role == UserRole.PUBLICATIONS_MANAGER
+                )
+            )
+            if self.options:
+                stmt = stmt.options(*self.options)
+
+            res = (await session.execute(stmt)).unique().scalars().all()
+
+        return [self.entity_to_model(x) for x in res] if res else []
 
     async def get_by_telegram_id(self, telegram_id: int) -> Optional[User]:
         try:
@@ -118,6 +134,7 @@ class UserRepository(
             telegram_first_name=entity.telegram_first_name,
             telegram_language_code=entity.telegram_language_code,
             role=entity.role,
+            is_banned=entity.is_banned,
             assistant_enabled=entity.assistant_enabled,
             session_string=entity.session_string,
             proxy_id=entity.proxy_id,

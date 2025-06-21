@@ -1,28 +1,26 @@
 import { useEffect, useState } from 'react';
-import { FiTrash2 } from 'react-icons/fi';
 import { on } from '@telegram-apps/sdk';
 import { useNavigate } from 'react-router-dom';
-import { deleteUser, getAuthCode, getUsers, sendAuthCode } from '../services/api';
-import type { UserRole } from "../types/UserRole";
-import { AxiosError } from "axios";
+import {
+  getAuthCode,
+  getUsers,
+  sendAuthCode, updateUser,
+  type User as APIUser,
+} from '../services/api';
+import { AxiosError } from 'axios';
+import type {UserRole} from "../types/UserRole";
 
-const roles = ['admin', 'moderator1', 'moderator2'] as const;
-type Role = typeof roles[number];
+const roles: UserRole[] = ['admin', 'manager', 'publications_manager'];
 
-interface Account {
-  userId: string;
-  username: string;
-  role: Role;
-}
-
-export interface User {
-  id: string;             // UUID
-  telegram_username: string;
-  role: UserRole;
-}
+const STATUS_LABELS: Record<UserRole, string> = {
+  admin: 'Админ',
+  manager: 'Менеджер',
+  publications_manager: 'Менеджер по постам',
+  banned: 'Забанен',
+};
 
 export default function AccountsControlPage() {
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accounts, setAccounts] = useState<APIUser[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [step, setStep] = useState<'form' | 'code'>('form');
   const [phone, setPhone] = useState('');
@@ -31,35 +29,27 @@ export default function AccountsControlPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [proxyError, setProxyError] = useState(false);
+  const [roleUpdatingId, setRoleUpdatingId] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const openModal = () => {
-    setIsModalOpen(true);
-    setStep('form');
-    setError('');
-    setPhone('');
-    setCloudPassword('');
-    setCode('');
-    setProxyError(false);
-  };
-
   const fetchAccounts = async () => {
-          try {
-        const users: User[] = await getUsers();
-        const mapped: Account[] = users.map(u => ({
-          userId: u.id,
-          username: u.telegram_username || u.id, // Если username отсутствует — показываем ID
-          role: u.role as Role
-        }));
-        setAccounts(mapped);
-      } catch (e) {
-        console.error('Не удалось получить пользователей', e);
-      }
+    try {
+      const users = await getUsers(); // APIUser[]
+      setAccounts(users);
+    } catch (e) {
+      console.error('Не удалось получить пользователей', e);
+    }
   };
 
   useEffect(() => {
     fetchAccounts();
   }, []);
+
+  // Обработчик системной кнопки назад
+  useEffect(() => {
+    const off = on('back_button_pressed', () => navigate(-1));
+    return () => off();
+  }, [navigate]);
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -68,35 +58,29 @@ export default function AccountsControlPage() {
     setProxyError(false);
   };
 
-const handleSendCode = async () => {
-  if (!phone) return setError('Введите телефон');
-  setIsLoading(true);
-  setError('');
-  setProxyError(false);
-  try {
-    await getAuthCode(phone);
-    setStep('code');
-  } catch (e: unknown) {
-    console.error(e);
-    // Если получили 503 — «нет свободного прокси», закрываем модалку и показываем плашку
-    if (
-      typeof e === 'object' &&
-      e !== null &&
-      'response' in e &&
-      (e as AxiosError).response?.status === 503
-    ) {
-      // Закроем окно «Новый аккаунт»
-      closeModal();
-      // Поднимем флаг proxyError, чтобы отрисовалась плашка
-      setProxyError(true);
-    } else {
-      setError('Не удалось отправить код. Попробуйте снова.');
+  // Отправка кода SMS
+  const handleSendCode = async () => {
+    if (!phone) return setError('Введите телефон');
+    setIsLoading(true);
+    setError('');
+    setProxyError(false);
+    try {
+      await getAuthCode(phone);
+      setStep('code');
+    } catch (e: unknown) {
+      if (e instanceof AxiosError && e.response?.status === 503) {
+        closeModal();
+        setProxyError(true);
+      } else {
+        console.error(e);
+        setError('Не удалось отправить код. Попробуйте снова.');
+      }
+    } finally {
+      setIsLoading(false);
     }
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
+  // Подтверждение кода SMS
   const handleConfirmCode = async () => {
     if (!code) return setError('Введите код подтверждения');
     setIsLoading(true);
@@ -114,91 +98,113 @@ const handleSendCode = async () => {
     }
   };
 
-  const changeRole = (userId: string, newRole: Role) => {
-    setAccounts(prev =>
-      prev.map(acc => acc.userId === userId ? { ...acc, role: newRole } : acc)
-    );
-  };
-
-  const deleteAccount = async (userId: string, username: string) => {
-    if (!confirm(`Удалить ${username}?`)) return;
-
+// Смена роли через updateUser
+  const handleRoleChange = async (userId: string, newRole: UserRole) => {
+    setRoleUpdatingId(userId);
     try {
-      await deleteUser(userId);
-      setAccounts(prev => prev.filter(acc => acc.userId !== userId));
+      const updated = await updateUser(userId, { role: newRole });
+      setAccounts(prev =>
+        prev.map(u => (u.id === userId ? updated : u))
+      );
     } catch (e) {
-      console.error('Ошибка при удалении пользователя', e);
-      alert('Не удалось удалить пользователя. Попробуйте ещё раз.');
+      console.error('Ошибка при смене роли', e);
+      alert('Не удалось сохранить роль');
+    } finally {
+      setRoleUpdatingId(null);
     }
   };
 
-  useEffect(() => {
-    const removeBackListener = on('back_button_pressed', () => navigate(-1));
-    return () => removeBackListener();
-  }, [navigate]);
+  // Бан/разбан через updateUser
+  const handleToggleBan = async (userId: string, currentIsBanned: boolean) => {
+    setRoleUpdatingId(userId);
+    try {
+      const updated = await updateUser(userId, { is_banned: !currentIsBanned });
+      setAccounts(prev =>
+        prev.map(u => (u.id === userId ? updated : u))
+      );
+    } catch (e) {
+      console.error('Ошибка при обновлении бана', e);
+      alert('Не удалось обновить статус бана');
+    } finally {
+      setRoleUpdatingId(null);
+    }
+  };
+
+
 
   return (
     <div className="container mx-auto p-6 bg-brandlight min-h-screen">
-      <h1 className="text-2xl text-center font-bold text-brand mb-8">Управление аккаунтами</h1>
+      <h1 className="text-2xl text-center font-bold text-brand mb-8">
+        Управление аккаунтами
+      </h1>
 
       {proxyError && (
-        <div className="max-w-lg mx-auto mb-6 bg-red-100 border border-red-500 text-black px-4 py-3 rounded-lg shadow">
+        <div className="max-w-lg mx-auto mb-6 bg-red-100 border border-red-500 px-4 py-3 rounded-lg shadow">
           Нет свободного прокси сервера. Он нужен, чтобы аккаунт не забанили. Необходимо добавить новый прокси сервер.
         </div>
       )}
 
-      <div className="flex justify-center mb-8">
-        <button
-          onClick={openModal}
-          className="px-6 py-3 border-2 border-brand text-brand bg-white rounded-lg hover:bg-brandlight transition"
+<div className="space-y-3">
+  {accounts.map((u) => (
+    <div
+      key={u.id}
+      className="bg-white rounded-lg shadow p-2 flex items-center"
+    >
+      {/* Ник */}
+      <div className="flex-1 min-w-0">
+        <h2 className="text-base font-semibold text-brand truncate">
+          {u.telegram_username || u.id}
+        </h2>
+      </div>
+
+      {/* Селект сверху + кнопка снизу, прижато вправо */}
+      <div className="flex-shrink-0 ml-auto flex flex-col items-end gap-1">
+        <select
+          value={u.role}
+          onChange={(e) => handleRoleChange(u.id, e.target.value as UserRole)}
+          disabled={roleUpdatingId === u.id}
+          className="
+            appearance-none w-32
+            py-1 px-2 text-sm
+            bg-white border border-gray-300
+            rounded focus:outline-none focus:ring-1 focus:ring-brand
+            cursor-pointer
+          "
         >
-          Подключить аккаунт
+          {roles.map((r) => (
+            <option key={r} value={r}>
+              {STATUS_LABELS[r]}
+            </option>
+          ))}
+        </select>
+
+        <button
+          onClick={() => handleToggleBan(u.id, u.is_banned)}
+          disabled={roleUpdatingId === u.id}
+          className={`
+            w-32 py-1 text-sm rounded font-medium disabled:opacity-50 focus:outline-none
+            ${u.is_banned
+              ? 'bg-green-100 text-green-800'
+              : 'bg-red-100 text-red-800'}
+          `}
+        >
+          {u.is_banned ? 'Разбанить' : 'Забанить'}
         </button>
       </div>
+    </div>
+  ))}
+</div>
 
-      <h2 className="text-center mb-2">─── ⋆⋅☆⋅⋆ ──</h2>
 
-      {/* Список аккаунтов */}
-      <div className="space-y-4">
-        {accounts.map(acc => (
-          <div
-            key={acc.username} // используем username как key
-            className="bg-white rounded-lg shadow p-4 flex items-center justify-between"
-          >
-            <div>
-              {/* Показываем telegram_username (или, если его нет, userId) */}
-              <div className="font-medium text-brand">{acc.username}</div>
-              <select
-                value={acc.role}
-                onChange={e => changeRole(acc.userId, e.target.value as Role)}
-                className="mt-1 bg-brandlight border border-brand px-2 py-1 rounded focus:ring-2 focus:ring-brand"
-              >
-                {roles.map(r => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button
-              onClick={() => deleteAccount(acc.userId, acc.username)}
-              className="text-red-500 hover:text-red-700"
-              title="Удалить аккаунт"
-            >
-              <FiTrash2 size={20} />
-            </button>
-          </div>
-        ))}
-      </div>
 
-      {/* Модалка для подключения аккаунта */}
+
+      {/* Модалка подключения нового аккаунта */}
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
             <button
               onClick={closeModal}
               className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-              title="Закрыть"
             >
               ✕
             </button>
@@ -210,8 +216,8 @@ const handleSendCode = async () => {
                   type="tel"
                   placeholder="Телефон"
                   value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  className="w-full mb-4 p-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand"
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full mb-4 p-2 border rounded focus:ring-2 focus:ring-brand"
                 />
                 <button
                   onClick={handleSendCode}
@@ -228,15 +234,15 @@ const handleSendCode = async () => {
                   type="text"
                   placeholder="Код из Telegram"
                   value={code}
-                  onChange={e => setCode(e.target.value)}
-                  className="w-full mb-3 p-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand"
+                  onChange={(e) => setCode(e.target.value)}
+                  className="w-full mb-3 p-2 border rounded focus:ring-2 focus:ring-brand"
                 />
                 <input
                   type="password"
                   placeholder="Облачный пароль (необязательно)"
                   value={cloudPassword}
-                  onChange={e => setCloudPassword(e.target.value)}
-                  className="w-full mb-4 p-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand"
+                  onChange={(e) => setCloudPassword(e.target.value)}
+                  className="w-full mb-4 p-2 border rounded focus:ring-2 focus:ring-brand"
                 />
                 <button
                   onClick={handleConfirmCode}

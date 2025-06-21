@@ -13,17 +13,21 @@ export interface User {
     id: string;
     telegram_username: string;
     role: UserRole
+    is_banned: boolean;
 }
 
 export interface ChatItem {
     id: string;
     name: string;
+    responsible_manager_id: string;
+    chat_type_id: string;
 }
 
 export interface Post {
     id: string;
     name: string;
     text: string;
+    responsible_manager_id: string;
     image_path: string | null;
     html?: string | null;
     entities?: MessageEntityDTO[];
@@ -32,12 +36,13 @@ export interface Post {
 export interface PostToPublish {
     id: string;
     post_id: string;
-    manager_id: string;
+    responsible_manager_id: string;
+    creator_id: string;
     scheduled_type: "everyday" | "single";
     scheduled_date: string | null;
     scheduled_time: string;
     status: string;
-    chats: { id: string; chat_id: string; name: string }[];  // если сервер отдаёт объекты
+    chats: { id: string; chat_id: string; name: string, chat_type_id: string, responsible_manager_id: string }[];  // если сервер отдаёт объекты
     post: Post;
 }
 
@@ -49,13 +54,16 @@ export interface CreatePostToPublishDTO {
     chats?: string[];
 }
 
+export interface UpdateUserDTO {
+    role?: UserRole;
+    is_banned?: boolean;
+}
 // export interface Chat {
 //     id: string;
 //     name: string;
 //     chat_id: string;
 //     invite_link: string;
 // }
-
 
 /** Сущность для обновления записи «пост в расписании» */
 export interface UpdatePostToPublishDTO {
@@ -94,10 +102,87 @@ export interface MessageEntityDTO {
 }
 
 
-export async function updatePostToPublish(id: string, payload: UpdatePostToPublishDTO): Promise<void> {
-    await apiClient.patch(`/post-to-publish/${id}`, payload);
+
+export interface Chat {
+  id: string;
+  name: string;
+  chat_id: number;
+  invite_link?: string;
+  chat_type_id?: string | null;
 }
 
+export interface CreateChatDTO {
+  invite_link: string;
+  chat_type_id: string;
+  responsible_manager_id: string;
+}
+
+export interface UpdateChatDTO {
+  chat_type_id?: string | null;
+  invite_link?: string;
+}
+
+export interface ChatType {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface CreateChatTypeDTO {
+  name: string;
+  description: string;
+}
+
+export interface UpdateChatTypeDTO {
+  name?: string;
+  description?: string;
+}
+
+export async function getChatTypes(): Promise<ChatType[]> {
+  return (await apiClient.get<ChatType[]>(`/chat_type`)).data;
+}
+
+export async function createChatType(
+  payload: CreateChatTypeDTO
+): Promise<void> {
+  await apiClient.post(`/chat_type`, payload);
+}
+
+export async function updateChatType(
+  id: string,
+  payload: UpdateChatTypeDTO
+): Promise<void> {
+  await apiClient.patch(`/chat_type/${id}`, payload);
+}
+
+export async function deleteChatType(
+  id: string
+): Promise<void> {
+  await apiClient.delete(`/chat_type/${id}`);
+}
+
+
+export async function getChatsByType(
+  typeId: string
+): Promise<Chat[]> {
+  return (
+    await apiClient.get<Chat[]>(`/chat/type/${typeId}`)
+  ).data;
+}
+
+export async function createChat(
+  payload: CreateChatDTO
+): Promise<Chat> {
+  const { data } = await apiClient.post<Chat>(`/chat`, payload);
+  return data;
+}
+
+export async function updateChat(
+  id: string,
+  payload: UpdateChatDTO
+): Promise<void> {
+  await apiClient.patch(`/chat/${id}`, payload);
+}
 
 /** 1) Создать сущность Post (multipart/form-data) */
 export async function createPost(
@@ -149,6 +234,10 @@ export async function createPostToPublish(dto: CreatePostToPublishDTO): Promise<
     return response.data;
 }
 
+export async function updatePostToPublish(id: string, payload: UpdatePostToPublishDTO): Promise<void> {
+    await apiClient.patch(`/post-to-publish/${id}`, payload);
+}
+
 export async function deletePostToPublish(postToPublishId: string) {
     await apiClient.delete("/post-to-publish", {
         params: {post_to_publish_id: postToPublishId},
@@ -161,6 +250,18 @@ export async function getMe(): Promise<MeResponse> {
 
 export async function getUsers(): Promise<User[]> {
     return (await apiClient.get(`users/all`)).data;
+}
+
+export async function updateUser(
+  id: string,
+  payload: UpdateUserDTO
+): Promise<User> {
+  const { data } = await apiClient.patch<User>(`/users/${id}`, payload);
+  return data;
+}
+
+export async function getManagers(): Promise<User[]> {
+    return (await apiClient.get(`users/managers`)).data;
 }
 
 export async function deleteUser(userId: string) {
@@ -178,16 +279,24 @@ export async function getPost(postId: string): Promise<Post> {
     return (await apiClient.get("post", {params: {post_id: postId}})).data;
 }
 
+export async function getPosts(): Promise<Post[]> {
+    return (await apiClient.get("post/all")).data;
+}
+
 export async function getChats(): Promise<ChatItem[]> {
     return (await apiClient.get("chat")).data;
 }
 
-export async function createChatByLink(link: string): Promise<ChatItem> {
+export type CreateChatByLinkDTO = {
+    invite_link: string;
+    manager_id: string;
+    chat_type_id?: string;
+}
+
+export async function createChatByLink(dto: CreateChatByLinkDTO): Promise<ChatItem> {
     const response = await apiClient.post<ChatItem>(
         "chat",
-        {
-            invite_link: link,
-        }
+        dto,
     );
     return response.data;
 }

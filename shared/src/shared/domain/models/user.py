@@ -14,6 +14,7 @@ class User(Model):
     telegram_language_code: Optional[str] = None
 
     role: UserRole
+    is_banned: Optional[bool] = False
 
     session_string: Optional[str] = None
     proxy_id: Optional[UUID] = None

@@ -9,6 +9,8 @@ from .auth import router as auth_router
 from .chat import router as chat_router
 from .emoji import router as emoji_router
 from .upload import router as upload_router
+from .chat import router as chat_router
+from .chat_type import router as chat_type_router
 
 router = APIRouter(
     prefix="/api",
@@ -23,3 +25,5 @@ router.include_router(auth_router)
 router.include_router(chat_router)
 router.include_router(emoji_router)
 router.include_router(upload_router)
+router.include_router(chat_router)
+router.include_router(chat_type_router)

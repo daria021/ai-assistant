@@ -1,5 +1,6 @@
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Optional, List
+from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
@@ -16,6 +17,12 @@ class ChatRepository(
     AbstractMainDBRepository[Chat, ChatModel, CreateChatDTO, UpdateChatDTO],
     ChatRepositoryInterface,
 ):
+    joined_fields: dict[str, Optional[List[str]]] = field(
+        default_factory=lambda: {
+            "users": None,
+            "chat_type": None,
+        },
+    )
     async def get_by_telegram_id(self, telegram_id: int) -> Optional[Chat]:
         try:
             async with self.session_maker() as session:
@@ -37,6 +44,28 @@ class ChatRepository(
             return None
 
         return self.entity_to_model(chat)
+
+    async def get_by_type(self, type_id: UUID) -> Optional[list[Chat]]:
+        try:
+            async with self.session_maker() as session:
+                if self.options:
+                    res = await session.execute(
+                        select(self.entity)
+                        .where(self.entity.chat_type_id == type_id)
+                        .options(*self.options)
+                    )
+                    chats = res.unique().scalars().all()
+                else:
+                    res = await session.execute(
+                        select(self.entity)
+                        .where(self.entity.chat_type_id == type_id)
+                    )
+                    chats = res.scalars().all()
+
+        except NoResultFound:
+            return []
+
+        return [self.entity_to_model(chat) for chat in chats]
 
     async def get_by_invite_link(self, invite_link: str) -> Chat:
         try:
@@ -67,6 +96,8 @@ class ChatRepository(
             invite_link=dto.invite_link,
             chat_id=dto.chat_id,
             name=dto.name,
+            chat_type_id=dto.chat_type_id,
+            responsible_manager_id=dto.responsible_manager_id,
             created_at=dto.created_at,
             updated_at=dto.updated_at,
         )
@@ -77,6 +108,8 @@ class ChatRepository(
             invite_link=entity.invite_link,
             chat_id=entity.chat_id,
             name=entity.name,
+            chat_type_id=entity.chat_type_id,
+            responsible_manager_id=entity.responsible_manager_id,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
         )

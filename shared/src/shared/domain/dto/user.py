@@ -23,6 +23,7 @@ class UpdateUserDTO(UpdateDTO):
     telegram_first_name: Optional[str] = None
     telegram_last_name: Optional[str] = None
     telegram_language_code: Optional[str] = None
+    is_banned: Optional[bool] = None
 
     role: Optional[UserRole] = None
 
