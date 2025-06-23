@@ -6,7 +6,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import { on } from "@telegram-apps/sdk";
 import {
-  createChatByLink,
   createPost,
   createPostToPublish,
   deletePostToPublish,
@@ -100,10 +99,6 @@ export default function PostsControlPage({ emojis }: PostsControlPageProps) {
   const [chatFilter, setChatFilter] = useState<string>("");
 
   const [chatTypes, setChatTypes] = useState<ChatTypeItem[]>([]);
-
-  /* ───────── Modals ───────── */
-  const [showAddChatModal, setShowAddChatModal] = useState(false);
-  const [newChatLink, setNewChatLink] = useState("");
 
   /* ───────── Schedule list ───────── */
   const [schedule, setSchedule] = useState<Record<string, EventItem[]>>({});
@@ -253,19 +248,6 @@ export default function PostsControlPage({ emojis }: PostsControlPageProps) {
     return () => remove();
   }, [navigate]);
 
-  /* ───────── Add Chat ───────── */
-  const handleAddChat = async () => {
-    const link = newChatLink.trim();
-    if (!link) return;
-    try {
-      const chat = await createChatByLink({ invite_link: link, manager_id: userId! });
-      setChats((prev) => (prev.some((c) => c.id === chat.id) ? prev : [...prev, chat]));
-      setNewChatLink("");
-      setShowAddChatModal(false);
-    } catch {
-      alert("Не удалось добавить чат. Проверьте ссылку.");
-    }
-  };
 
   /* ───────── Save Post ───────── */
   const handleSave = async () => {
@@ -510,12 +492,6 @@ export default function PostsControlPage({ emojis }: PostsControlPageProps) {
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block font-medium">Чаты для отправки</label>
-              <button
-                onClick={() => setShowAddChatModal(true)}
-                className="text-2xl font-bold text-brand"
-              >
-                +
-              </button>
             </div>
 
             {/* поиск */}
@@ -553,36 +529,6 @@ export default function PostsControlPage({ emojis }: PostsControlPageProps) {
           >
             Сохранить
           </button>
-
-          {/* Modal Add Chat */}
-          {showAddChatModal && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
-              <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full border border-brand">
-                <h3 className="text-lg font-semibold mb-4">Добавить новый чат</h3>
-                <input
-                  type="text"
-                  placeholder="Ссылка-приглашение"
-                  value={newChatLink}
-                  onChange={(e) => setNewChatLink(e.target.value)}
-                  className="w-full mb-4 border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-brand"
-                />
-                <div className="flex justify-end space-x-4">
-                  <button
-                    onClick={() => setShowAddChatModal(false)}
-                    className="px-4 py-2 rounded-md text-gray-600 hover:bg-gray-100 transition"
-                  >
-                    Отмена
-                  </button>
-                  <button
-                    onClick={handleAddChat}
-                    className="px-4 py-2 bg-brand text-white rounded-md hover:bg-brand2 transition"
-                  >
-                    Добавить
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
