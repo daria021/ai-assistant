@@ -2,3 +2,8 @@
 __pycache__
 .idea
 .DS_Store
+scrape.py
+dasha.session
+dasha.txt
+collected_py_files.json
+login_script.py
