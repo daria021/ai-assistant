@@ -23,7 +23,6 @@ RUN apk add --no-cache tzdata \
  && echo $TZ > /etc/timezone \
  && apk del tzdata
 
-
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 EXPOSE 80

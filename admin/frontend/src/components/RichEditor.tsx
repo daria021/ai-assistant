@@ -4,7 +4,7 @@ import Suggestion from '@tiptap/suggestion'
 import type {Editor} from '@tiptap/core'
 import {Node} from '@tiptap/core'
 import type {Emoji} from '../services/api'
-import type { Node as PMNode } from '@tiptap/pm/model'
+import type {Node as PMNode} from '@tiptap/pm/model'
 import {useEffect} from "react";
 
 
@@ -122,79 +122,72 @@ function buildSuggestion(emojis: Emoji[], editor: Editor) {
         items: ({query}) =>
             emojis
                 .filter(e => e.name.toLowerCase().startsWith(query.toLowerCase()))
-                .slice(0, 10)
                 .map(e => ({id: e.id, label: e.name, src: e.img_url, custom_emoji_id: e.custom_emoji_id})),
 
         render: () => {
             let popup: HTMLDivElement
 
             const paint = (items: EmojiAttrs[], cmd: (it: EmojiAttrs) => void) => {
+                // Очищаем и подготавливаем грид
                 popup.innerHTML = ''
+                popup.style.display = 'grid'
+                popup.style.gridTemplateColumns = 'repeat(auto-fill, 32px)'
+                popup.style.gridAutoRows = '32px'
+                popup.style.gap = '4px'
+                popup.style.padding = '4px'
+
                 for (const it of items) {
-                    const row = document.createElement('div')
-                    row.className =
-                        'px-2 py-1 flex items-center space-x-2 cursor-pointer hover:bg-gray-100'
+                    const cell = document.createElement('div')
+                    cell.className = 'cursor-pointer'
+                    cell.style.width = '32px'
+                    cell.style.height = '32px'
+                    cell.style.display = 'flex'
+                    cell.style.alignItems = 'center'
+                    cell.style.justifyContent = 'center'
 
                     if (it.src.endsWith('.webm')) {
                         const vid = document.createElement('video')
                         vid.src = it.src
                         vid.width = vid.height = 24
                         vid.autoplay = true
-                        vid.loop = true           // loop attribute alone isn’t enough everywhere
+                        vid.loop = true
                         vid.muted = true
                         vid.playsInline = true
-                        vid.addEventListener('loadeddata', () => {
-                            vid
-                                .play()
-                                .catch(() => {/* iOS/Safari may refuse until user interaction */
-                                })
-                        })
-                        vid.addEventListener('ended', () => {
-                            vid.play().catch(() => {
-                            })
-                        })
-                        row.appendChild(vid)
+                        vid.addEventListener('ended', () => vid.play().catch(() => {
+                        }))
+                        cell.appendChild(vid)
                     } else {
                         const img = document.createElement('img')
                         img.src = it.src
-                        img.className = 'h-6 w-6'
-                        row.appendChild(img)
+                        img.width = img.height = 24
+                        cell.appendChild(img)
                     }
 
-                    const span = document.createElement('span')
-                    span.textContent = it.label
-                    row.appendChild(span)
-
-                    row.onclick = () => cmd(it)
-                    popup.appendChild(row)
+                    cell.onclick = () => cmd(it)
+                    popup.appendChild(cell)
                 }
             }
 
             return {
                 onStart({items, command, clientRect}) {
                     popup = document.createElement('div')
-                    popup.className =
-                        'absolute bg-white border rounded shadow-lg z-50 max-h-60 overflow-auto'
-                    // **shrink to content**:
-                    popup.style.width = 'max-content'
-                    popup.style.maxWidth = '250px'
-
+                    popup.className = 'absolute emoji-suggest-popup z-50'
+                    // задаём максимальные размеры
+                    popup.style.maxHeight = '200px'
+                    popup.style.overflowY = 'auto'
                     document.body.appendChild(popup)
                     paint(items, command)
 
-                    // position it once
+                    // позиционируем
                     const box = clientRect?.()
                     if (box) {
                         popup.style.left = `${box.left}px`
                         popup.style.top = `${box.bottom + window.scrollY}px`
                     }
                 },
-
                 onUpdate({items, command}) {
-                    // only repaint, keep original coords
                     paint(items, command)
                 },
-
                 onExit() {
                     popup.remove()
                 },
@@ -225,12 +218,12 @@ const EmojiSuggestionExt = Extension.create<{ emojis: Emoji[] }>({
 })
 
 function getPlainWithPlaceholders(doc: PMNode): string {
-  return doc.textBetween(
-    0,
-    doc.content.size,
-    undefined,      // separator for block nodes (оставляем '\n' по-умолчанию)
-    '🦏',       // char for leaf / atom nodes
-  )
+    return doc.textBetween(
+        0,
+        doc.content.size,
+        undefined,      // separator for block nodes (оставляем '\n' по-умолчанию)
+        '🦏',       // char for leaf / atom nodes
+    )
 }
 
 export function RichEditor({emojis, initialContent = '', onChange}: Props) {
@@ -257,9 +250,9 @@ export function RichEditor({emojis, initialContent = '', onChange}: Props) {
         },
     })
     useEffect(() => {
-    if (editor && initialContent !== undefined) {
-      editor.commands.setContent(initialContent, false)
-    }
-  }, [editor, initialContent])
+        if (editor && initialContent !== undefined) {
+            editor.commands.setContent(initialContent, false)
+        }
+    }, [editor, initialContent])
     return <EditorContent editor={editor} className="border p-2 rounded"/>
 }

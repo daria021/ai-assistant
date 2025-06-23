@@ -9,3 +9,14 @@
     --color-white:       #f9fcff;
     --color-white2:      #e3e4da;
 }
+
+.emoji-suggest-popup {
+  @apply bg-white border rounded-lg shadow-lg grid gap-1 p-1 max-h-52 overflow-y-auto;
+    grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
+    min-width: 160px;   /* 5 эмодзи минимум */
+    width: 100%;
+    max-width: 288px;   /* 8 эмодзи максимум */                          /* фиксируем ширину */
+}
+.emoji-suggest-popup > div {
+  @apply w-8 h-8 flex items-center justify-center cursor-pointer;
+}

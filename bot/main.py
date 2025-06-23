@@ -39,6 +39,7 @@ dp = Dispatcher(storage=MemoryStorage())  # <-- attach FSM storage
 class BotStates(StatesGroup):
     waiting_for_proxy = State()
     waiting_for_emoji = State()
+    waiting_for_sticker_pack = State()
 
 
 # ——— /start handlers (unchanged) ————————————————————————————
@@ -148,8 +149,62 @@ async def process_sticker(msg: types.Message, state: FSMContext):
     await get_emoji_service().create_emoji(dto)
 
     await msg.reply(f"✅ Эмоджи «{name}» зарегистрировано.")
-    await state.clear()  # done with emoji
+    await state.clear()
 
+
+# ——— /add_sticker_pack — ask for sticker, go into sticker_pack‐state ——————————
+@dp.message(Command(commands=["add_sticker_pack"]))
+async def cmd_add_sticker_pack(message: types.Message, state: FSMContext):
+    await message.reply("📦 Пришлите ваш кастом-эмоджи-стикер из пака — и я добавлю весь набор. (Это займет около минуты)")
+    await state.set_state(BotStates.waiting_for_sticker_pack)
+
+# ——— sticker_pack‐state handler: only stickers, only in waiting_for_sticker_pack ——
+@dp.message(StateFilter(BotStates.waiting_for_sticker_pack))
+async def process_sticker_pack(msg: types.Message, state: FSMContext):
+    entities: list = msg.entities or [None]
+    sticker = entities[0]
+    # как в одиночном add_emoji
+    if not sticker or sticker.type != "custom_emoji":
+        await msg.reply("Это не эмоджи-стикер, попробуйте ещё раз.")
+        return await state.clear()
+
+    # берём мета-данные первого стикера
+    entity = (await bot.get_custom_emoji_stickers([sticker.custom_emoji_id]))[0]
+    pack_name = entity.set_name  # имя пака из того же entity
+    # получаем весь сет
+    sticker_set = await bot.get_sticker_set(pack_name)
+
+    upload_service = get_upload_service()
+    repo = get_emoji_service()
+    added = 0
+
+    for st in sticker_set.stickers:
+        # download
+        file = await bot.get_file(st.file_id)
+        url = f"https://api.telegram.org/file/bot{settings.bot.token.get_secret_value()}/{file.file_path}"
+        async with AsyncClient() as client:
+            resp = await client.get(url)
+            if not resp.is_success:
+                continue
+
+        # upload
+        ext = file.file_path.rsplit(".", 1)[-1]
+        filename = await upload_service.upload(resp.content, extension=ext)
+        public_url = upload_service.get_file_url(filename)
+
+        # создаём DTO ровно как в одиночном случае
+        name = f"{st.emoji}_{entity.set_name}_{st.custom_emoji_id}"
+        logger.info(f"СТИКЕР {name}, {public_url}, {st.custom_emoji_id}")
+        dto = CreateEmojiDTO(
+            name=name,
+            img_url=public_url,
+            custom_emoji_id=st.custom_emoji_id,
+        )
+        await repo.create_emoji(dto)
+        added += 1
+
+    await msg.reply(f"✅ Добавлено {added} стикеров из пака «{sticker_set.title}» ({pack_name}).")
+    await state.clear()
 
 # ——— bootstrap & run ——————————————————————————————————————
 async def main():

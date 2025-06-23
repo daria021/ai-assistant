@@ -50,6 +50,8 @@ services:
     restart: unless-stopped
     ports:
       - "3000:80"
+    volumes:
+      - ./admin/frontend/nginx.conf:/etc/nginx/nginx.conf:ro
 
   worker-manager:
     build:
