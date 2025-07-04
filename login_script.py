@@ -8,14 +8,18 @@ from telethon.sessions import StringSession
 api_id = 27878010  # e.g. 123456
 api_hash = 'a8c3c7628be9f25001bd387bd713f6f8'
 phone = '+79776721730'  # your phone number in international format
+# phone = '+79817331201'  # your phone number in international format
+password = 'gRizzli1980'
+# password = 'Rider2108'
 
 # Session file will be created as 'user.session'
 session_name = 'service'
-proxy = ('socks5', '91.236.79.114', '80', True, 'silent', 'bob',  )
+# proxy = ('socks5', '91.236.79.114', '80', True, 'silent', 'bob',  )
 
 
 async def main():
-    client = TelegramClient(session_name, api_id, api_hash, proxy=proxy)
+    client = TelegramClient(session_name, api_id, api_hash)
+    # client = TelegramClient(session_name, api_id, api_hash, proxy=proxy)
     await client.connect()
     h = await client.send_code_request(phone)
     h = h.phone_code_hash
@@ -23,7 +27,7 @@ async def main():
     try:
         await client.sign_in(phone, code, phone_code_hash=h)
     except SessionPasswordNeededError:
-        await client.sign_in(password='gRizzli1980')
+        await client.sign_in(password=password)
 
     string = StringSession.save(client.session)
     with open(f'{session_name}.txt', 'w') as f:

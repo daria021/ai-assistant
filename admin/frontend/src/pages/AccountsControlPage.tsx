@@ -58,6 +58,16 @@ export default function AccountsControlPage() {
     setProxyError(false);
   };
 
+  const openModal = () => {
+    setIsModalOpen(true);
+    setStep('form');
+    setError('');
+    setPhone('');
+    setCloudPassword('');
+    setCode('');
+    setProxyError(false);
+  };
+
   // Отправка кода SMS
   const handleSendCode = async () => {
     if (!phone) return setError('Введите телефон');
@@ -130,8 +140,6 @@ export default function AccountsControlPage() {
     }
   };
 
-
-
   return (
     <div className="container mx-auto p-6 bg-brandlight min-h-screen">
       <h1 className="text-2xl text-center font-bold text-brand mb-8">
@@ -143,6 +151,17 @@ export default function AccountsControlPage() {
           Нет свободного прокси сервера. Он нужен, чтобы аккаунт не забанили. Необходимо добавить новый прокси сервер.
         </div>
       )}
+
+      <div className="flex justify-center mb-8">
+        <button
+          onClick={openModal}
+          className="px-6 py-3 border-2 border-brand text-brand bg-white rounded-lg hover:bg-brandlight transition"
+        >
+          Подключить аккаунт
+        </button>
+      </div>
+
+      <h2 className="text-center mb-2">─── ⋆⋅☆⋅⋆ ──</h2>
 
 <div className="space-y-3">
   {accounts.map((u) => (
@@ -194,9 +213,6 @@ export default function AccountsControlPage() {
     </div>
   ))}
 </div>
-
-
-
 
       {/* Модалка подключения нового аккаунта */}
       {isModalOpen && (

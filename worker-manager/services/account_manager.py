@@ -40,12 +40,23 @@ class AccountManager(AccountManagerInterface):
         raise UnknownRequestTypeException(f"{type(request)} requests are not supported")
 
     async def _send_post(self, request: SendPostRequest) -> None:
-                await self.bot_service.send_post(
-                        chat_id = request.chat.chat_id,
-                    text = request.post.text,
-                    entities = request.post.entities,
-                    media_path = request.post.image_path,
-                )
+        worker_message_dto = CreateWorkerMessageDTO(
+            user_id=request.user_id,
+            type=WorkerMessageType.POST,
+            text=request.post.text,
+            entities=request.post.entities,
+            media_path=request.post.image_path,
+            status=WorkerMessageStatus.PENDING,
+            chat_id=request.chat.chat_id,
+            request_id=request.id,
+        )
+
+        logger.info(f"Sending post request {worker_message_dto}")
+        logger.info(f"Request was {request}")
+
+        await self.worker_message_repository.create(worker_message_dto)
+
+        await self.ensure_worker_running(request.user_id)
 
     async def ensure_worker_running(self, user_id: UUID) -> None:
         user = await self.user_repository.get(user_id)

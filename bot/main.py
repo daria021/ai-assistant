@@ -56,7 +56,9 @@ async def handler_start_deep(message: types.Message):
         ]
     )
     await message.answer(
-        "Привет! ♡\n\nЭто админ-панель…\n\n*✧･ﾟ: *✧･ﾟ:*",
+        "Привет! ♡\n\nЭто админ-панель*✧･ﾟ: *✧･ﾟ:*\n\n"
+        "Команда /add_emoji добавляет кастом-эмоджи-стикер,\n\n "
+        "/add_sticker_pack добавляет весь набор стикеров.",
         reply_markup=kb,
         parse_mode="HTML",
         disable_web_page_preview=True,
@@ -76,7 +78,9 @@ async def handler_start_plain(message: types.Message):
         ]
     )
     await message.answer(
-        "Привет! ♡\n\nЭто админ-панель…",
+        "Привет! ♡\n\nЭто админ-панель*✧･ﾟ: *✧･ﾟ:*\n\n"
+        "Команда /add_emoji добавляет кастом-эмоджи-стикер,\n\n "
+        "/add_sticker_pack добавляет весь набор стикеров.",
         reply_markup=kb,
         disable_web_page_preview=True,
     )
@@ -89,7 +93,6 @@ async def cmd_add_proxy(message: types.Message, state: FSMContext):
         "🌐 Пришлите список URL для подключения прокси. Каждый URL – на новой строке"
     )
     await state.set_state(BotStates.waiting_for_proxy)
-
 
 # ——— proxy‐state handler: only text, only in waiting_for_proxy —————
 @dp.message(
