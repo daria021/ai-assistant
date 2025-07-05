@@ -90,6 +90,8 @@ class SendPostRequestRepository(
                 id=chat.id,
                 chat_id=chat.chat_id,
                 name=chat.name,
+                chat_type_id=chat.chat_type_id,
+                responsible_manager_id=chat.responsible_manager_id,
                 invite_link=chat.invite_link,
                 created_at=chat.created_at,
                 updated_at=chat.updated_at,
