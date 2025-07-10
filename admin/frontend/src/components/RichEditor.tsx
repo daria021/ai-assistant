@@ -121,8 +121,15 @@ function buildSuggestion(emojis: Emoji[], editor: Editor) {
 
         items: ({query}) =>
             emojis
-                .filter(e => e.name.toLowerCase().startsWith(query.toLowerCase()))
-                .map(e => ({id: e.id, label: e.name, src: e.img_url, custom_emoji_id: e.custom_emoji_id})),
+                .filter(e => {
+                    console.log("constructing emoji entity", e);
+                    return e.name.toLowerCase().startsWith(query.toLowerCase());}
+                )
+                .map(e => {
+                    const mapped = {id: e.id, label: e.name, src: e.img_url, custom_emoji_id: e.custom_emoji_id};
+                    console.log("mapping emoji entity", mapped);
+                    return mapped;
+                }),
 
         render: () => {
             let popup: HTMLDivElement
@@ -237,6 +244,9 @@ export function RichEditor({emojis, initialContent = '', onChange}: Props) {
 
             editor.state.doc.descendants((node, pos) => {
                 if (node.type.name === 'emoji') {
+                    console.log("check");
+                    console.log("attrs:", node.attrs);
+                    console.log("check passed");
                     const emojiEntry = {
                         type: 'custom_emoji',
                         offset: pos - 1,
