@@ -237,12 +237,14 @@ export function RichEditor({emojis, initialContent = '', onChange}: Props) {
 
             editor.state.doc.descendants((node, pos) => {
                 if (node.type.name === 'emoji') {
-                    entities.push({
+                    const emojiEntry = {
                         type: 'custom_emoji',
                         offset: pos - 1,
                         length: 2,
                         custom_emoji_id: node.attrs.custom_emoji_id,
-                    })
+                    } as EmojiEntity;
+                    console.log(`emoji found ${node.attrs}, out entry${emojiEntry}`);
+                    entities.push(emojiEntry);
                 }
             })
 
