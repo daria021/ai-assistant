@@ -321,7 +321,7 @@ export async function sendAuthCode(phone: string, code: string, password?: strin
 
 export async function listEmojis(): Promise<Emoji[]> {
     const res = (await apiClient.get<Emoji[]>('emoji')).data
-    console.log("emojis!!");
+    console.log("emojis!!", res);
     return res;
 }
 
