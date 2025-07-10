@@ -246,9 +246,9 @@ export function RichEditor({emojis, initialContent = '', onChange}: Props) {
                     console.log(`emoji found ${node.attrs}, out entry${emojiEntry}`);
                     entities.push(emojiEntry);
                 }
-            })
+            });
 
-            onChange({html: editor.getHTML(), text, entities})
+            onChange({html: editor.getHTML(), text, entities});
         },
     })
     useEffect(() => {

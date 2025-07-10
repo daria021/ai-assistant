@@ -6,7 +6,7 @@ export interface Emoji {
     id: string;
     name: string;
     img_url: string;
-    custom_emoji_id: string
+    custom_emoji_id: string;
 }
 
 export interface User {
@@ -320,7 +320,9 @@ export async function sendAuthCode(phone: string, code: string, password?: strin
 }
 
 export async function listEmojis(): Promise<Emoji[]> {
-    return (await apiClient.get<Emoji[]>('emoji')).data
+    const res = (await apiClient.get<Emoji[]>('emoji')).data
+    console.log("emojis!!");
+    return res;
 }
 
 
