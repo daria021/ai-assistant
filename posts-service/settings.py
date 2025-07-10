@@ -1,4 +1,5 @@
 from pathlib import Path
+from uuid import UUID
 
 from pydantic import Field
 from pydantic_settings import SettingsConfigDict
@@ -12,6 +13,7 @@ class Settings(AbstractSettings):
     db: MainDBSettings = Field(default_factory=MainDBSettings)
     scheduler: SchedulerSettings = Field(default_factory=SchedulerSettings)
     watcher: WatcherSettings = Field(default_factory=WatcherSettings)
+    sender_id: UUID
 
     model_config = SettingsConfigDict(
         extra="ignore",

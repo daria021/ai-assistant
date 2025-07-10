@@ -8,7 +8,7 @@ from shared.domain.enums import SendPostRequestStatus
 from shared.domain.requests import PostPublicationStartedRequest
 
 from dependencies.services.watcher_client import get_watcher_client
-
+from settings import settings
 
 async def publish(post_id: UUID) -> None:
     posts_to_publish_repository = get_post_to_publish_repository()
@@ -25,10 +25,11 @@ async def publish(post_id: UUID) -> None:
         child_requests: list[UUID] = []
         for chat in post.chats:
             logger.info(f"создание CreateSendPostRequestDTO")
+            logger.info(f"{post.responsible_manager_id}")
             post_request_dto = CreateSendPostRequestDTO(
                 post_id=post.post_id,
                 chat_id=chat.id,
-                user_id=post.responsible_manager_id,
+                user_id=settings.sender_id,
                 status=SendPostRequestStatus.PLANNED,
                 publication_id=post.id,
             )

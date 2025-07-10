@@ -43,7 +43,10 @@ async def create_post(
     else:
         logger.error("ATTENTION!!! IMAGE IS NONE")
 
-    entities = [MessageEntityDTO.model_validate(e) for e in json.loads(entities)]
+    logger.info(entities)
+    dsrslzd_entities = json.loads(entities)
+    logger.info(dsrslzd_entities)
+    entities = [MessageEntityDTO.model_validate(e) for e in dsrslzd_entities]
 
     post = CreatePostDTO(
         name=name,
