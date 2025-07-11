@@ -211,6 +211,7 @@ function buildSuggestion(emojis: Emoji[], editor: Editor) {
                     attrs: {id: props.id, name: props.label, src: props.src, custom_emoji_id: props.custom_emoji_id},
                 })
                 .run()
+            console.log(`NEW FUCKING EMOJI FROM PROPS ${props}`);
         },
     })
 }
@@ -246,7 +247,9 @@ export function RichEditor({emojis, initialContent = '', onChange}: Props) {
                 if (node.type.name === 'emoji') {
                     console.log("check");
                     console.log("attrs:", node.attrs);
-                    console.log("check passed");
+                    console.log("check1 passed");
+                    console.log("id:", node.attrs.custom_emoji_id);
+                    console.log("check2 passed");
                     const emojiEntry = {
                         type: 'custom_emoji',
                         offset: pos - 1,
@@ -257,6 +260,8 @@ export function RichEditor({emojis, initialContent = '', onChange}: Props) {
                     entities.push(emojiEntry);
                 }
             });
+
+            console.log(`NEW FUCKING ENTITIES ${entities}`);
 
             onChange({html: editor.getHTML(), text, entities});
         },
