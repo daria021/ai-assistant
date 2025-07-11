@@ -259,8 +259,8 @@ export function RichEditor({emojis, initialContent = '', onChange}: Props) {
                         length: 2,
                         custom_emoji_id: node.attrs.custom_emoji_id,
                     } as EmojiEntity;
-                    console.log("emojiEntry is ready");
-                    console.log(`emoji found ${node.attrs}, out entry ${emojiEntry}`);
+                    // console.log("emojiEntry is ready");
+                    // console.log(`emoji found ${node.attrs}, out entry ${emojiEntry}`);
                     entities.push(emojiEntry);
                 }
             });
