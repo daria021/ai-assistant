@@ -202,16 +202,18 @@ function buildSuggestion(emojis: Emoji[], editor: Editor) {
         },
 
         command({editor, range, props}) {
-            console.log(`NEW FUCKING EMOJI FROM PROPS ${props}`);
+            console.log(`FROM PROPS ${JSON.stringify(props)}`);
+            const attrs = {id: props.id, name: props.label, src: props.src, custom_emoji_id: props.custom_emoji_id};
             editor
                 .chain()
                 .focus()
                 .deleteRange(range)
                 .insertContent({
                     type: 'emoji',
-                    attrs: {id: props.id, name: props.label, src: props.src, custom_emoji_id: props.custom_emoji_id},
+                    attrs: attrs,
                 })
-                .run()
+                .run();
+            console.log(`NEW FUCKING EMOJI ${JSON.stringify(props)}`);
         },
     })
 }
