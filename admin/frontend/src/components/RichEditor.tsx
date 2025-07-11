@@ -48,33 +48,49 @@ const EmojiNode = Node.create({
     /* — парсинг из HTML (paste/SSR) — */
     parseHTML() {
         return [
-            {tag: 'img[data-emoji-id]'},
-            {tag: 'video[data-emoji-id]'},
+            {
+                tag: 'img[data-emoji-id]',
+                getAttrs: (dom: HTMLElement) => {
+                    const element = dom as HTMLElement;
+                    return {
+                        id: element.dataset.emojiId,
+                        src: element.getAttribute('src'),
+                        name: element.getAttribute('alt'),
+                        custom_emoji_id: element.dataset.customEmojiId,
+                    };
+                },
+            },
+            {
+                tag: 'video[data-emoji-id]',
+                getAttrs: (dom: HTMLElement) => {
+                    const element = dom as HTMLElement;
+                    return {
+                        id: element.dataset.emojiId,
+                        src: element.getAttribute('src'),
+                        name: '', // or some default
+                        custom_emoji_id: element.dataset.customEmojiId,
+                    };
+                },
+            },
         ]
     },
 
+
     /* — HTML-экспорт (editor.getHTML()) — */
     renderHTML({node}) {
-        const src = node.attrs.src as string
+        const src = node.attrs.src;
+        const attrs = {
+            'data-emoji-id': node.attrs.id,
+            'data-custom-emoji-id': node.attrs.custom_emoji_id,
+            src,
+            width: '24',
+            height: '24',
+            style: 'display:inline-block;vertical-align:middle',
+        };
+
         return src.endsWith('.webm')
-            ? ['video', {
-                'data-emoji-id': node.attrs.id,
-                src,
-                width: '24',
-                height: '24',
-                autoplay: 'true',
-                loop: 'true',
-                muted: 'true',
-                style: 'display:inline-block;vertical-align:middle',
-            }]
-            : ['img', {
-                'data-emoji-id': node.attrs.id,
-                src,
-                alt: node.attrs.name,
-                width: '24',
-                height: '24',
-                style: 'display:inline-block;vertical-align:middle',
-            }]
+            ? ['video', {...attrs, autoplay: 'true', loop: 'true', muted: 'true'}]
+            : ['img', {...attrs, alt: node.attrs.name}];
     },
 
 
