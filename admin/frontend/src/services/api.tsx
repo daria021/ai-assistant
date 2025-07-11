@@ -192,7 +192,7 @@ export async function createPost(
     entities: MessageEntityDTO[],
     imageFile?: File,
 ): Promise<string> {
-    console.log(`SENDING FUCKING ENTITIES ${entities}`);
+    console.log(`SENDING FUCKING ENTITIES ${JSON.stringify(entities)}`);
     const form = new FormData();
     form.append("name", name);
     form.append("text", text);

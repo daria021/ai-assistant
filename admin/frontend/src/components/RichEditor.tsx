@@ -265,7 +265,7 @@ export function RichEditor({emojis, initialContent = '', onChange}: Props) {
                 }
             });
 
-            console.log(`NEW FUCKING ENTITIES ${entities}`);
+            console.log(`NEW FUCKING ENTITIES ${JSON.stringify(entities)}`);
 
             onChange({html: editor.getHTML(), text, entities});
         },
