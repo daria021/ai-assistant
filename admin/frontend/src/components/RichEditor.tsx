@@ -229,7 +229,7 @@ function buildSuggestion(emojis: Emoji[], editor: Editor) {
                     attrs: attrs,
                 })
                 .run();
-            console.log(`NEW FUCKING EMOJI ${JSON.stringify(props)}`);
+            console.log(`NEW EMOJI ${JSON.stringify(props)}`);
         },
     })
 }
