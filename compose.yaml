@@ -36,7 +36,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./upload/:/app/upload/
+      - ~/upload/:/app/upload/
     networks:
       - assistant_bridge
     depends_on:
@@ -83,7 +83,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./upload/:/app/upload/
+      - ~/upload/:/app/upload/
     networks:
       - assistant_bridge
     depends_on:
@@ -120,7 +120,6 @@ services:
 
 volumes:
   postgres_data:
-
 
 networks:
   assistant_bridge:

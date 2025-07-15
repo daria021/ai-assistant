@@ -37,6 +37,7 @@ jobs:
             echo "" >> .env
             echo "APP_HOST=${DOMAIN}" >> .env
             echo "MINIAPP_URL=${DOMAIN}" >> .env
+            echo "HOST_UPLOAD_DIR=~/upload" >> .env
 
             echo "VITE_API_BASE=${DOMAIN}/api" > admin/frontend/.env
           fi
