@@ -173,6 +173,7 @@ function buildSuggestion(emojis: Emoji[], editor: Editor) {
                         const vid = document.createElement('video')
                         vid.src = it.src
                         vid.width = vid.height = 24
+                        vid.preload = 'metadata'
                         vid.autoplay = true
                         vid.loop = true
                         vid.muted = true
@@ -184,6 +185,7 @@ function buildSuggestion(emojis: Emoji[], editor: Editor) {
                         const img = document.createElement('img')
                         img.src = it.src
                         img.width = img.height = 24
+                        img.loading = 'eager'
                         cell.appendChild(img)
                     }
 
@@ -194,6 +196,10 @@ function buildSuggestion(emojis: Emoji[], editor: Editor) {
 
             return {
                 onStart({items, command, clientRect}) {
+                    // popup = document.createElement('div')
+                    // перед новым рендером удаляем старый попап, если он остался
+                    const stale = document.querySelector('.emoji-suggest-popup')
+                    if (stale) stale.remove()
                     popup = document.createElement('div')
                     popup.className = 'absolute emoji-suggest-popup z-50'
                     // задаём максимальные размеры
@@ -291,10 +297,10 @@ export function RichEditor({emojis, initialContent = '', onChange}: Props) {
     })
     const prevContent = useRef(initialContent)
     useEffect(() => {
-      if (editor && initialContent !== prevContent.current) {
-        editor.commands.setContent(initialContent, false)
-        prevContent.current = initialContent
-      }
+        if (editor && initialContent !== prevContent.current) {
+            editor.commands.setContent(initialContent, false)
+            prevContent.current = initialContent
+        }
     }, [editor, initialContent]);
 
     return <EditorContent editor={editor} className="border p-2 rounded"/>

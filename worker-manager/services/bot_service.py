@@ -9,6 +9,13 @@ from abstractions.services.bot_service import BotServiceInterface
 from dependencies.services.upload import get_upload_service
 from settings import settings
 
+from aiogram.types import (
+    MessageEntityCustomEmoji,
+    MessageEntityBold,
+    MessageEntityItalic,
+    MessageEntityText,
+)
+
 logger = logging.getLogger(__name__)
 
 class AiogramBotService(BotServiceInterface):
@@ -24,6 +31,39 @@ class AiogramBotService(BotServiceInterface):
         )
         self.upload = get_upload_service()
 
+    def _build_entities(self, raw_entities: list[dict] | None) -> list:
+        """Преобразует JSON-список из БД в список Aiogram MessageEntity."""
+        result: list = []
+        if not raw_entities:
+            return result
+
+        for e in raw_entities:
+            typ = e.get("type")
+            if typ == "custom_emoji":
+                result.append(MessageEntityCustomEmoji(
+                    offset=e["offset"],
+                    length=e["length"],
+                    custom_emoji_id=e["custom_emoji_id"],
+                ))
+            elif typ == "bold":
+                result.append(MessageEntityBold(
+                    offset=e["offset"],
+                    length=e["length"],
+                ))
+            elif typ == "italic":
+                result.append(MessageEntityItalic(
+                    offset=e["offset"],
+                    length=e["length"],
+                ))
+            else:
+                # чтобы не ломать смещения, вкладываем “текстовую” сущность
+                result.append(MessageEntityText(
+                    offset=e["offset"],
+                    length=e["length"],
+                ))
+        return result
+
+
     async def send_post(
         self,
         chat_id: int,
@@ -31,10 +71,9 @@ class AiogramBotService(BotServiceInterface):
         entities: list = None,
         media_path: str = None,
     ) -> None:
-        """
-        Отправляем либо текст, либо фото+текст пользователю/каналу.
-        Поддержка платных эмоджи: просто встраиваются в text.
-        """
+
+        parsed_entities = self._build_entities(entities)
+
         if media_path:
             logger.info(f"BotService: send_photo to {chat_id}")
             media_url = self.upload.get_file_url(media_path)
@@ -43,7 +82,7 @@ class AiogramBotService(BotServiceInterface):
             logger.info(settings.environment.host)
             logger.info(text)
             logger.info(entities)
-            await self.bot.send_photo(chat_id, photo=media_url, caption=text, caption_entities=entities)
+            await self.bot.send_photo(chat_id, photo=media_url, caption=text, caption_entities=parsed_entities)
         else:
             logger.info(f"BotService: send_message to {chat_id}")
-            await self.bot.send_message(chat_id, text, entities=entities)
+            await self.bot.send_message(chat_id, text, entities=parsed_entities)
