@@ -407,14 +407,7 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                                 setEditorEntities(entities);
                             }}
                         />
-                        + {/* === ПРЕДПРОСМОТР С ЭМОДЖИ === */}
-                        <div className="mt-4 p-4 bg-white border rounded">
-                            <h3 className="mb-2 font-medium">Предпросмотр:</h3>
-                            <div
-                                className="prose"
-                                dangerouslySetInnerHTML={{__html: editorHtml}}
-                            />
-                        </div>
+
                     </div>
 
                     {/* Ответственный менеджер */}

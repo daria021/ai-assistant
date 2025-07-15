@@ -28,7 +28,7 @@ def parse_args():
     parser.add_argument(
         "--exclude-files",
         nargs="*",
-        default=["*.lock", "*~"],
+        default=["*.lock", "*~", "package-lock.json"],
         help="File patterns to exclude (default: ['*.lock', '*~'])."
     )
     parser.add_argument(
@@ -52,8 +52,8 @@ def collect_py_files(root_dir, exclude_files, exclude_dirs):
         dirnames[:] = [d for d in dirnames if not should_exclude(d, exclude_dirs)]
         for filename in filenames:
             # Only .py files
-            if not filename.endswith(".py"):
-                continue
+            # if not filename.endswith(".py"):
+            #     continue
             # Skip excluded file patterns
             if should_exclude(filename, exclude_files):
                 continue
