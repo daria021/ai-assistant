@@ -5,7 +5,7 @@ import type {Editor} from '@tiptap/core'
 import {Node} from '@tiptap/core'
 import type {Emoji} from '../services/api'
 import type {Node as PMNode} from '@tiptap/pm/model'
-import {useEffect} from "react";
+import {useEffect, useRef} from "react";
 
 
 /* ── типы ─────────────────────────────────────── */
@@ -138,8 +138,9 @@ function buildSuggestion(emojis: Emoji[], editor: Editor) {
         items: ({query}) =>
             emojis
                 .filter(e => {
-                    console.log("constructing emoji entity", e);
-                    return e.name.toLowerCase().startsWith(query.toLowerCase());}
+                        console.log("constructing emoji entity", e);
+                        return e.name.toLowerCase().startsWith(query.toLowerCase());
+                    }
                 )
                 .map(e => {
                     const mapped = {id: e.id, label: e.name, src: e.img_url, custom_emoji_id: e.custom_emoji_id};
@@ -288,10 +289,13 @@ export function RichEditor({emojis, initialContent = '', onChange}: Props) {
             onChange({html: editor.getHTML(), text, entities});
         },
     })
+    const prevContent = useRef(initialContent)
     useEffect(() => {
-        if (editor && initialContent !== undefined) {
-            editor.commands.setContent(initialContent, false)
-        }
-    }, [editor, initialContent])
+      if (editor && initialContent !== prevContent.current) {
+        editor.commands.setContent(initialContent, false)
+        prevContent.current = initialContent
+      }
+    }, [editor, initialContent]);
+
     return <EditorContent editor={editor} className="border p-2 rounded"/>
 }
