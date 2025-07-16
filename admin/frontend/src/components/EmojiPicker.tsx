@@ -1,6 +1,5 @@
-import React from 'react'
+import React, {useEffect} from 'react'
 import type {Emoji} from '../services/api'
-import { nanoid } from 'nanoid'
 
 interface EmojiPickerProps {
   /** Список эмодзи из БД */
@@ -13,30 +12,31 @@ interface EmojiPickerProps {
  * EmojiPicker — все эмодзи простым src,
  * с новым key={nanoid()} на каждый рендер.
  */
-export const EmojiPicker: React.FC<EmojiPickerProps> = ({
-  emojis,
-  onSelect,
-}) => {
-  return (
-    <div
-      className="
-        absolute bg-white border shadow-lg p-2
-        grid grid-cols-6 gap-2
-        top-full left-0 z-10
-      "
-    >
-      {emojis.map((emoji) => {
-        const isVideo = emoji.img_url.toLowerCase().endsWith('.webm')
+export const EmojiPicker: React.FC<EmojiPickerProps> = ({ emojis, onSelect }) => {
+  // ensure videos reload and autoplay each time the modal opens
+  useEffect(() => {
+    document
+      .querySelectorAll<HTMLVideoElement>('video[data-emoji-id]')
+      .forEach(video => {
+        video.load();
+        video.play().catch(() => {});
+      });
+  }, []);
 
+  return (
+    <div className="grid grid-cols-8 gap-2 p-2">
+      {emojis.map(emoji => {
+        const isVideo = emoji.img_url.toLowerCase().endsWith('.webm');
         return (
           <button
-            key={nanoid()}                     // ← новый ключ при каждом рендере
+            key={emoji.custom_emoji_id}
             type="button"
             onClick={() => onSelect(emoji)}
-            className="p-1 hover:bg-gray-100 rounded"
+            className={clsx('p-1 rounded hover:bg-gray-100')}
           >
             {isVideo ? (
               <video
+                data-emoji-id={emoji.custom_emoji_id}
                 src={emoji.img_url}
                 width={24}
                 height={24}
@@ -44,8 +44,8 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({
                 loop
                 muted
                 playsInline
-                preload="auto"
-                crossOrigin="use-credentials"
+                preload="metadata"
+                crossOrigin="anonymous"
               />
             ) : (
               <img
@@ -53,12 +53,12 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({
                 alt={emoji.name}
                 width={24}
                 height={24}
-                crossOrigin="use-credentials"
+                crossOrigin="anonymous"
               />
             )}
           </button>
-        )
+        );
       })}
     </div>
-  )
-}
+  );
+};
