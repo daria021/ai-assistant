@@ -1,4 +1,4 @@
-import {EditorContent, Extension, useEditor} from '@tiptap/react'
+import {EditorContent, Extension, ReactRenderer, useEditor} from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Suggestion from '@tiptap/suggestion'
 import type {Editor} from '@tiptap/core'
@@ -6,6 +6,7 @@ import {Node} from '@tiptap/core'
 import type {Emoji} from '../services/api'
 import type {Node as PMNode} from '@tiptap/pm/model'
 import {useEffect, useRef} from "react";
+import {EmojiSuggestionList} from "./EmojiSuggestionList";
 
 
 /* ── типы ─────────────────────────────────────── */
@@ -149,96 +150,54 @@ function buildSuggestion(emojis: Emoji[], editor: Editor) {
                 }),
 
         render: () => {
-            let popup: HTMLDivElement
+      let component: ReactRenderer
 
-            const paint = (items: EmojiAttrs[], cmd: (it: EmojiAttrs) => void) => {
-                // Очищаем и подготавливаем грид
-                popup.innerHTML = ''
-                popup.style.display = 'grid'
-                popup.style.gridTemplateColumns = 'repeat(auto-fill, 32px)'
-                popup.style.gridAutoRows = '32px'
-                popup.style.gap = '4px'
-                popup.style.padding = '4px'
+      return {
+        onStart({ items, command, clientRect }) {
+          component = new ReactRenderer(EmojiSuggestionList, {
+            editor,
+            props: { items, command },
+          });
+          document.body.appendChild(component.element);
 
-                for (const it of items) {
-                    const cell = document.createElement('div')
-                    cell.className = 'cursor-pointer'
-                    cell.style.width = '32px'
-                    cell.style.height = '32px'
-                    cell.style.display = 'flex'
-                    cell.style.alignItems = 'center'
-                    cell.style.justifyContent = 'center'
+          const popup = component.element as HTMLElement;
 
-                    if (it.src.endsWith('.webm')) {
-                        const vid = document.createElement('video')
-                        vid.src = it.src
-                        vid.width = vid.height = 24
-                        vid.preload = 'metadata'
-                        vid.autoplay = true
-                        vid.loop = true
-                        vid.muted = true
-                        vid.playsInline = true
-                        vid.addEventListener('ended', () => vid.play().catch(() => {
-                        }))
-                        cell.appendChild(vid)
-                    } else {
-                        const img = document.createElement('img')
-                        img.src = it.src
-                        img.width = img.height = 24
-                        img.loading = 'eager'
-                        cell.appendChild(img)
-                    }
-
-                    cell.onclick = () => cmd(it)
-                    popup.appendChild(cell)
-                }
-            }
-
-            return {
-                onStart({items, command, clientRect}) {
-                    // popup = document.createElement('div')
-                    // перед новым рендером удаляем старый попап, если он остался
-                    const stale = document.querySelector('.emoji-suggest-popup')
-                    if (stale) stale.remove()
-                    popup = document.createElement('div')
-                    popup.className = 'absolute emoji-suggest-popup z-50'
-                    // задаём максимальные размеры
-                    popup.style.maxHeight = '200px'
-                    popup.style.overflowY = 'auto'
-                    document.body.appendChild(popup)
-                    paint(items, command)
-
-                    // позиционируем
-                    const box = clientRect?.()
-                    if (box) {
-                        popup.style.left = `${box.left}px`
-                        popup.style.top = `${box.bottom + window.scrollY}px`
-                    }
-                },
-                onUpdate({items, command}) {
-                    paint(items, command)
-                },
-                onExit() {
-                    popup.remove()
-                },
-            }
+          const box = clientRect?.()
+          if (box) {
+            popup.style.position = 'absolute'
+            popup.style.left = `${box.left}px`
+            popup.style.top = `${box.bottom + window.scrollY}px`
+          }
         },
-
-        command({editor, range, props}) {
-            console.log(`FROM PROPS ${JSON.stringify(props)}`);
-            const attrs = {id: props.id, name: props.label, src: props.src, custom_emoji_id: props.custom_emoji_id};
-            editor
-                .chain()
-                .focus()
-                .deleteRange(range)
-                .insertContent({
-                    type: 'emoji',
-                    attrs: attrs,
-                })
-                .run();
-            console.log(`NEW EMOJI ${JSON.stringify(props)}`);
+        onUpdate({ items, command, clientRect }) {
+          component.updateProps({ items, command });
+          const popup = component.element as HTMLElement;
+          // при необходимости можно передвинуть попап заново:
+          const box = clientRect?.()
+          if (box) {
+            popup.style.left = `${box.left}px`
+            popup.style.top = `${box.bottom + window.scrollY}px`
+          }
         },
-    })
+        onExit() {
+          component.destroy()
+        },
+      }
+    },
+
+    command({ editor, range, props }) {
+      const attrs = {
+        id: props.id,
+        name: props.label,
+        src: props.src,
+        custom_emoji_id: props.custom_emoji_id,
+      }
+      editor.chain().focus().deleteRange(range).insertContent({
+        type: 'emoji',
+        attrs,
+      }).run()
+    },
+  })
 }
 
 
