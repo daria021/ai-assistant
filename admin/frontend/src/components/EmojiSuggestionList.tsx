@@ -1,5 +1,11 @@
 import React, { useEffect, useRef } from 'react'
-import type { EmojiAttrs } from '../path/to/RichEditor'
+
+interface EmojiAttrs {
+    id: string
+    label: string
+    src: string
+    custom_emoji_id: string
+}
 
 interface Props {
   items: EmojiAttrs[]

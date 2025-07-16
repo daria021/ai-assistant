@@ -407,7 +407,6 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                                 setEditorEntities(entities);
                             }}
                         />
-
                     </div>
 
                     {/* Ответственный менеджер */}
