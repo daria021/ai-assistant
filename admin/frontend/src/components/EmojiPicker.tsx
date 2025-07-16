@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import type { Emoji } from '../services/api'
 
 interface EmojiPickerProps {
@@ -9,23 +9,28 @@ interface EmojiPickerProps {
 }
 
 /**
- * EmojiPicker — простой попап со всеми эмодзи,
- * который сам загружает каждый URL через fetch+blob,
- * чтобы обойти авторизационные ограничения и CORS,
- * и рендерит WebM-файлы через <video>, а не <img>.
+ * EmojiPicker — модалка со всеми эмодзи.
+ * Для каждого emoji мы:
+ * 1. Однократно fetch+blob→objectURL (чтобы прокинуть куки/CORS).
+ * 2. Рендерим <video> для .webm и <img> для остального,
+ *    но только когда objectURL уже готов.
+ * 3. Пока идёт загрузка — отображаем placeholder, чтобы не
+ *    получать TypeError: Load failed из‐за src=undefined.
  */
 export const EmojiPicker: React.FC<EmojiPickerProps> = ({
   emojis,
   onSelect,
 }) => {
-  // Словарь: custom_emoji_id → локальный objectURL
+  // custom_emoji_id → objectURL
   const [urlMap, setUrlMap] = useState<Record<string, string>>({})
+  // чтобы не перезагружать один и тот же emoji
+  const loadedRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     emojis.forEach(emoji => {
       const key = emoji.custom_emoji_id
-      // Если ещё не загружали этот эмодзи — выполняем запрос
-      if (key && !urlMap[key]) {
+      if (key && !loadedRef.current.has(key)) {
+        loadedRef.current.add(key)
         fetch(emoji.img_url, { credentials: 'include' })
           .then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -43,8 +48,7 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({
           })
       }
     })
-    // Мы хотим перезапустить эффект, если список emojis изменится
-  }, [emojis, urlMap])
+  }, [emojis])
 
   return (
     <div
@@ -54,49 +58,56 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({
         top-full left-0 z-10
       "
     >
-      {/*
-        Используем emojis.map с key={emoji.custom_emoji_id}:
-        - custom_emoji_id гарантированно уникален в БД,
-        - стабильный ключ предотвращает потерю DOM-узлов
-      */}
       {emojis.map(emoji => {
-        const objectUrl = urlMap[emoji.custom_emoji_id]
-        // Определяем, видео ли это по расширению URL
+        const key = emoji.custom_emoji_id
+        const objectUrl = key ? urlMap[key] : undefined
         const isVideo = emoji.img_url.toLowerCase().endsWith('.webm')
 
         return (
           <button
-            key={emoji.custom_emoji_id}
+            key={key}
             type="button"
             onClick={() => onSelect(emoji)}
             className="p-1 hover:bg-gray-100 rounded"
           >
-            {isVideo ? (
-              /* Для WebM используем <video>, чтобы браузер мог его воспроизвести */
-              <video
-                src={objectUrl}
-                width={24}
-                height={24}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="inline-block align-middle"
-              />
+            {objectUrl ? (
+              isVideo ? (
+                <video
+                  src={objectUrl}
+                  width={24}
+                  height={24}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="inline-block align-middle"
+                  onError={e =>
+                    console.error(
+                      `Emoji <video> load error for ${key}:`,
+                      e
+                    )
+                  }
+                />
+              ) : (
+                <img
+                  src={objectUrl}
+                  alt={emoji.name}
+                  width={24}
+                  height={24}
+                  className="inline-block align-middle"
+                  onError={e =>
+                    console.error(
+                      `Emoji <img> load error for ${key}:`,
+                      (e.target as HTMLImageElement).src
+                    )
+                  }
+                />
+              )
             ) : (
-              /* Для остальных форматов — <img> */
-              <img
-                src={objectUrl}
-                alt={emoji.name}
-                width={24}
-                height={24}
-                className="inline-block align-middle"
-                onError={e =>
-                  console.error(
-                    'Emoji load error src=',
-                    (e.target as HTMLImageElement).src
-                  )
-                }
+              // Плейсхолдер пока blob не загружен
+              <div
+                style={{ width: 24, height: 24 }}
+                className="inline-block bg-gray-200 animate-pulse"
               />
             )}
           </button>
