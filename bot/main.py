@@ -209,6 +209,7 @@ async def process_sticker_pack(msg: types.Message, state: FSMContext):
 
             with open(new_filename, "rb") as f:
                 content = f.read()
+            ext = "webp"
 
             os.remove(temp_filename)
 
