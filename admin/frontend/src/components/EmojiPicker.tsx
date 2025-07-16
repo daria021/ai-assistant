@@ -44,6 +44,7 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({
                 loop
                 muted
                 playsInline
+                preload="auto"
                 crossOrigin="use-credentials"
               />
             ) : (
