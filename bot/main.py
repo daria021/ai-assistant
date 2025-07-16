@@ -200,7 +200,6 @@ async def process_sticker_pack(msg: types.Message, state: FSMContext):
         ext = file.file_path.rsplit(".", 1)[-1]
         content = resp.content
         if ext == "webm":
-            ext = "webp"
             temp_filename = f"{uuid4()}.{ext}"
             with open(temp_filename, "wb") as f:
                 f.write(resp.content)  # noqa
@@ -209,9 +208,11 @@ async def process_sticker_pack(msg: types.Message, state: FSMContext):
 
             with open(new_filename, "rb") as f:
                 content = f.read()
+
             ext = "webp"
 
             os.remove(temp_filename)
+            os.remove(new_filename)
 
         filename = await upload_service.upload(content, extension=ext)
         public_url = upload_service.get_file_url(filename)

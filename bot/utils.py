@@ -1,7 +1,10 @@
 import asyncio
+import logging
 import os
 
 import imageio
+
+logger = logging.getLogger(__name__)
 
 
 def _sync_convert_webm_to_webp(input_path: str) -> str:
@@ -10,7 +13,9 @@ def _sync_convert_webm_to_webp(input_path: str) -> str:
     with the same basename.
     """
     # derive output path
-    base, _ = os.path.splitext(input_path)
+    logger.info(f"Converting webm to webp {input_path}")
+    base, ext = os.path.splitext(input_path)
+    logger.info(f"Converting webp to webp {base}, {ext}")
     output_path = f"{base}.webp"
 
     reader = imageio.get_reader(input_path, 'ffmpeg')
