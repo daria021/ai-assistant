@@ -1,7 +1,6 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import FileUploader from "../components/FileUploader";
 
-import {useCallback, useEffect, useMemo, useState} from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {useLocation, useNavigate} from "react-router-dom";
 import {FiChevronDown, FiChevronUp} from "react-icons/fi";
 import {on} from "@telegram-apps/sdk";
@@ -20,7 +19,9 @@ import {useAuth} from "../contexts/auth";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import {RichEditor} from "../components/RichEditor";
+import type {RichEditorHandle} from "../components/RichEditor";
 import type {UserRole} from "../types/UserRole";
+import {EmojiPicker} from "../components/EmojiPicker";
 
 /* ───────── Типы ───────── */
 type EventItem = {
@@ -123,6 +124,10 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
         getChatTypes().then(setChatTypes).catch(console.error);
     }, []);
 
+
+    const richEditorRef = useRef<RichEditorHandle>(null)
+    const [pickerOpen, setPickerOpen] = useState(false)
+
     /* ───────── Template pre-fill ───────── */
     const location = useLocation();
     type LocationState = { template?: Post; openCreate?: true };
@@ -222,6 +227,7 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
             alert("Ошибка при загрузке расписания");
         }
     }, [managerFilter, chatTypeFilter, chatFilter]);
+
 
     /* ───────── Chats fetch ───────── */
     const fetchChats = useCallback(async () => {
@@ -379,8 +385,8 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                         file={photoFile}
                         preview={photoPreview}
                         onFileChange={(f) => {
-                            setPhotoFile(f);
-                            setPhotoPreview(f ? URL.createObjectURL(f) : null);
+                            setPhotoFile(f)
+                            setPhotoPreview(f ? URL.createObjectURL(f) : null)
                         }}
                     />
 
@@ -397,16 +403,35 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
 
                     {/* Текст */}
                     <div>
-                        <label className="block mb-2 font-medium">Текст поста</label>
+                        <div className="flex items-center mb-2">
+                            <label className="block mb-2 font-medium">Текст поста</label>
+                            <button
+                                type="button"
+                                onClick={() => setPickerOpen((o) => !o)}
+                                className="ml-2 px-2 py-1 rounded hover:bg-gray-200"
+                            >
+                                😊
+                            </button>
+                        </div>
                         <RichEditor
+                            ref={richEditorRef}
                             emojis={emojis}
                             initialContent={editorHtml}
                             onChange={({html, text, entities}) => {
-                                setEditorHtml(html);
-                                setEditorText(text);
-                                setEditorEntities(entities);
+                                setEditorHtml(html)
+                                setEditorText(text)
+                                setEditorEntities(entities)
                             }}
                         />
+                        {pickerOpen && (
+                            <EmojiPicker
+                                emojis={emojis}
+                                onSelect={(emoji) => {
+                                    richEditorRef.current?.insertEmoji(emoji)
+                                    setPickerOpen(false)
+                                }}
+                            />
+                        )}
                     </div>
 
                     {/* Ответственный менеджер */}
@@ -490,11 +515,7 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
 
                     {/* Чаты */}
                     <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <label className="block font-medium">Чаты для отправки</label>
-                        </div>
-
-                        {/* поиск */}
+                        <label className="block mb-2 font-medium">Чаты для отправки</label>
                         <input
                             type="text"
                             placeholder="Поиск чатов..."
@@ -502,8 +523,6 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                             onChange={(e) => setChatSearch(e.target.value)}
                             className="w-full mb-2 border border-brand rounded p-2 focus:outline-none focus:ring-2 focus:ring-brand"
                         />
-
-                        {/* список */}
                         <div className="max-h-60 overflow-y-auto space-y-2 border border-brand rounded p-2">
                             {filteredChats.map(({id, name}) => (
                                 <label key={id} className="flex items-center space-x-2">
@@ -522,7 +541,7 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                         </div>
                     </div>
 
-                    {/* Save */}
+                    {/* Сохранить */}
                     <button
                         onClick={handleSave}
                         className="w-full py-3 bg-brand text-white rounded-lg shadow hover:bg-brand2 transition"
@@ -531,6 +550,7 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                     </button>
                 </div>
             )}
+
 
             {/* ───────── Schedule tab ───────── */}
             {activeTab === "schedule" && (
