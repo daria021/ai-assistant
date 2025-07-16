@@ -28,7 +28,7 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({
     >
       {emojis.map(emoji => (
         <button
-          key={emoji.custom_emoji_id}
+          key={emoji.id}
           type="button"
           onClick={() => onSelect(emoji)}
           className="p-1 hover:bg-gray-100 rounded"
