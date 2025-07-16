@@ -150,54 +150,52 @@ function buildSuggestion(emojis: Emoji[], editor: Editor) {
                 }),
 
         render: () => {
-      let component: ReactRenderer
+            let component: ReactRenderer
 
-      return {
-        onStart({ items, command, clientRect }) {
-          component = new ReactRenderer(EmojiSuggestionList, {
-            editor,
-            props: { items, command },
-          });
-          document.body.appendChild(component.element);
+            return {
+                onStart({items, command, clientRect}) {
+                    component = new ReactRenderer(EmojiSuggestionList, {
+                        editor,
+                        props: {items, command},
+                    })
+                    document.body.appendChild(component.element)
 
-          const popup = component.element as HTMLElement;
-
-          const box = clientRect?.()
-          if (box) {
-            popup.style.position = 'absolute'
-            popup.style.left = `${box.left}px`
-            popup.style.top = `${box.bottom + window.scrollY}px`
-          }
+                    // позиционируем корневой <div> из ReactRenderer
+                    const popup = component.element as HTMLElement
+                    const box = clientRect?.()
+                    if (box) {
+                        popup.style.left = `${box.left}px`
+                        popup.style.top = `${box.bottom + window.scrollY}px`
+                    }
+                },
+                onUpdate({items, command, clientRect}) {
+                    component.updateProps({items, command})
+                    const popup = component.element as HTMLElement
+                    const box = clientRect?.()
+                    if (box) {
+                        popup.style.left = `${box.left}px`
+                        popup.style.top = `${box.bottom + window.scrollY}px`
+                    }
+                },
+                onExit() {
+                    component.destroy()
+                },
+            }
         },
-        onUpdate({ items, command, clientRect }) {
-          component.updateProps({ items, command });
-          const popup = component.element as HTMLElement;
-          // при необходимости можно передвинуть попап заново:
-          const box = clientRect?.()
-          if (box) {
-            popup.style.left = `${box.left}px`
-            popup.style.top = `${box.bottom + window.scrollY}px`
-          }
-        },
-        onExit() {
-          component.destroy()
-        },
-      }
-    },
 
-    command({ editor, range, props }) {
-      const attrs = {
-        id: props.id,
-        name: props.label,
-        src: props.src,
-        custom_emoji_id: props.custom_emoji_id,
-      }
-      editor.chain().focus().deleteRange(range).insertContent({
-        type: 'emoji',
-        attrs,
-      }).run()
-    },
-  })
+        command({editor, range, props}) {
+            const attrs = {
+                id: props.id,
+                name: props.label,
+                src: props.src,
+                custom_emoji_id: props.custom_emoji_id,
+            }
+            editor.chain().focus().deleteRange(range).insertContent({
+                type: 'emoji',
+                attrs,
+            }).run()
+        },
+    })
 }
 
 
