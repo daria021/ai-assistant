@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import os
+from uuid import uuid4
 
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart, Command, StateFilter
@@ -21,6 +23,7 @@ from shared.infrastructure.main_db import init_db
 
 from dependencies.service.upload import get_upload_service
 from settings import settings
+from utils import convert_webm_to_webp
 
 # ——— Logging & Bot setup —————————————————————————————————————
 logging.basicConfig(
@@ -94,6 +97,7 @@ async def cmd_add_proxy(message: types.Message, state: FSMContext):
     )
     await state.set_state(BotStates.waiting_for_proxy)
 
+
 # ——— proxy‐state handler: only text, only in waiting_for_proxy —————
 @dp.message(
     StateFilter(BotStates.waiting_for_proxy),
@@ -158,8 +162,10 @@ async def process_sticker(msg: types.Message, state: FSMContext):
 # ——— /add_sticker_pack — ask for sticker, go into sticker_pack‐state ——————————
 @dp.message(Command(commands=["add_sticker_pack"]))
 async def cmd_add_sticker_pack(message: types.Message, state: FSMContext):
-    await message.reply("📦 Пришлите ваш кастом-эмоджи-стикер из пака — и я добавлю весь набор. (Это займет около минуты)")
+    await message.reply(
+        "📦 Пришлите ваш кастом-эмоджи-стикер из пака — и я добавлю весь набор. (Это займет около минуты)")
     await state.set_state(BotStates.waiting_for_sticker_pack)
+
 
 # ——— sticker_pack‐state handler: only stickers, only in waiting_for_sticker_pack ——
 @dp.message(StateFilter(BotStates.waiting_for_sticker_pack))
@@ -192,10 +198,23 @@ async def process_sticker_pack(msg: types.Message, state: FSMContext):
 
         # upload
         ext = file.file_path.rsplit(".", 1)[-1]
-        filename = await upload_service.upload(resp.content, extension=ext)
+        content = resp.content
+        if ext == "webm":
+            ext = "webp"
+            temp_filename = f"{uuid4()}.{ext}"
+            with open(temp_filename, "wb") as f:
+                f.write(resp.content)  # noqa
+
+            new_filename = await convert_webm_to_webp(temp_filename)
+
+            with open(new_filename, "rb") as f:
+                content = f.read()
+
+            os.remove(temp_filename)
+
+        filename = await upload_service.upload(content, extension=ext)
         public_url = upload_service.get_file_url(filename)
 
-        # создаём DTO ровно как в одиночном случае
         name = f"{st.emoji}_{entity.set_name}_{st.custom_emoji_id}"
         logger.info(f"СТИКЕР {name}, {public_url}, {st.custom_emoji_id}")
         dto = CreateEmojiDTO(
@@ -208,6 +227,7 @@ async def process_sticker_pack(msg: types.Message, state: FSMContext):
 
     await msg.reply(f"✅ Добавлено {added} стикеров из пака «{sticker_set.title}» ({pack_name}).")
     await state.clear()
+
 
 # ——— bootstrap & run ——————————————————————————————————————
 async def main():
