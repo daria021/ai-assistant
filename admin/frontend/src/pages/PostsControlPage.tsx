@@ -1,4 +1,5 @@
 import FileUploader from "../components/FileUploader";
+
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {useLocation, useNavigate} from "react-router-dom";
 import {FiChevronDown, FiChevronUp} from "react-icons/fi";
@@ -125,12 +126,12 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
 
 
     const richEditorRef = useRef<RichEditorHandle>(null)
+    const [pickerOpen, setPickerOpen] = useState(false)
 
     /* ───────── Template pre-fill ───────── */
     const location = useLocation();
     type LocationState = { template?: Post; openCreate?: true };
     const {template, openCreate} = (location.state as LocationState) || {};
-    const [pickerOpen, setPickerOpen] = useState(false)
 
     useEffect(() => {
         if (openCreate) setActiveTab("create");
@@ -403,16 +404,16 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                     {/* Текст */}
                     <div>
                         <div className="relative">
-                        <div className="flex items-center mb-2">
-                            <label className="block mb-2 font-medium">Текст поста</label>
-                            <button
-                                type="button"
-                                onClick={() => setPickerOpen((o) => !o)}
-                                className="ml-2 px-2 py-1 mb-2 rounded hover:bg-gray-200"
-                            >
-                                😊
-                            </button>
-                        </div>
+                            <div className="flex items-center mb-2">
+                                <label className="block mb-2 font-medium">Текст поста</label>
+                                <button
+                                    type="button"
+                                    onClick={() => setPickerOpen((o) => !o)}
+                                    className="ml-2 px-2 py-1 mb-2 rounded hover:bg-gray-200"
+                                >
+                                    😊
+                                </button>
+                            </div>
                         </div>
                         <RichEditor
                             ref={richEditorRef}
@@ -425,21 +426,7 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                             }}
                         />
                         {pickerOpen && (
-                            <div
-      className={`
-        absolute
-        /* изначально «пристыкован» к нижнему левому углу редактора: */
-        top-full left-0
-        /* отступ вниз, если нужен gap */
-        mt-1
-        /* сдвинуть вправо на 1rem: */
-        ml-4
-        /* и «вытащить» чуть вверх на 0.5rem: */
-        -translate-y-2
-        /* остальные ваши классы оформления: */
-        w-80 max-h-64 overflow-auto bg-white shadow-lg rounded z-50
-      `}
-    >
+
                             <EmojiPicker
                                 emojis={emojis}
                                 onSelect={(emoji) => {
@@ -447,7 +434,6 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                                     setPickerOpen(false)
                                 }}
                             />
-                                </div>
 
                         )}
                     </div>

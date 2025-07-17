@@ -20,7 +20,7 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({
   return (
     <div
       className="
-        absolute bg-white border shadow-lg p-2
+        bg-white border shadow-lg p-2
         grid grid-cols-6 gap-2
         top-full left-0 z-10
       "

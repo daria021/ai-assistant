@@ -20,8 +20,7 @@ export interface RichEditorProps {
 export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
     ({
          // emojis,
-         initialContent = '',
-         onChange}, ref) => {
+         initialContent = '', onChange}, ref) => {
         const editorRef = useRef<HTMLDivElement>(null)
         // const [pickerOpen, setPickerOpen] = useState(false)
 
@@ -41,7 +40,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
                 {
                     acceptNode(node) {
-                        if (node.nodeType == 3) return NodeFilter.FILTER_ACCEPT;
+                        if (node.nodeType === 3) return NodeFilter.FILTER_ACCEPT;
                         if (
                             node.nodeType === NodeFilter.SHOW_ELEMENT &&
                             (node as Element).matches('img[data-custom-emoji-id]')
