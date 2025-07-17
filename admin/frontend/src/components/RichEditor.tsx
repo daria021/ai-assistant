@@ -30,47 +30,42 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
         }, [])
 
         const extractEntities = (el: HTMLDivElement) => {
-            const entities: MessageEntityDTO[] = [];
-            let idx = 0;
+            const entities: MessageEntityDTO[] = []
+            let idx = 0
 
-            // Create a TreeWalker that visits both text nodes and element nodes
             const walker = document.createTreeWalker(
                 el,
                 NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
                 {
                     acceptNode(node) {
-                        // only text nodes or images
-                        if (node.nodeType === NodeFilter.SHOW_TEXT) return NodeFilter.FILTER_ACCEPT;
+                        if (node.nodeType === NodeFilter.SHOW_TEXT) return NodeFilter.FILTER_ACCEPT
                         if (
                             node.nodeType === NodeFilter.SHOW_ELEMENT &&
                             (node as Element).matches('img[data-custom-emoji-id]')
-                        ) return NodeFilter.FILTER_ACCEPT;
-                        return NodeFilter.FILTER_SKIP;
-                    }
+                        ) return NodeFilter.FILTER_ACCEPT
+                        return NodeFilter.FILTER_SKIP
+                    },
                 },
-            );
+            )
 
             while (walker.nextNode()) {
-                const node = walker.currentNode;
+                const node = walker.currentNode
                 if (node.nodeType === Node.TEXT_NODE) {
-                    // accumulate length of text
-                    idx += (node.textContent ?? '').length;
+                    idx += (node.textContent ?? '').length
                 } else {
-                    // it's an <img data-custom-emoji-id>
-                    const img = node as HTMLImageElement;
-                    const id = img.dataset.customEmojiId!;
+                    const img = node as HTMLImageElement
+                    const id = img.dataset.customEmojiId!
                     entities.push({
                         type: 'custom_emoji',
                         offset: idx,
-                        length: 2,                   // or 2 if your protocol expects length=2
-                        custom_emoji_id: id
-                    });
-                    // emojis count as one “character” in the plain‐text stream:
-                    idx += 2;
+                        length: 2,
+                        custom_emoji_id: id,
+                    })
+                    idx += 2
                 }
             }
 
-            return entities;
+            return entities
         }
 
 
@@ -79,9 +74,20 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             const el = editorRef.current;
             if (!el) return;
             const handleInput = () => {
-                const html = el.innerHTML;
-                const text = el.textContent || '';
+                // const html = el.innerHTML;
+                // const text = el.textContent || '';
                 const entities = extractEntities(el);
+                const clone = el.cloneNode(true) as HTMLDivElement
+                clone
+                    .querySelectorAll('img[data-custom-emoji-id]')
+                    .forEach(img => {
+                        const rhino = document.createTextNode('🦏')
+                        img.parentNode?.replaceChild(rhino, img)
+                    })
+
+                // 4. Собираем чистый HTML и текст из клона
+                const html = clone.innerHTML
+                const text = clone.textContent || ''
                 onChange({html, text, entities});
             }
             el.addEventListener('input', handleInput)
