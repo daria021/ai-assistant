@@ -402,13 +402,12 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                     </div>
 
                     {/* Текст */}
-                    {/* PostsControlPage, внутри вашего блока «Текст поста» */}
-                    <div className="relative overflow-visible">  {/* <-- сюда и редактор, и пикер */}
+                    <div className="relative"> {/* <- этот контейнер теперь оборачивает и редактор, и попап */}
                         <div className="flex items-center mb-2">
                             <label className="block mb-2 font-medium">Текст поста</label>
                             <button
                                 type="button"
-                                onClick={() => setPickerOpen(o => !o)}
+                                onClick={() => setPickerOpen((o) => !o)}
                                 className="ml-2 px-2 py-1 rounded hover:bg-gray-200"
                             >
                                 😊
@@ -427,10 +426,11 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                         />
 
                         {pickerOpen && (
-                            <div className="absolute top-full left-0 mt-1 z-50">
+                            // вот тут — задать нормальные размеры, фон, скролл и тень
+      <div className="absolute top-full left-0 mt-1 w-full max-h-64 overflow-auto bg-white shadow-lg rounded z-50">
                                 <EmojiPicker
                                     emojis={emojis}
-                                    onSelect={emoji => {
+                                    onSelect={(emoji) => {
                                         richEditorRef.current?.insertEmoji(emoji)
                                         setPickerOpen(false)
                                     }}
@@ -438,7 +438,6 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                             </div>
                         )}
                     </div>
-
 
                     {/* Ответственный менеджер */}
                     <div>
