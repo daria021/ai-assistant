@@ -1,5 +1,4 @@
 import FileUploader from "../components/FileUploader";
-
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {useLocation, useNavigate} from "react-router-dom";
 import {FiChevronDown, FiChevronUp} from "react-icons/fi";
@@ -21,7 +20,6 @@ import "react-datepicker/dist/react-datepicker.css";
 import type {RichEditorHandle} from "../components/RichEditor";
 import {RichEditor} from "../components/RichEditor";
 import type {UserRole} from "../types/UserRole";
-import {EmojiPicker} from "../components/EmojiPicker";
 
 /* ───────── Типы ───────── */
 type EventItem = {
@@ -126,7 +124,6 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
 
 
     const richEditorRef = useRef<RichEditorHandle>(null)
-    const [pickerOpen, setPickerOpen] = useState(false)
 
     /* ───────── Template pre-fill ───────── */
     const location = useLocation();
@@ -402,42 +399,22 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                     </div>
 
                     {/* Текст */}
-                    <div className="relative"> {/* <- этот контейнер теперь оборачивает и редактор, и попап */}
-                        <div className="flex items-center mb-2">
-                            <label className="block mb-2 font-medium">Текст поста</label>
-                            <button
-                                type="button"
-                                onClick={() => setPickerOpen((o) => !o)}
-                                className="ml-2 px-2 py-1 rounded hover:bg-gray-200"
-                            >
-                                😊
-                            </button>
-                        </div>
-
-                        <RichEditor
-                            ref={richEditorRef}
-                            emojis={emojis}
-                            initialContent={editorHtml}
-                            onChange={({html, text, entities}) => {
-                                setEditorHtml(html)
-                                setEditorText(text)
-                                setEditorEntities(entities)
-                            }}
-                        />
-
-                        {pickerOpen && (
-                            // вот тут — задать нормальные размеры, фон, скролл и тень
-      <div className="absolute top-full left-0 mt-1 w-full max-h-64 overflow-auto bg-white shadow-lg rounded z-50">
-                                <EmojiPicker
-                                    emojis={emojis}
-                                    onSelect={(emoji) => {
-                                        richEditorRef.current?.insertEmoji(emoji)
-                                        setPickerOpen(false)
-                                    }}
-                                />
-                            </div>
-                        )}
+                    <div>
+                        <label className="block mb-2 font-medium">Текст поста</label>
                     </div>
+
+
+                    <RichEditor
+                        ref={richEditorRef}
+                        emojis={emojis}
+                        initialContent={editorHtml}
+                        onChange={({html, text, entities}) => {
+                            setEditorHtml(html)
+                            setEditorText(text)
+                            setEditorEntities(entities)
+                        }}
+                    />
+
 
                     {/* Ответственный менеджер */}
                     <div>
