@@ -18,8 +18,8 @@ import {
 import {useAuth} from "../contexts/auth";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import {RichEditor} from "../components/RichEditor";
 import type {RichEditorHandle} from "../components/RichEditor";
+import {RichEditor} from "../components/RichEditor";
 import type {UserRole} from "../types/UserRole";
 import {EmojiPicker} from "../components/EmojiPicker";
 
@@ -403,263 +403,265 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
 
                     {/* Текст */}
                     <div>
-                        <div className="flex items-center mb-2">
-                            <label className="block mb-2 font-medium">Текст поста</label>
-                            <button
-                                type="button"
-                                onClick={() => setPickerOpen((o) => !o)}
-                                className="ml-2 px-2 py-1 mb-2 rounded hover:bg-gray-200"
-                            >
-                                😊
-                            </button>
-                        </div>
-                        <RichEditor
-                            ref={richEditorRef}
-                            emojis={emojis}
-                            initialContent={editorHtml}
-                            onChange={({html, text, entities}) => {
-                                setEditorHtml(html)
-                                setEditorText(text)
-                                setEditorEntities(entities)
-                            }}
-                        />
-                        {pickerOpen && (
-                            <EmojiPicker
+                        <div className="relative">
+                            <div className="flex items-center mb-2">
+                                <label className="block mb-2 font-medium">Текст поста</label>
+                                <button
+                                    type="button"
+                                    onClick={() => setPickerOpen((o) => !o)}
+                                    className="ml-2 px-2 py-1 mb-2 rounded hover:bg-gray-200"
+                                >
+                                    😊
+                                </button>
+                            </div>
+                                                            </div>
+                            <RichEditor
+                                ref={richEditorRef}
                                 emojis={emojis}
-                                onSelect={(emoji) => {
-                                    richEditorRef.current?.insertEmoji(emoji)
-                                    setPickerOpen(false)
+                                initialContent={editorHtml}
+                                onChange={({html, text, entities}) => {
+                                    setEditorHtml(html)
+                                    setEditorText(text)
+                                    setEditorEntities(entities)
                                 }}
                             />
-                        )}
-                    </div>
-
-                    {/* Ответственный менеджер */}
-                    <div>
-                        <label className="block mb-2 font-medium">Ответственный менеджер</label>
-                        <select
-                            value={responsibleManagerId}
-                            onChange={(e) => setResponsibleManagerId(e.target.value)}
-                            className="w-full border border-brand rounded p-2 focus:outline-none focus:ring-2 focus:ring-brand"
-                        >
-                            <option value="" disabled>
-                                — выберите менеджера —
-                            </option>
-                            {managers.map((m) => (
-                                <option key={m.id} value={m.id}>
-                                    {m.telegram_username}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Тип рассылки */}
-                    <div>
-                        <label className="block mb-2 font-medium">Тип рассылки</label>
-                        <div className="flex space-x-4">
-                            <label className="flex items-center space-x-2">
-                                <input
-                                    type="radio"
-                                    name="scheduleType"
-                                    value="once"
-                                    checked={scheduleType === "once"}
-                                    onChange={() => setScheduleType("once")}
-                                    className="form-radio h-4 w-4 text-brand"
+                            {pickerOpen && (
+                                <EmojiPicker
+                                    emojis={emojis}
+                                    onSelect={(emoji) => {
+                                        richEditorRef.current?.insertEmoji(emoji)
+                                        setPickerOpen(false)
+                                    }}
                                 />
-                                <span>В указанный день</span>
-                            </label>
-                            <label className="flex items-center space-x-2">
-                                <input
-                                    type="radio"
-                                    name="scheduleType"
-                                    value="daily"
-                                    checked={scheduleType === "daily"}
-                                    onChange={() => setScheduleType("daily")}
-                                    className="form-radio h-4 w-4 text-brand"
-                                />
-                                <span>Каждый день</span>
-                            </label>
+                                )}
                         </div>
-                    </div>
 
-                    {/* Дата / Время */}
-                    {scheduleType === "once" ? (
+                        {/* Ответственный менеджер */}
                         <div>
-                            <label className="block mb-2 font-medium">Дата и время</label>
-                            <DatePicker
-                                selected={scheduledAt}
-                                onChange={setScheduledAt}
-                                showTimeSelect
-                                timeFormat="HH:mm"
-                                timeIntervals={15}
-                                dateFormat="dd.MM.yyyy HH:mm"
-                                placeholderText="Кликните для выбора"
-                                className="w-full border border-brand rounded p-2 focus:outline-none focus:ring-2 focus:ring-brand"
-                            />
-                        </div>
-                    ) : (
-                        <div>
-                            <label className="block mb-2 font-medium">Время</label>
-                            <DatePicker
-                                selected={timeOnly}
-                                onChange={setTimeOnly}
-                                showTimeSelect
-                                showTimeSelectOnly
-                                timeIntervals={15}
-                                dateFormat="HH:mm"
-                                placeholderText="Выберите время"
-                                className="w-full border border-brand rounded p-2 focus:outline-none focus:ring-2 focus:ring-brand"
-                            />
-                        </div>
-                    )}
-
-                    {/* Чаты */}
-                    <div>
-                        <label className="block mb-2 font-medium">Чаты для отправки</label>
-                        <input
-                            type="text"
-                            placeholder="Поиск чатов..."
-                            value={chatSearch}
-                            onChange={(e) => setChatSearch(e.target.value)}
-                            className="w-full mb-2 border border-brand rounded p-2 focus:outline-none focus:ring-2 focus:ring-brand"
-                        />
-                        <div className="max-h-60 overflow-y-auto space-y-2 border border-brand rounded p-2">
-                            {filteredChats.map(({id, name}) => (
-                                <label key={id} className="flex items-center space-x-2">
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedChats.includes(id)}
-                                        onChange={() => handleChatToggle(id)}
-                                        className="form-checkbox h-5 w-5 text-brand focus:ring-brand"
-                                    />
-                                    <span>{name}</span>
-                                </label>
-                            ))}
-                            {filteredChats.length === 0 && (
-                                <div className="text-gray-500 italic">Чаты не найдены</div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Сохранить */}
-                    <button
-                        onClick={handleSave}
-                        className="w-full py-3 bg-brand text-white rounded-lg shadow hover:bg-brand2 transition"
-                    >
-                        Сохранить
-                    </button>
-                </div>
-            )}
-
-
-            {/* ───────── Schedule tab ───────── */}
-            {activeTab === "schedule" && (
-
-                <div className="space-y-4 text-brand">
-                    <div className="flex flex-wrap gap-4 mb-6">
-                        {/* manager */}
-                        {role !== "manager" && (
+                            <label className="block mb-2 font-medium">Ответственный менеджер</label>
                             <select
-                                value={managerFilter}
-                                onChange={(e) => setManagerFilter(e.target.value)}
-                                className="border border-brand rounded p-2"
+                                value={responsibleManagerId}
+                                onChange={(e) => setResponsibleManagerId(e.target.value)}
+                                className="w-full border border-brand rounded p-2 focus:outline-none focus:ring-2 focus:ring-brand"
                             >
-                                <option value="">— все менеджеры —</option>
+                                <option value="" disabled>
+                                    — выберите менеджера —
+                                </option>
                                 {managers.map((m) => (
                                     <option key={m.id} value={m.id}>
                                         {m.telegram_username}
                                     </option>
                                 ))}
                             </select>
-                        )}
-                        {/* chat-type */}
-                        <select
-                            value={chatTypeFilter}
-                            onChange={(e) => setChatTypeFilter(e.target.value)}
-                            className="border border-brand rounded p-2"
-                        >
-                            <option value="">— все группы чатов —</option>
-                            {chatTypes.map((ct) => (
-                                <option key={ct.id} value={ct.id}>
-                                    {ct.name}
-                                </option>
-                            ))}
-                        </select>
+                        </div>
 
-                        {/* chat */}
-                        <select
-                            value={chatFilter}
-                            onChange={(e) => setChatFilter(e.target.value)}
-                            className="border border-brand rounded p-2"
-                        >
-                            <option value="">— все чаты —</option>
-                            {chats.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.name}
-                                </option>
-                            ))}
-                        </select>
+                        {/* Тип рассылки */}
+                        <div>
+                            <label className="block mb-2 font-medium">Тип рассылки</label>
+                            <div className="flex space-x-4">
+                                <label className="flex items-center space-x-2">
+                                    <input
+                                        type="radio"
+                                        name="scheduleType"
+                                        value="once"
+                                        checked={scheduleType === "once"}
+                                        onChange={() => setScheduleType("once")}
+                                        className="form-radio h-4 w-4 text-brand"
+                                    />
+                                    <span>В указанный день</span>
+                                </label>
+                                <label className="flex items-center space-x-2">
+                                    <input
+                                        type="radio"
+                                        name="scheduleType"
+                                        value="daily"
+                                        checked={scheduleType === "daily"}
+                                        onChange={() => setScheduleType("daily")}
+                                        className="form-radio h-4 w-4 text-brand"
+                                    />
+                                    <span>Каждый день</span>
+                                </label>
+                            </div>
+                        </div>
 
-                        {(managerFilter || chatTypeFilter || chatFilter) && (
-                            <button
-                                onClick={() => {
-                                    setManagerFilter("");
-                                    setChatTypeFilter("");
-                                    setChatFilter("");
-                                }}
-                                className="px-4 py-2 bg-brand text-white rounded"
-                            >
-                                Сбросить
-                            </button>
+                        {/* Дата / Время */}
+                        {scheduleType === "once" ? (
+                            <div>
+                                <label className="block mb-2 font-medium">Дата и время</label>
+                                <DatePicker
+                                    selected={scheduledAt}
+                                    onChange={setScheduledAt}
+                                    showTimeSelect
+                                    timeFormat="HH:mm"
+                                    timeIntervals={15}
+                                    dateFormat="dd.MM.yyyy HH:mm"
+                                    placeholderText="Кликните для выбора"
+                                    className="w-full border border-brand rounded p-2 focus:outline-none focus:ring-2 focus:ring-brand"
+                                />
+                            </div>
+                        ) : (
+                            <div>
+                                <label className="block mb-2 font-medium">Время</label>
+                                <DatePicker
+                                    selected={timeOnly}
+                                    onChange={setTimeOnly}
+                                    showTimeSelect
+                                    showTimeSelectOnly
+                                    timeIntervals={15}
+                                    dateFormat="HH:mm"
+                                    placeholderText="Выберите время"
+                                    className="w-full border border-brand rounded p-2 focus:outline-none focus:ring-2 focus:ring-brand"
+                                />
+                            </div>
                         )}
+
+                        {/* Чаты */}
+                        <div>
+                            <label className="block mb-2 font-medium">Чаты для отправки</label>
+                            <input
+                                type="text"
+                                placeholder="Поиск чатов..."
+                                value={chatSearch}
+                                onChange={(e) => setChatSearch(e.target.value)}
+                                className="w-full mb-2 border border-brand rounded p-2 focus:outline-none focus:ring-2 focus:ring-brand"
+                            />
+                            <div className="max-h-60 overflow-y-auto space-y-2 border border-brand rounded p-2">
+                                {filteredChats.map(({id, name}) => (
+                                    <label key={id} className="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedChats.includes(id)}
+                                            onChange={() => handleChatToggle(id)}
+                                            className="form-checkbox h-5 w-5 text-brand focus:ring-brand"
+                                        />
+                                        <span>{name}</span>
+                                    </label>
+                                ))}
+                                {filteredChats.length === 0 && (
+                                    <div className="text-gray-500 italic">Чаты не найдены</div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Сохранить */}
+                        <button
+                            onClick={handleSave}
+                            className="w-full py-3 bg-brand text-white rounded-lg shadow hover:bg-brand2 transition"
+                        >
+                            Сохранить
+                        </button>
                     </div>
-                    {Object.keys(schedule)
-                        .sort()
-                        .map((iso) => {
-                            const label = new Date(iso).toLocaleDateString("ru-RU", {
-                                day: "2-digit",
-                                month: "long",
-                                year: "numeric"
-                            });
-                            return (
-                                <div key={iso} className="bg-brand-pink p-4 rounded-lg shadow">
-                                    <div
-                                        className="flex justify-between items-center cursor-pointer"
-                                        onClick={() => toggleDay(iso)}
-                                    >
-                                        <h2 className="text-xl font-semibold">{label}</h2>
-                                        {openDays[iso] ? <FiChevronUp/> : <FiChevronDown/>}
-                                    </div>
+                    )}
 
-                                    {openDays[iso] && (
-                                        <ul className="mt-4 space-y-2">
-                                            {schedule[iso].map((ev) => (
-                                                <li
-                                                    key={ev.id}
-                                                    className="flex items-center justify-between p-2 hover:bg-gray-100 rounded cursor-pointer"
-                                                    onClick={() => navigate(`/post-details/${ev.id}`)}
-                                                >
+
+                    {/* ───────── Schedule tab ───────── */}
+                    {activeTab === "schedule" && (
+
+                        <div className="space-y-4 text-brand">
+                            <div className="flex flex-wrap gap-4 mb-6">
+                                {/* manager */}
+                                {role !== "manager" && (
+                                    <select
+                                        value={managerFilter}
+                                        onChange={(e) => setManagerFilter(e.target.value)}
+                                        className="border border-brand rounded p-2"
+                                    >
+                                        <option value="">— все менеджеры —</option>
+                                        {managers.map((m) => (
+                                            <option key={m.id} value={m.id}>
+                                                {m.telegram_username}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
+                                {/* chat-type */}
+                                <select
+                                    value={chatTypeFilter}
+                                    onChange={(e) => setChatTypeFilter(e.target.value)}
+                                    className="border border-brand rounded p-2"
+                                >
+                                    <option value="">— все группы чатов —</option>
+                                    {chatTypes.map((ct) => (
+                                        <option key={ct.id} value={ct.id}>
+                                            {ct.name}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                {/* chat */}
+                                <select
+                                    value={chatFilter}
+                                    onChange={(e) => setChatFilter(e.target.value)}
+                                    className="border border-brand rounded p-2"
+                                >
+                                    <option value="">— все чаты —</option>
+                                    {chats.map((c) => (
+                                        <option key={c.id} value={c.id}>
+                                            {c.name}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                {(managerFilter || chatTypeFilter || chatFilter) && (
+                                    <button
+                                        onClick={() => {
+                                            setManagerFilter("");
+                                            setChatTypeFilter("");
+                                            setChatFilter("");
+                                        }}
+                                        className="px-4 py-2 bg-brand text-white rounded"
+                                    >
+                                        Сбросить
+                                    </button>
+                                )}
+                            </div>
+                            {Object.keys(schedule)
+                                .sort()
+                                .map((iso) => {
+                                    const label = new Date(iso).toLocaleDateString("ru-RU", {
+                                        day: "2-digit",
+                                        month: "long",
+                                        year: "numeric"
+                                    });
+                                    return (
+                                        <div key={iso} className="bg-brand-pink p-4 rounded-lg shadow">
+                                            <div
+                                                className="flex justify-between items-center cursor-pointer"
+                                                onClick={() => toggleDay(iso)}
+                                            >
+                                                <h2 className="text-xl font-semibold">{label}</h2>
+                                                {openDays[iso] ? <FiChevronUp/> : <FiChevronDown/>}
+                                            </div>
+
+                                            {openDays[iso] && (
+                                                <ul className="mt-4 space-y-2">
+                                                    {schedule[iso].map((ev) => (
+                                                        <li
+                                                            key={ev.id}
+                                                            className="flex items-center justify-between p-2 hover:bg-gray-100 rounded cursor-pointer"
+                                                            onClick={() => navigate(`/post-details/${ev.id}`)}
+                                                        >
                           <span>
                             <span className="font-medium">{ev.time}</span> — {ev.title}
                           </span>
-                                                    <img
-                                                        src="/icons/trash.png"
-                                                        alt="Удалить"
-                                                        className="h-5 w-5 opacity-60 hover:opacity-100"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDelete(iso, ev);
-                                                        }}
-                                                    />
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </div>
-                            );
-                        })}
+                                                            <img
+                                                                src="/icons/trash.png"
+                                                                alt="Удалить"
+                                                                className="h-5 w-5 opacity-60 hover:opacity-100"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleDelete(iso, ev);
+                                                                }}
+                                                            />
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                        </div>
+                    )}
                 </div>
-            )}
-        </div>
-    );
-}
+            );
+            }

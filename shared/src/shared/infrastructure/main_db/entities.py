@@ -147,13 +147,13 @@ class PostToPublish(AbstractBase):
 class SendPostRequest(AbstractBase):
     __tablename__ = "send_post_requests"
 
-    post_id: Mapped[pyUUID] = mapped_column(ForeignKey("posts.id"))
+    post_id: Mapped[pyUUID] = mapped_column(ForeignKey("posts.id"), )
     chat_id: Mapped[pyUUID] = mapped_column(ForeignKey("chats.id"))
     user_id: Mapped[pyUUID] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"),
                                             nullable=True)
     scheduled_at: Mapped[Optional[datetime]]
 
-    publication_id: Mapped[pyUUID] = mapped_column(ForeignKey("posts_to_publish.id"))
+    publication_id: Mapped[pyUUID] = mapped_column(ForeignKey("posts_to_publish.id", ondelete="CASCADE"))
 
     status: Mapped[SendPostRequestStatus] = mapped_column(Enum(SendPostRequestStatus))
     sent_at: Mapped[Optional[datetime]]
