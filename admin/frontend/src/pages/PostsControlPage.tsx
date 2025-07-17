@@ -20,6 +20,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import type {RichEditorHandle} from "../components/RichEditor";
 import {RichEditor} from "../components/RichEditor";
 import type {UserRole} from "../types/UserRole";
+import {EmojiPicker} from "../components/EmojiPicker";
 
 /* ───────── Типы ───────── */
 type EventItem = {
@@ -129,6 +130,7 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
     const location = useLocation();
     type LocationState = { template?: Post; openCreate?: true };
     const {template, openCreate} = (location.state as LocationState) || {};
+    const [pickerOpen, setPickerOpen] = useState(false)
 
     useEffect(() => {
         if (openCreate) setActiveTab("create");
@@ -399,22 +401,40 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                     </div>
 
                     {/* Текст */}
+                                       {/* Текст */}
                     <div>
-                        <label className="block mb-2 font-medium">Текст поста</label>
+                        <div className="relative">
+                        <div className="flex items-center mb-2">
+                            <label className="block mb-2 font-medium">Текст поста</label>
+                            <button
+                                type="button"
+                                onClick={() => setPickerOpen((o) => !o)}
+                                className="ml-2 px-2 py-1 mb-2 rounded hover:bg-gray-200"
+                            >
+                                😊
+                            </button>
+                        </div>
+                        </div>
+                        <RichEditor
+                            ref={richEditorRef}
+                            emojis={emojis}
+                            initialContent={editorHtml}
+                            onChange={({html, text, entities}) => {
+                                setEditorHtml(html)
+                                setEditorText(text)
+                                setEditorEntities(entities)
+                            }}
+                        />
+                        {pickerOpen && (
+                            <EmojiPicker
+                                emojis={emojis}
+                                onSelect={(emoji) => {
+                                    richEditorRef.current?.insertEmoji(emoji)
+                                    setPickerOpen(false)
+                                }}
+                            />
+                        )}
                     </div>
-
-
-                    <RichEditor
-                        ref={richEditorRef}
-                        emojis={emojis}
-                        initialContent={editorHtml}
-                        onChange={({html, text, entities}) => {
-                            setEditorHtml(html)
-                            setEditorText(text)
-                            setEditorEntities(entities)
-                        }}
-                    />
-
 
                     {/* Ответственный менеджер */}
                     <div>

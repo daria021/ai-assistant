@@ -148,40 +148,29 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
     // 5) Выносим insertEmoji наружу через ref
     useImperativeHandle(ref, () => ({ insertEmoji }), [insertEmoji]);
 
-    return (
-      <div className="relative">
-        {/* Кнопка открытия попапа */}
-        <button
-          type="button"
-          onClick={() => setPickerOpen((o) => !o)}
-          className="absolute top-2 right-2 z-30 px-2 py-1 rounded hover:bg-gray-200"
-        >
-          😊
-        </button>
+            return (
+            <div className="relative">
 
-        {/* Редактируемая область */}
-        <div
-          ref={editorRef}
-          contentEditable
-          suppressContentEditableWarning
-          className="border p-2 rounded min-h-[150px] focus:outline-none"
-        />
+                <div
+                    ref={editorRef}
+                    contentEditable
+                    suppressContentEditableWarning
+                    className="border p-2 rounded min-h-[150px] focus:outline-none"
+                />
 
-        {/* Сам попап — приклеен к этому же контейнеру */}
-        {pickerOpen && (
-          <div className="absolute top-full left-0 mt-1 w-80 max-h-64 overflow-auto bg-white shadow-lg rounded z-50">
-            <EmojiPicker
-              emojis={emojis}
-              onSelect={(emoji) => {
-                insertEmoji(emoji);
-                setPickerOpen(false);
-              }}
-            />
-          </div>
-        )}
-      </div>
-    );
-  }
-);
-
+                {pickerOpen && (
+                    <div className="absolute top-full left-0 mt-1 z-20">
+                        <EmojiPicker
+                            emojis={emojis}
+                            onSelect={emoji => {
+                                insertEmoji(emoji)
+                                setPickerOpen(false)
+                            }}
+                        />
+                    </div>
+                )}
+            </div>
+        )
+    }
+)
 RichEditor.displayName = 'RichEditor';
