@@ -414,18 +414,20 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                                     😊
                                 </button>
                             </div>
-                                                            </div>
-                            <RichEditor
-                                ref={richEditorRef}
-                                emojis={emojis}
-                                initialContent={editorHtml}
-                                onChange={({html, text, entities}) => {
-                                    setEditorHtml(html)
-                                    setEditorText(text)
-                                    setEditorEntities(entities)
-                                }}
-                            />
-                            {pickerOpen && (
+                        </div>
+                        <RichEditor
+                            ref={richEditorRef}
+                            emojis={emojis}
+                            initialContent={editorHtml}
+                            onChange={({html, text, entities}) => {
+                                setEditorHtml(html)
+                                setEditorText(text)
+                                setEditorEntities(entities)
+                            }}
+                        />
+                        {pickerOpen && (
+                            <div className="absolute top-full left-0 mt-1 z-50 overflow-visible">
+
                                 <EmojiPicker
                                     emojis={emojis}
                                     onSelect={(emoji) => {
@@ -433,7 +435,9 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                                         setPickerOpen(false)
                                     }}
                                 />
-                                )}
+                            </div>
+
+                        )}
                         </div>
 
                         {/* Ответственный менеджер */}
