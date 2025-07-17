@@ -49,19 +49,28 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             )
 
             while (walker.nextNode()) {
-                const node = walker.currentNode
+                const node = walker.currentNode;
+                console.log(node);
                 if (node.nodeType === Node.TEXT_NODE) {
-                    idx += (node.textContent ?? '').length
+                    console.log("text node");
+                    console.log("idx: ", idx);
+                    console.log(node.textContent);
+                    idx += (node.textContent ?? '').length;
+                    console.log("new idx: ", idx);
                 } else {
-                    const img = node as HTMLImageElement
-                    const id = img.dataset.customEmojiId!
-                    entities.push({
+                    const img = node as HTMLImageElement;
+                    const id = img.dataset.customEmojiId!;
+                    console.log(`image node with id ${id} at ${idx}`);
+                    const entity = {
                         type: 'custom_emoji',
                         offset: idx,
                         length: 2,
                         custom_emoji_id: id,
-                    })
-                    idx += 2
+                    };
+                    console.log(entity);
+                    entities.push(entity as MessageEntityDTO);
+                    idx += 2;
+                    console.log("new idx: ", idx);
                 }
             }
 
@@ -137,6 +146,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             el.dispatchEvent(new Event('input'))
         }
 
+
         // «выливаем» insertEmoji наружу
         useImperativeHandle(ref, () => ({insertEmoji}), [insertEmoji])
 
@@ -151,13 +161,15 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 />
 
                 {pickerOpen && (
-                    <EmojiPicker
-                        emojis={emojis}
-                        onSelect={emoji => {
-                            insertEmoji(emoji)
-                            setPickerOpen(false)
-                        }}
-                    />
+                    <div className="absolute top-full left-0 mt-1 z-20">
+                        <EmojiPicker
+                            emojis={emojis}
+                            onSelect={emoji => {
+                                insertEmoji(emoji)
+                                setPickerOpen(false)
+                            }}
+                        />
+                    </div>
                 )}
             </div>
         )
