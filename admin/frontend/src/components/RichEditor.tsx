@@ -38,7 +38,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
                 {
                     acceptNode(node) {
-                        if (node.nodeType === NodeFilter.SHOW_TEXT) return NodeFilter.FILTER_ACCEPT;
+                        if (node.nodeType == 3) return NodeFilter.FILTER_ACCEPT;
                         if (
                             node.nodeType === NodeFilter.SHOW_ELEMENT &&
                             (node as Element).matches('img[data-custom-emoji-id]')

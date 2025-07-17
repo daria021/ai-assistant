@@ -401,7 +401,6 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                     </div>
 
                     {/* Текст */}
-                                       {/* Текст */}
                     <div>
                         <div className="relative">
                         <div className="flex items-center mb-2">
@@ -426,6 +425,21 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                             }}
                         />
                         {pickerOpen && (
+                            <div
+      className={`
+        absolute
+        /* изначально «пристыкован» к нижнему левому углу редактора: */
+        top-full left-0
+        /* отступ вниз, если нужен gap */
+        mt-1
+        /* сдвинуть вправо на 1rem: */
+        ml-4
+        /* и «вытащить» чуть вверх на 0.5rem: */
+        -translate-y-2
+        /* остальные ваши классы оформления: */
+        w-80 max-h-64 overflow-auto bg-white shadow-lg rounded z-50
+      `}
+    >
                             <EmojiPicker
                                 emojis={emojis}
                                 onSelect={(emoji) => {
@@ -433,6 +447,8 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                                     setPickerOpen(false)
                                 }}
                             />
+                                </div>
+
                         )}
                     </div>
 
