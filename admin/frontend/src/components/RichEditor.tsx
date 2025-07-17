@@ -30,27 +30,28 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
         }, [])
 
         const extractEntities = (el: HTMLDivElement) => {
-            const entities: MessageEntityDTO[] = []
-            let idx = 0
+            const entities: MessageEntityDTO[] = [];
+            let idx = 0;
 
             const walker = document.createTreeWalker(
                 el,
                 NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
                 {
                     acceptNode(node) {
-                        if (node.nodeType === NodeFilter.SHOW_TEXT) return NodeFilter.FILTER_ACCEPT
+                        console.log("inner node: ", node, "type", node.nodeType);
+                        if (node.nodeType === NodeFilter.SHOW_TEXT) return NodeFilter.FILTER_ACCEPT;
                         if (
                             node.nodeType === NodeFilter.SHOW_ELEMENT &&
                             (node as Element).matches('img[data-custom-emoji-id]')
-                        ) return NodeFilter.FILTER_ACCEPT
-                        return NodeFilter.FILTER_SKIP
+                        ) return NodeFilter.FILTER_ACCEPT;
+                        return NodeFilter.FILTER_SKIP;
                     },
                 },
             )
 
             while (walker.nextNode()) {
                 const node = walker.currentNode;
-                console.log(node);
+                console.log("NODE: ", node);
                 if (node.nodeType === Node.TEXT_NODE) {
                     console.log("text node");
                     console.log("idx: ", idx);
