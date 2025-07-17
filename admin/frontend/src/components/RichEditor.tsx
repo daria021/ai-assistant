@@ -1,6 +1,6 @@
-import {forwardRef, useEffect, useImperativeHandle, useRef, useState} from 'react'
+import {forwardRef, useEffect, useImperativeHandle, useRef} from 'react'
 import type {Emoji, MessageEntityDTO} from '../services/api'
-import {EmojiPicker} from './EmojiPicker'
+// import {EmojiPicker} from './EmojiPicker'
 
 // описываем, что мы отдадим наружу
 export type RichEditorHandle = {
@@ -18,9 +18,12 @@ export interface RichEditorProps {
 }
 
 export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
-    ({emojis, initialContent = '', onChange}, ref) => {
+    ({
+         // emojis,
+         initialContent = '',
+         onChange}, ref) => {
         const editorRef = useRef<HTMLDivElement>(null)
-        const [pickerOpen, setPickerOpen] = useState(false)
+        // const [pickerOpen, setPickerOpen] = useState(false)
 
         // замещаем initialContent ОДИН раз
         useEffect(() => {
@@ -160,17 +163,17 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                     className="border p-2 rounded min-h-[150px] focus:outline-none"
                 />
 
-                {pickerOpen && (
-                    <div className="absolute top-full left-0 mt-1 z-20">
-                        <EmojiPicker
-                            emojis={emojis}
-                            onSelect={emoji => {
-                                insertEmoji(emoji)
-                                setPickerOpen(false)
-                            }}
-                        />
-                    </div>
-                )}
+                {/*{pickerOpen && (*/}
+                {/*    <div className="absolute top-full left-0 mt-1 z-20">*/}
+                {/*        <EmojiPicker*/}
+                {/*            emojis={emojis}*/}
+                {/*            onSelect={emoji => {*/}
+                {/*                insertEmoji(emoji)*/}
+                {/*                setPickerOpen(false)*/}
+                {/*            }}*/}
+                {/*        />*/}
+                {/*    </div>*/}
+                {/*)}*/}
             </div>
         )
     }
