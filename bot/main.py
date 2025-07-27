@@ -42,6 +42,7 @@ dp = Dispatcher(storage=MemoryStorage())  # <-- attach FSM storage
 class BotStates(StatesGroup):
     waiting_for_proxy = State()
     waiting_for_emoji = State()
+    waiting_for_remove_emoji = State()
     waiting_for_sticker_pack = State()
 
 
@@ -61,7 +62,9 @@ async def handler_start_deep(message: types.Message):
     await message.answer(
         "Привет! ♡\n\nЭто админ-панель*✧･ﾟ: *✧･ﾟ:*\n\n"
         "Команда /add_emoji добавляет кастом-эмоджи-стикер,\n\n "
-        "/add_sticker_pack добавляет весь набор стикеров.",
+        "/add_sticker_pack добавляет весь набор стикеров.\n\n",
+        "Чтобы удалить стикер жми /remove_emoji\n\n"
+        "/cancel чтобы отменить действие\n\n",
         reply_markup=kb,
         parse_mode="HTML",
         disable_web_page_preview=True,
@@ -83,11 +86,19 @@ async def handler_start_plain(message: types.Message):
     await message.answer(
         "Привет! ♡\n\nЭто админ-панель*✧･ﾟ: *✧･ﾟ:*\n\n"
         "Команда /add_emoji добавляет кастом-эмоджи-стикер,\n\n "
-        "/add_sticker_pack добавляет весь набор стикеров.",
+        "/add_sticker_pack добавляет весь набор стикеров.\n\n"
+        "Чтобы удалить стикер жми /remove_emoji\n\n"
+        "/cancel чтобы отменить действие\n\n",
         reply_markup=kb,
         disable_web_page_preview=True,
     )
 
+@dp.message(Command(commands=["cancel"]))
+async def cmd_cancel(message: types.Message, state: FSMContext):
+    await state.set_state(None)
+    await message.reply(
+        "Операция отменена"
+    )
 
 # ——— /add_proxy — ask for text, go into proxy‐state —————————————
 @dp.message(Command(commands=["add_proxy"]))
@@ -131,6 +142,11 @@ async def process_sticker(msg: types.Message, state: FSMContext):
     if not sticker or not sticker.type == "custom_emoji":
         return await msg.reply("Это не эмоджи-стикер, попробуйте ещё раз.")
 
+    emoji_service = get_emoji_service()
+
+    if await emoji_service.get_emoji_by_custom_emoji_id(sticker.custom_emoji_id):
+        return await msg.reply("⚠️ Такой эмоджи уже существует.")
+
     # download the file from Telegram
     entity = (await bot.get_custom_emoji_stickers([sticker.custom_emoji_id]))[0]
     file = await bot.get_file(entity.file_id)
@@ -153,7 +169,7 @@ async def process_sticker(msg: types.Message, state: FSMContext):
         img_url=public_url,
         custom_emoji_id=sticker.custom_emoji_id,
     )
-    await get_emoji_service().create_emoji(dto)
+    await emoji_service.create_emoji(dto)
 
     await msg.reply(f"✅ Эмоджи «{name}» зарегистрировано.")
     await state.clear()
@@ -184,16 +200,25 @@ async def process_sticker_pack(msg: types.Message, state: FSMContext):
     sticker_set = await bot.get_sticker_set(pack_name)
 
     upload_service = get_upload_service()
-    repo = get_emoji_service()
-    added = 0
+    added, doubles, failed = 0, 0, 0
+
+    all_ids = [st.custom_emoji_id for st in sticker_set.stickers]
+
+    emoji_service = get_emoji_service()
+    existing_ids = await emoji_service.get_existing_custom_ids(all_ids)
 
     for st in sticker_set.stickers:
+        if st.custom_emoji_id in existing_ids:
+            doubles += 1
+            continue
+
         # download
         file = await bot.get_file(st.file_id)
         url = f"https://api.telegram.org/file/bot{settings.bot.token.get_secret_value()}/{file.file_path}"
         async with AsyncClient() as client:
             resp = await client.get(url)
             if not resp.is_success:
+                failed += 1
                 continue
 
         # upload
@@ -228,10 +253,42 @@ async def process_sticker_pack(msg: types.Message, state: FSMContext):
             img_url=public_url,
             custom_emoji_id=st.custom_emoji_id,
         )
-        await repo.create_emoji(dto)
+        await emoji_service.create_emoji(dto)
         added += 1
 
-    await msg.reply(f"✅ Добавлено {added} стикеров из пака «{sticker_set.title}» ({pack_name}).")
+    await msg.reply(
+        f"✅ Добавлено {added} стикеров (всего {added + failed + doubles}) из пака «{sticker_set.title}» ({pack_name}).\n"
+        f"Ошибок загрузки: {failed}\n"
+        f"Дубликатов: {doubles}"
+    )
+    await state.clear()
+
+
+# remove added emoji
+@dp.message(Command(commands=["remove_emoji"]))
+async def cmd_remove_emoji(message: types.Message, state: FSMContext):
+    await message.reply("📩 Пришлите кастом-эмоджи-стикер, который нужно удалить")
+    await state.set_state(BotStates.waiting_for_remove_emoji)
+
+
+@dp.message(
+    StateFilter(BotStates.waiting_for_remove_emoji),
+)
+async def process_remove_sticker(msg: types.Message, state: FSMContext):
+    entities: list = msg.entities or [None]
+    sticker = entities[0]
+    if not sticker or not sticker.type == "custom_emoji":
+        return await msg.reply("Это не эмоджи-стикер, попробуйте ещё раз.")
+
+    custom_emoji_id = sticker.custom_emoji_id
+    emoji_service = get_emoji_service()
+    emoji = await emoji_service.get_emoji_by_custom_emoji_id(custom_emoji_id)
+    if not emoji:
+        await msg.reply(f"Такого эмоджи у меня нет :(")
+        return
+
+    await emoji_service.remove_added_emoji(emoji.id)
+    await msg.reply(f"✅ Эмоджи «{emoji.name}» удалено.")
     await state.clear()
 
 

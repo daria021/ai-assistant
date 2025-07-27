@@ -205,7 +205,7 @@ class Emoji(AbstractBase):
     __tablename__ = "emojis"
 
     name: Mapped[str]
-    custom_emoji_id: Mapped[str]
+    custom_emoji_id: Mapped[str] = mapped_column(unique=True)
     img_url: Mapped[str]
 
 
