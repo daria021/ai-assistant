@@ -1,8 +1,6 @@
-import asyncio
-import logging
-import os
-
 import imageio
+import asyncio, tempfile, os, logging
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -50,3 +48,30 @@ async def convert_webm_to_webp(input_path: str) -> str:
         input_path
     )
     return output_path
+
+
+async def convert_tgs_to_webm(tgs_bytes: bytes) -> str:
+    """
+    Принимает raw-байты .tgs, возвращает путь к временно
+    созданному .webm-файлу (анимированному).
+    Вызывать внутри `with tempfile.TemporaryDirectory()`.
+    """
+    with tempfile.TemporaryDirectory() as td:
+        in_path  = Path(td) / "in.tgs"
+        out_path = Path(td) / "out.webm"
+        in_path.write_bytes(tgs_bytes)
+
+        # lottie_convert.py in.tgs out.webm --format webm
+        proc = await asyncio.create_subprocess_exec(
+            "lottie_convert.py", str(in_path), str(out_path), "--format", "webm"
+        )
+        await proc.communicate()
+
+        if not out_path.exists():
+            raise RuntimeError("lottie_convert: out.webm not produced")
+
+        # возвращаем КОПИЮ, чтобы файл не удалился вместе с tmpdir
+        final_path = Path(td).with_suffix(".webm")
+        final_path.write_bytes(out_path.read_bytes())
+        logger.info("tgs -> webm: %s → %s", in_path, final_path)
+        return str(final_path)

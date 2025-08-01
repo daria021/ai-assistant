@@ -7,6 +7,7 @@ export interface Emoji {
     name: string;
     img_url: string;
     custom_emoji_id: string;
+    format: "static" | "video" | "lottie"
 }
 
 export interface User {

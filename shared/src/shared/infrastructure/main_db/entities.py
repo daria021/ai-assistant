@@ -1,4 +1,5 @@
 from datetime import datetime, time, date
+from enum import StrEnum
 from typing import Optional
 from uuid import UUID as pyUUID
 
@@ -6,7 +7,7 @@ from sqlalchemy import ForeignKey, UUID, Enum, func, BigInteger, Table, Column
 from sqlalchemy.dialects.postgresql import TIMESTAMP, JSONB
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from sqlalchemy import Enum as PgEnum
 from shared.domain.enums import (
     UserRole,
     SendPostRequestStatus,
@@ -201,12 +202,23 @@ class PublishStoryRequest(AbstractBase):
     story: Mapped["Story"] = relationship("Story")
 
 
+class EmojiFormat(StrEnum):
+    static = "static"     # .webp и PNG
+    video  = "video"      # .webm
+    lottie = "lottie"     # .tgs
+
+
 class Emoji(AbstractBase):
     __tablename__ = "emojis"
 
     name: Mapped[str]
     custom_emoji_id: Mapped[str] = mapped_column(unique=True)
     img_url: Mapped[str]
+    format: Mapped[EmojiFormat] = mapped_column(
+        PgEnum(EmojiFormat, name="format"),
+        server_default=EmojiFormat.video,
+        nullable=False,
+    )
 
 
 # internal workers data

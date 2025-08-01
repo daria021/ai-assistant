@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import pathlib
 from uuid import uuid4
 
 from aiogram import Bot, Dispatcher, types, F
@@ -20,10 +21,11 @@ from shared.dependencies.services.emoji import get_emoji_service
 from shared.domain.dto import CreateProxyDTO
 from shared.domain.dto.emoji import CreateEmojiDTO
 from shared.infrastructure.main_db import init_db
+from shared.infrastructure.main_db.entities import EmojiFormat
 
 from dependencies.service.upload import get_upload_service
 from settings import settings
-from utils import convert_webm_to_webp
+from utils import convert_webm_to_webp, convert_tgs_to_webm
 
 # ——— Logging & Bot setup —————————————————————————————————————
 logging.basicConfig(
@@ -93,12 +95,14 @@ async def handler_start_plain(message: types.Message):
         disable_web_page_preview=True,
     )
 
+
 @dp.message(Command(commands=["cancel"]))
 async def cmd_cancel(message: types.Message, state: FSMContext):
     await state.set_state(None)
     await message.reply(
         "Операция отменена"
     )
+
 
 # ——— /add_proxy — ask for text, go into proxy‐state —————————————
 @dp.message(Command(commands=["add_proxy"]))
@@ -132,35 +136,61 @@ async def cmd_add_emoji(message: types.Message, state: FSMContext):
     await state.set_state(BotStates.waiting_for_emoji)
 
 
-# ——— emoji‐state handler: only stickers, only in waiting_for_emoji ——
-@dp.message(
-    StateFilter(BotStates.waiting_for_emoji),
-)
+# ───────────── /add_emoji  ─────────────────────────────────────────
+@dp.message(StateFilter(BotStates.waiting_for_emoji))
 async def process_sticker(msg: types.Message, state: FSMContext):
     entities: list = msg.entities or [None]
     sticker = entities[0]
-    if not sticker or not sticker.type == "custom_emoji":
+    if not sticker or sticker.type != "custom_emoji":
         return await msg.reply("Это не эмоджи-стикер, попробуйте ещё раз.")
 
     emoji_service = get_emoji_service()
-
     if await emoji_service.get_emoji_by_custom_emoji_id(sticker.custom_emoji_id):
         return await msg.reply("⚠️ Такой эмоджи уже существует.")
 
-    # download the file from Telegram
+    # ---------- качаем оригинал ----------
     entity = (await bot.get_custom_emoji_stickers([sticker.custom_emoji_id]))[0]
-    file = await bot.get_file(entity.file_id)
-    url = f"https://api.telegram.org/file/bot{settings.bot.token.get_secret_value()}/{file.file_path}"
-    upload_service = get_upload_service()
+    tg_file = await bot.get_file(entity.file_id)
+    url = f"https://api.telegram.org/file/bot{settings.bot.token.get_secret_value()}/{tg_file.file_path}"
 
     async with AsyncClient() as client:
-        resp = await client.get(url)
-        if not resp.is_success:
-            logger.error("Unable to fetch sticker from Telegram: %s", resp.status_code)
-            return await msg.reply("Не удалось загрузить медиа, попробуйте ещё раз.")
+        r = await client.get(url)
+        if not r.is_success:
+            logger.error("TG download failed: %s", r.status_code)
+            return await msg.reply("Не удалось загрузить медиа 😢 Попробуйте ещё раз.")
 
-    ext = file.file_path.rsplit(".", 1)[-1]
-    filename = await upload_service.upload(resp.content, extension=ext)
+    ext = tg_file.file_path.rsplit(".", 1)[-1].lower()
+    content = r.content
+
+    # ---------- TGS → WEBM → WEBP ----------
+    if ext == "tgs":
+        temp_webm = await convert_tgs_to_webm(content)  # .tgs → .webm
+        new_webp = await convert_webm_to_webp(temp_webm)  # .webm → .webp
+        content = pathlib.Path(new_webp).read_bytes()
+        os.remove(temp_webm)
+        os.remove(new_webp)
+        ext = "webp"
+        emoji_format = EmojiFormat.static
+
+    # ---------- WEBM → WEBP ----------
+    elif ext == "webm":
+        temp = f"/tmp/{uuid4()}.webm"
+        with open(temp, "wb") as f:
+            f.write(content)
+        new_webp = await convert_webm_to_webp(temp)
+        content = pathlib.Path(new_webp).read_bytes()
+        os.remove(temp);
+        os.remove(new_webp)
+        ext = "webp"
+        emoji_format = EmojiFormat.video
+
+    # ---------- уже статичное изображение ----------
+    else:
+        emoji_format = EmojiFormat.static
+
+    # ---------- upload & save ----------
+    upload_service = get_upload_service()
+    filename = await upload_service.upload(content, extension=ext)
     public_url = upload_service.get_file_url(filename)
 
     name = f"{entity.emoji}_{entity.set_name}_{sticker.custom_emoji_id}"
@@ -168,9 +198,9 @@ async def process_sticker(msg: types.Message, state: FSMContext):
         name=name,
         img_url=public_url,
         custom_emoji_id=sticker.custom_emoji_id,
+        format=emoji_format,
     )
     await emoji_service.create_emoji(dto)
-
     await msg.reply(f"✅ Эмоджи «{name}» зарегистрировано.")
     await state.clear()
 
@@ -183,27 +213,23 @@ async def cmd_add_sticker_pack(message: types.Message, state: FSMContext):
     await state.set_state(BotStates.waiting_for_sticker_pack)
 
 
-# ——— sticker_pack‐state handler: only stickers, only in waiting_for_sticker_pack ——
+# ───────────── /add_sticker_pack  ─────────────────────────────────
 @dp.message(StateFilter(BotStates.waiting_for_sticker_pack))
 async def process_sticker_pack(msg: types.Message, state: FSMContext):
     entities: list = msg.entities or [None]
     sticker = entities[0]
-    # как в одиночном add_emoji
     if not sticker or sticker.type != "custom_emoji":
         await msg.reply("Это не эмоджи-стикер, попробуйте ещё раз.")
         return await state.clear()
 
-    # берём мета-данные первого стикера
     entity = (await bot.get_custom_emoji_stickers([sticker.custom_emoji_id]))[0]
-    pack_name = entity.set_name  # имя пака из того же entity
-    # получаем весь сет
+    pack_name = entity.set_name
     sticker_set = await bot.get_sticker_set(pack_name)
 
     upload_service = get_upload_service()
     added, doubles, failed = 0, 0, 0
 
     all_ids = [st.custom_emoji_id for st in sticker_set.stickers]
-
     emoji_service = get_emoji_service()
     existing_ids = await emoji_service.get_existing_custom_ids(all_ids)
 
@@ -212,52 +238,53 @@ async def process_sticker_pack(msg: types.Message, state: FSMContext):
             doubles += 1
             continue
 
-        # download
-        file = await bot.get_file(st.file_id)
-        url = f"https://api.telegram.org/file/bot{settings.bot.token.get_secret_value()}/{file.file_path}"
+        tg_file = await bot.get_file(st.file_id)
+        url = f"https://api.telegram.org/file/bot{settings.bot.token.get_secret_value()}/{tg_file.file_path}"
         async with AsyncClient() as client:
-            resp = await client.get(url)
-            if not resp.is_success:
+            r = await client.get(url)
+            if not r.is_success:
                 failed += 1
                 continue
 
-        # upload
-        ext = file.file_path.rsplit(".", 1)[-1]
-        content = resp.content
-        if ext == "webm":
-            temp_filename = f"{uuid4()}.{ext}"
-            logger.info(f"temp: {temp_filename}")
-            with open(temp_filename, "wb") as f:
-                f.write(resp.content)  # noqa
+        ext = tg_file.file_path.rsplit(".", 1)[-1].lower()
+        content = r.content
 
-            new_filename = await convert_webm_to_webp(temp_filename)
+        # ----- tgs → webm → webp -----
+        if ext == "tgs":
+            temp_webm = await convert_tgs_to_webm(content)
+            new_webp = await convert_webm_to_webp(temp_webm)
+            content = pathlib.Path(new_webp).read_bytes()
+            ext = "webp"
+            os.remove(temp_webm)
+            os.remove(new_webp)
+        # ----- webm → webp -----
+        elif ext == "webm":
+            logger.info(f"ext: {ext}")
+            temp = f"/tmp/{uuid4()}.webm"
+            with open(temp, "wb") as f:
+                f.write(content)
 
-            logger.info(f"new: {new_filename}")
-
-            with open(new_filename, "rb") as f:
-                content = f.read()
-
-            ext = os.path.splitext(new_filename)[1]
-
-            os.remove(temp_filename)
-            os.remove(new_filename)
+            new_webp = await convert_webm_to_webp(temp)
+            content = pathlib.Path(new_webp).read_bytes()
+            ext = "webp"
+            os.remove(temp)
+            os.remove(new_webp)
 
         filename = await upload_service.upload(content, extension=ext)
-        logger.info(f"filename: {filename}")
         public_url = upload_service.get_file_url(filename)
 
         name = f"{st.emoji}_{entity.set_name}_{st.custom_emoji_id}"
-        logger.info(f"СТИКЕР {name}, {public_url}, {st.custom_emoji_id}")
         dto = CreateEmojiDTO(
             name=name,
             img_url=public_url,
             custom_emoji_id=st.custom_emoji_id,
+            format=EmojiFormat.video if ext == "webm" else EmojiFormat.static,
         )
         await emoji_service.create_emoji(dto)
         added += 1
 
     await msg.reply(
-        f"✅ Добавлено {added} стикеров (всего {added + failed + doubles}) из пака «{sticker_set.title}» ({pack_name}).\n"
+        f"✅ Добавлено {added} стикеров (всего {added + failed + doubles}) из пака «{sticker_set.title}».\n"
         f"Ошибок загрузки: {failed}\n"
         f"Дубликатов: {doubles}"
     )

@@ -32,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: auth } = await apiClient.post('/auth/telegram', { initData: data });
         localStorage.setItem('authToken', auth.access_token);
         localStorage.setItem('refreshToken', auth.refresh_token);
+        apiClient.defaults.headers.common.Authorization = `Bearer ${auth.access_token}`;
 
         const me = await getMe();
         setUserId(me.id);

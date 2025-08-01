@@ -5,6 +5,7 @@ interface EmojiAttrs {
     label: string
     src: string
     custom_emoji_id: string
+    format?: 'static' | 'video'
 }
 
 interface Props {
@@ -59,7 +60,7 @@ export const EmojiSuggestionList: React.FC<Props> = ({ items, command }) => {
             command(it)
           }}
         >
-          {it.src.endsWith('.webm') ? (
+          {(it.format === 'video' || it.src.toLowerCase().endsWith('.webm')) ? (
             <video
               // <-- bust cache
               src={`${it.src}?t=${Date.now()}`}
