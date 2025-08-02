@@ -3,7 +3,7 @@ import {useNavigate, useParams} from "react-router-dom";
 import {useEffect, useMemo, useState} from "react";
 import FileUploader from "../components/FileUploader";
 import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+// import "react-datepicker/dist/react-datepicker.css";
 import {RichEditor} from "../components/RichEditor";
 import type {Emoji, MessageEntityDTO} from "../services/api";
 import {

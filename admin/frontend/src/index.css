@@ -1,22 +1,110 @@
-@import "tailwindcss";
+/* 1) Сначала «родные» стили DatePicker */
 @import 'react-datepicker/dist/react-datepicker.css';
+
+/* 2) Затем – Tailwind v4 (preflight + utilities) */
+@import "tailwindcss";
+
+/* 3) Ваши CSS-переменные (brand-цвета) */
 @theme {
-    --color-brand:       #4B3935;
-    --color-brand-pink: #ffecdd;
-    --color-brandlight:  #CBDFEA;
-    --color-brand2:      #53161D;
-    --color-brandlight2: #FFFBF0;
-    --color-white:       #f9fcff;
-    --color-white2:      #e3e4da;
+  --color-brand:        #4B3935;
+  --color-brand-pink:   #ffecdd;
+  --color-brandlight:   #CBDFEA;
+  --color-brand2:       #53161D;
+  --color-brandlight2:  #FFFBF0;
+  --color-white:        #f9fcff;
+  --color-white2:       #e3e4da;
 }
 
-.emoji-suggest-popup {
-  @apply bg-white border rounded-lg shadow-lg grid gap-1 p-1 max-h-52 overflow-y-auto;
-    grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
-    min-width: 160px;   /* 5 эмодзи минимум */
-    width: 100%;
-    max-width: 288px;   /* 8 эмодзи максимум */                          /* фиксируем ширину */
-}
-.emoji-suggest-popup > div {
-  @apply w-8 h-8 flex items-center justify-center cursor-pointer;
+@layer components {
+  /* 1) Контур попапа и граница между календарём и временем */
+  .datepicker-popper {
+    border: 1px solid var(--color-brand2) !important;
+  }
+  .datepicker-popper .react-datepicker__time-container {
+    border-left: 1px solid var(--color-brand2) !important;
+  }
+
+  /* 2) Шапка месяца */
+  .datepicker-popper .react-datepicker__header {
+    background: var(--color-gray-100) !important;      /* бледно-серый фон */
+    border-bottom: 1px solid var(--color-brand2) !important;
+  }
+  .datepicker-popper .react-datepicker__current-month {
+    color: var(--color-brand2) !important;             /* бордовый текст */
+  }
+  /* стрелочки навигации */
+  .datepicker-popper .react-datepicker__navigation-icon::before {
+    border-color: var(--color-brand2) !important;
+  }
+
+  /* 3) Подписи дней недели */
+  .datepicker-popper .react-datepicker__day-name {
+    color: var(--color-brand2) !important;
+    border-bottom: 1px solid var(--color-brand2) !important;
+  }
+
+  /* 4) Ячейки дат */
+  .datepicker-popper .react-datepicker__day {
+    color: var(--color-brand2) !important;             /* бордовый текст */
+    border: 1px solid var(--color-brand2) !important;  /* тонкая бордовая рамка */
+    background: transparent !important;
+  }
+  .datepicker-popper .react-datepicker__day:hover {
+    background-color: rgba(83,22,29,0.15) !important;
+  }
+  .datepicker-popper .react-datepicker__day--today {
+    border-width: 2px !important;
+  }
+
+  /* 5) Выбранная дата */
+  .datepicker-popper .react-datepicker__day--selected,
+  .datepicker-popper .react-datepicker__day--keyboard-selected {
+    background-color: var(--color-brand2) !important;
+    color: var(--color-white) !important;
+  }
+
+  /* 6) Колонка времени */
+  .datepicker-popper .react-datepicker__time {
+    background: var(--color-gray-100) !important;
+  }
+  .datepicker-popper .react-datepicker__time-list {
+    border-top: 1px solid var(--color-brand2) !important;
+  }
+  .datepicker-popper .react-datepicker__time-list-item {
+    color: var(--color-brand2) !important;
+    border-bottom: 1px solid var(--color-brand2) !important;
+  }
+  .datepicker-popper .react-datepicker__time-list-item--selected {
+    background-color: var(--color-brand2) !important;
+    color: var(--color-white) !important;
+  }
+
+  /* 7) Убираем штатный треугольник */
+  .datepicker-popper .react-datepicker__triangle,
+  .datepicker-popper .react-datepicker__triangle::before {
+    display: none !important;
+  }
+    .datepicker-popper .react-datepicker__current-month {
+    color: var(--color-brand2) !important;
+  }
+
+  /* 2) Заголовок колонки времени («Time») */
+  .datepicker-popper .react-datepicker__header--time,
+  .datepicker-popper .react-datepicker__time-container .react-datepicker__header {
+    /* бледно-серый фон, чтобы не контрастировал с рамкой */
+    background-color: var(--color-gray-100) !important;
+    /* бордовая нижняя линия */
+    border-bottom: 1px solid var(--color-brand2) !important;
+    /* бордовый текст */
+    color: var(--color-brand2) !important;
+  }
+
+  /* 3) Стрелочки и границы тоже бордовые */
+  .datepicker-popper .react-datepicker__navigation-icon::before {
+    border-color: var(--color-brand2) !important;
+  }
+  .datepicker-popper .react-datepicker__time-container {
+    border-left: 1px solid var(--color-brand2) !important;
+  }
+
 }

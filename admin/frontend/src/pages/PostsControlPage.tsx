@@ -17,7 +17,6 @@ import {
 } from "../services/api";
 import {useAuth} from "../contexts/auth";
 import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import type {RichEditorHandle} from "../components/RichEditor";
 import {RichEditor} from "../components/RichEditor";
 import type {UserRole} from "../types/UserRole";
@@ -498,6 +497,9 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                                 timeIntervals={15}
                                 dateFormat="dd.MM.yyyy HH:mm"
                                 placeholderText="Кликните для выбора"
+                                popperPlacement="bottom-end"
+                                popperClassName="datepicker-popper"
+                                calendarClassName="datepicker-calendar"
                                 className="w-full border border-brand rounded p-2 focus:outline-none focus:ring-2 focus:ring-brand"
                             />
                         </div>
@@ -512,6 +514,9 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                                 timeIntervals={15}
                                 dateFormat="HH:mm"
                                 placeholderText="Выберите время"
+                                popperPlacement="bottom-end"
+                                popperClassName="datepicker-popper"
+                                calendarClassName="datepicker-calendar"
                                 className="w-full border border-brand rounded p-2 focus:outline-none focus:ring-2 focus:ring-brand"
                             />
                         </div>
