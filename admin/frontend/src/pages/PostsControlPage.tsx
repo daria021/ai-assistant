@@ -111,6 +111,7 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
     const [editorText, setEditorText] = useState("");
     const [editorEntities, setEditorEntities] = useState<MessageEntityDTO[]>([]);
     const [responsibleManagerId, setResponsibleManagerId] = useState("");
+    const [viewMode, setViewMode] = useState<"scheduled" | "sent">("scheduled");
 
     const navigate = useNavigate();
     const {userId, role} = useAuth();
@@ -164,68 +165,152 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
 
     /* ───────── Schedule fetch ───────── */
     const fetchSchedule = useCallback(async () => {
-        try {
-            const raw = await getPostsToPublish();
+  try {
+    const raw = await getPostsToPublish();
 
-            /* --- фильтрация --- */
-            const filtered = raw.filter((p) => {
-                if (managerFilter && p.responsible_manager_id !== managerFilter) return false;
-                if (
-                    chatTypeFilter &&
-                    !p.chats.some((c) => c.chat_type_id === chatTypeFilter)
-                )
-                    return false;
-                if (chatFilter && !p.chats.some((c) => c.id === chatFilter)) return false;
-                return true;
-            });
+    // 1) общий фильтр по менеджеру/чат-типу/чату
+    const pre = raw.filter(p => {
+      if (managerFilter && p.responsible_manager_id !== managerFilter) return false;
+      if (chatTypeFilter && !p.chats.some(c => c.chat_type_id === chatTypeFilter)) return false;
+      if (chatFilter && !p.chats.some(c => c.id === chatFilter)) return false;
+      return true;
+    });
 
-            /* --- заголовки постов --- */
-            const titlesCache = new Map<string, string>();
-            await Promise.all(
-                filtered.map(async (p) => {
-                    if (!titlesCache.has(p.post_id)) {
-                        const post = await getPost(p.post_id);
-                        titlesCache.set(p.post_id, post.name);
-                    }
-                })
-            );
-
-            /* --- группировка по дням --- */
-            const map: Record<string, EventItem[]> = {};
-            const today = new Date();
-
-            for (const p of filtered) {
-                const item: EventItem = {
-                    id: p.id,
-                    postId: p.post_id,
-                    title: titlesCache.get(p.post_id) ?? "Без названия",
-                    time: p.scheduled_time.slice(0, 5),
-                    scheduledType: p.scheduled_type
-                };
-
-                if (p.scheduled_type === "single" && p.scheduled_date) {
-                    const d = new Date(p.scheduled_date);
-                    const iso = d.toISOString().slice(0, 10);
-                    map[iso] = (map[iso] || []).concat(item);
-                } else {
-                    for (let i = 0; i < 7; i++) {
-                        const d = new Date(today);
-                        d.setDate(d.getDate() + i);
-                        const iso = d.toISOString().slice(0, 10);
-                        map[iso] = (map[iso] || []).concat(item);
-                    }
-                }
-            }
-
-            Object.values(map).forEach((arr) =>
-                arr.sort((a, b) => a.time.localeCompare(b.time))
-            );
-            setSchedule(map);
-        } catch (err) {
-            console.error("Не удалось загрузить расписание", err);
-            alert("Ошибка при загрузке расписания");
+    // 2) подгружаем все заголовки
+    const titles = new Map<string,string>();
+    await Promise.all(
+      pre.map(async p => {
+        if (!titles.has(p.post_id)) {
+          const post = await getPost(p.post_id);
+          titles.set(p.post_id, post.name);
         }
-    }, [managerFilter, chatTypeFilter, chatFilter]);
+      })
+    );
+
+    const map: Record<string, EventItem[]> = {};
+    const today = new Date();
+
+    for (const p of pre) {
+      const base: EventItem = {
+        id: p.id,
+        postId: p.post_id,
+        title: titles.get(p.post_id)!,
+        time: p.scheduled_time.slice(0,5),
+        scheduledType: p.scheduled_type
+      };
+
+      if (p.scheduled_type === "single") {
+        // 3) одиночные: только дата >= сегодня
+        if (!p.scheduled_date) continue;
+        const dt = new Date(p.scheduled_date);
+        if (dt < today) continue;
+        const iso = dt.toISOString().slice(0,10);
+        map[iso] = (map[iso]||[]).concat(base);
+      } else {
+        // 4) ежедневные: раскладываем на N дней вперёд
+        for (let i = 0; i < 7; i++) {
+          const dt = new Date(today);
+          dt.setDate(today.getDate() + i);
+          const iso = dt.toISOString().slice(0,10);
+          map[iso] = (map[iso]||[]).concat(base);
+        }
+      }
+    }
+
+    // 5) сортировка по времени
+    Object.values(map).forEach(arr =>
+      arr.sort((a,b)=>a.time.localeCompare(b.time))
+    );
+
+    setSchedule(map);
+    setOpenDays(Object.fromEntries(Object.keys(map).map(d=>[d,true])));
+  } catch(err) {
+    console.error(err);
+    alert("Не удалось загрузить запланированные посты");
+  }
+}, [managerFilter, chatTypeFilter, chatFilter]);
+
+const fetchSent = useCallback(async () => {
+  try {
+    const raw = await getPostsToPublish();
+
+    // 1) общий фильтр по менеджеру/чат-типу/чату
+    const pre = raw.filter(p => {
+      if (managerFilter && p.responsible_manager_id !== managerFilter) return false;
+      if (chatTypeFilter && !p.chats.some(c => c.chat_type_id === chatTypeFilter)) return false;
+      if (chatFilter && !p.chats.some(c => c.id === chatFilter)) return false;
+      return true;
+    });
+
+    // 2) загружаем все заголовки
+    const titles = new Map<string,string>();
+    await Promise.all(
+      pre.map(async p => {
+        if (!titles.has(p.post_id)) {
+          const post = await getPost(p.post_id);
+          titles.set(p.post_id, post.name);
+        }
+      })
+    );
+
+    const map: Record<string, EventItem[]> = {};
+    const today = new Date();
+
+    // 3) одиночные до вчера
+    pre
+      .filter(p => p.scheduled_type === "single" && p.scheduled_date && new Date(p.scheduled_date) < today)
+      .forEach(p => {
+        const dt = new Date(p.scheduled_date!);
+        const iso = dt.toISOString().slice(0,10);
+        map[iso] = (map[iso]||[]).concat({
+          id: p.id,
+          postId: p.post_id,
+          title: titles.get(p.post_id)!,
+          time: p.scheduled_time.slice(0,5),
+          scheduledType: "single"
+        });
+      });
+
+    // 4) ежедневные: последние 7 дней
+    pre
+      .filter(p => p.scheduled_type === "everyday")
+      .forEach(p => {
+        for (let i = 1; i <= 7; i++) {
+          const dt = new Date(today);
+          dt.setDate(today.getDate() - i);
+          const iso = dt.toISOString().slice(0,10);
+          map[iso] = (map[iso]||[]).concat({
+            id: p.id,
+            postId: p.post_id,
+            title: titles.get(p.post_id)!,
+            time: p.scheduled_time.slice(0,5),
+            scheduledType: "everyday"
+          });
+        }
+      });
+
+    // 5) сортировка
+    Object.values(map).forEach(arr =>
+      arr.sort((a,b)=>a.time.localeCompare(b.time))
+    );
+
+    setSchedule(map);
+    setOpenDays(Object.fromEntries(Object.keys(map).map(d=>[d,true])));
+  } catch(err) {
+    console.error(err);
+    alert("Не удалось загрузить отправленные посты");
+  }
+}, [managerFilter, chatTypeFilter, chatFilter]);
+
+
+      useEffect(() => {
+    if (viewMode === "scheduled") {
+      fetchSchedule();
+    } else {
+      fetchSent();
+    }
+  }, [viewMode, fetchSchedule, fetchSent]);
+
 
 
     /* ───────── Chats fetch ───────── */
@@ -243,9 +328,6 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
         fetchChats();
     }, []);
 
-    useEffect(() => {
-        fetchSchedule();
-    }, [fetchSchedule]);
 
     /* ───────── Back button ───────── */
     useEffect(() => {
@@ -566,6 +648,18 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
 
                 <div className="space-y-4 text-brand">
                     <div className="flex flex-wrap gap-4 mb-6">
+
+<select
+  value={viewMode}
+  onChange={e => setViewMode(e.target.value as "scheduled" | "sent")}
+  className="border border-brand rounded p-2"
+>
+  <option value="scheduled">— Запланированные —</option>
+  <option value="sent">— Отправленные —</option>
+</select>
+
+
+
                         {/* manager */}
                         {role !== "manager" && (
                             <select
@@ -622,7 +716,7 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                             </button>
                         )}
                     </div>
-                    {Object.keys(schedule)
+   {Object.keys(schedule)
                         .sort()
                         .map((iso) => {
                             const label = new Date(iso).toLocaleDateString("ru-RU", {
