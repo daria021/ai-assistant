@@ -1,9 +1,19 @@
+import pathlib
+from uuid import uuid4
+
 import imageio
 import asyncio, tempfile, os, logging
-from pathlib import Path
+import shutil
 
 logger = logging.getLogger(__name__)
 
+LOTTIE_BIN = (
+    shutil.which("lottie_convert")                # ищем без .py
+    or shutil.which("lottie_convert.py")          # или с .py
+    or "/usr/local/bin/lottie_convert.py"         # жёсткий fallback
+)
+if not os.path.isfile(LOTTIE_BIN):
+    raise RuntimeError(f"LOTTIE_BIN not found at {LOTTIE_BIN}")
 
 def _sync_convert_webm_to_webp(input_path: str) -> str:
     """
@@ -49,29 +59,34 @@ async def convert_webm_to_webp(input_path: str) -> str:
     )
     return output_path
 
+# определяем бинарь-конвертер один раз
+_LOTTIE = (
+    shutil.which("lottie_convert") or
+    shutil.which("lottie_convert.py") or
+    "/usr/local/bin/lottie_convert.py"
+)
+if not os.path.isfile(_LOTTIE):
+    raise RuntimeError("lottie_convert не найден — установите lottie[cli]")
 
-async def convert_tgs_to_webm(tgs_bytes: bytes) -> str:
+async def convert_tgs_to_webp(tgs_bytes: bytes) -> bytes:
     """
-    Принимает raw-байты .tgs, возвращает путь к временно
-    созданному .webm-файлу (анимированному).
-    Вызывать внутри `with tempfile.TemporaryDirectory()`.
+    Конвертирует .tgs (Lottie) прямо в анимированный .webp.
+    Возвращает готовый байт-массив WEBP.
     """
     with tempfile.TemporaryDirectory() as td:
-        in_path  = Path(td) / "in.tgs"
-        out_path = Path(td) / "out.webm"
-        in_path.write_bytes(tgs_bytes)
+        src = pathlib.Path(td) / f"{uuid4()}.tgs"
+        dst = pathlib.Path(td) / f"{uuid4()}.webp"
+        src.write_bytes(tgs_bytes)
 
-        # lottie_convert.py in.tgs out.webm --format webm
         proc = await asyncio.create_subprocess_exec(
-            "lottie_convert.py", str(in_path), str(out_path), "--format", "webm"
+            _LOTTIE, str(src), str(dst),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
         )
-        await proc.communicate()
+        out, err = await proc.communicate()
 
-        if not out_path.exists():
-            raise RuntimeError("lottie_convert: out.webm not produced")
+        if proc.returncode != 0 or not dst.exists():
+            logger.error("lottie_convert error:\n%s", (err or out).decode().strip())
+            raise RuntimeError("Ошибка конвертации .tgs → .webp (см. лог)")
 
-        # возвращаем КОПИЮ, чтобы файл не удалился вместе с tmpdir
-        final_path = Path(td).with_suffix(".webm")
-        final_path.write_bytes(out_path.read_bytes())
-        logger.info("tgs -> webm: %s → %s", in_path, final_path)
-        return str(final_path)
+        return dst.read_bytes()
