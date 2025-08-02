@@ -1,0 +1,802 @@
+[
+  {
+    "id": "877680f8-24d2-46ca-9261-7e80c237c333",
+    "created_at": "2025-08-01T15:57:17.425230",
+    "updated_at": "2025-08-01T15:57:17.425242",
+    "custom_emoji_id": "5343661691068492878",
+    "name": "😁_EmojiCatalogbot66_5343661691068492878",
+    "img_url": "https://ai.avocado.ceo/api/upload/dcc657fd-6e07-4a61-9a2d-193b47096a19.webp"
+  },
+  {
+    "id": "0bea14c4-649a-4f8f-bc60-29f5aa685eba",
+    "created_at": "2025-08-01T15:57:18.053530",
+    "updated_at": "2025-08-01T15:57:18.053538",
+    "custom_emoji_id": "5346289081477248303",
+    "name": "😁_EmojiCatalogbot66_5346289081477248303",
+    "img_url": "https://ai.avocado.ceo/api/upload/3561b781-1d1f-45d5-af03-3e395b95da80.webp"
+  },
+  {
+    "id": "5d2b9aab-ede0-49cb-8a69-14eae19bc159",
+    "created_at": "2025-08-01T15:57:18.669012",
+    "updated_at": "2025-08-01T15:57:18.669019",
+    "custom_emoji_id": "5346152724855533087",
+    "name": "😁_EmojiCatalogbot66_5346152724855533087",
+    "img_url": "https://ai.avocado.ceo/api/upload/4f603725-f6c6-4b37-ba8d-a91f3253d88c.webp"
+  },
+  {
+    "id": "9593d622-ff17-4ea6-909f-0b78fcc65e25",
+    "created_at": "2025-08-01T15:57:19.277341",
+    "updated_at": "2025-08-01T15:57:19.277355",
+    "custom_emoji_id": "5343540512861206734",
+    "name": "😁_EmojiCatalogbot66_5343540512861206734",
+    "img_url": "https://ai.avocado.ceo/api/upload/5f8f7fac-27e9-4b6e-acf1-3280dcc9d5c1.webp"
+  },
+  {
+    "id": "f3919e3d-787a-4f8d-a891-23aee346b47a",
+    "created_at": "2025-08-01T15:57:19.818045",
+    "updated_at": "2025-08-01T15:57:19.818070",
+    "custom_emoji_id": "5343524561352666618",
+    "name": "😁_EmojiCatalogbot66_5343524561352666618",
+    "img_url": "https://ai.avocado.ceo/api/upload/9828f351-04fb-404b-abdc-abaf32bd6121.webp"
+  },
+  {
+    "id": "c4e5cb88-1375-4fb8-a068-9e4984d9c23a",
+    "created_at": "2025-08-01T15:57:20.458403",
+    "updated_at": "2025-08-01T15:57:20.458412",
+    "custom_emoji_id": "5346182385899676614",
+    "name": "😁_EmojiCatalogbot66_5346182385899676614",
+    "img_url": "https://ai.avocado.ceo/api/upload/56cd49b9-9f62-4120-90bf-fed5b04686af.webp"
+  },
+  {
+    "id": "e9acae03-5e67-4fbf-8c3a-e2f1da982dac",
+    "created_at": "2025-08-01T15:57:21.094882",
+    "updated_at": "2025-08-01T15:57:21.094893",
+    "custom_emoji_id": "5346282518767217518",
+    "name": "😁_EmojiCatalogbot66_5346282518767217518",
+    "img_url": "https://ai.avocado.ceo/api/upload/3258dc54-081f-4c75-b286-88871354043c.webp"
+  },
+  {
+    "id": "4e7b04a8-bfe1-4b3f-af98-07efae6f13a1",
+    "created_at": "2025-08-01T15:57:21.643640",
+    "updated_at": "2025-08-01T15:57:21.643652",
+    "custom_emoji_id": "5344000847455990127",
+    "name": "😁_EmojiCatalogbot66_5344000847455990127",
+    "img_url": "https://ai.avocado.ceo/api/upload/cf874aeb-8c13-490a-aa65-ae1c7e351bc2.webp"
+  },
+  {
+    "id": "a5d02ce7-f3b9-42e9-965a-48ead9578ded",
+    "created_at": "2025-08-01T15:57:22.189428",
+    "updated_at": "2025-08-01T15:57:22.189439",
+    "custom_emoji_id": "5345844084210674493",
+    "name": "😁_EmojiCatalogbot66_5345844084210674493",
+    "img_url": "https://ai.avocado.ceo/api/upload/7dcc9dc2-fc73-4845-89aa-22c5a1cc98e4.webp"
+  },
+  {
+    "id": "78d6d604-d771-4763-ad1f-3a823958768e",
+    "created_at": "2025-08-01T15:57:22.738692",
+    "updated_at": "2025-08-01T15:57:22.738703",
+    "custom_emoji_id": "5343879548989617034",
+    "name": "😁_EmojiCatalogbot66_5343879548989617034",
+    "img_url": "https://ai.avocado.ceo/api/upload/cb56a060-9c84-49a5-8c9a-c32cfa38a947.webp"
+  },
+  {
+    "id": "c25ba861-0b91-4e2f-b913-4dd5e65759e5",
+    "created_at": "2025-08-01T15:57:23.284747",
+    "updated_at": "2025-08-01T15:57:23.284761",
+    "custom_emoji_id": "5345828862846576218",
+    "name": "😁_EmojiCatalogbot66_5345828862846576218",
+    "img_url": "https://ai.avocado.ceo/api/upload/8515a313-3b41-4a08-97fd-10f0077425c6.webp"
+  },
+  {
+    "id": "a1a20cad-fb10-4544-a1fe-642bf5bf1bb6",
+    "created_at": "2025-08-01T15:57:23.848212",
+    "updated_at": "2025-08-01T15:57:23.848223",
+    "custom_emoji_id": "5346134565733805968",
+    "name": "😁_EmojiCatalogbot66_5346134565733805968",
+    "img_url": "https://ai.avocado.ceo/api/upload/b06d3efa-618d-4185-9558-dbe47dd38bbf.webp"
+  },
+  {
+    "id": "5f3ce4d6-e2e9-4e71-a0e7-f1789791e4ef",
+    "created_at": "2025-08-01T15:57:24.376805",
+    "updated_at": "2025-08-01T15:57:24.376835",
+    "custom_emoji_id": "5343684922546598965",
+    "name": "😁_EmojiCatalogbot66_5343684922546598965",
+    "img_url": "https://ai.avocado.ceo/api/upload/ba71a3e6-38b3-4359-aeef-2f03635ab5aa.webp"
+  },
+  {
+    "id": "0240165a-1c7b-453a-98e7-e20853cd8cb8",
+    "created_at": "2025-08-01T15:57:25.041756",
+    "updated_at": "2025-08-01T15:57:25.041769",
+    "custom_emoji_id": "5343675559517892494",
+    "name": "😁_EmojiCatalogbot66_5343675559517892494",
+    "img_url": "https://ai.avocado.ceo/api/upload/d00562fd-4fd7-4da8-a1a9-a92cf3fb03ae.webp"
+  },
+  {
+    "id": "0d6ce667-6617-458b-af7c-8cd243f6819b",
+    "created_at": "2025-08-01T15:57:25.593059",
+    "updated_at": "2025-08-01T15:57:25.593065",
+    "custom_emoji_id": "5343953190498872536",
+    "name": "😁_EmojiCatalogbot66_5343953190498872536",
+    "img_url": "https://ai.avocado.ceo/api/upload/e35c3acb-dbc5-4145-973f-c8f77ad32988.webp"
+  },
+  {
+    "id": "da0a0336-16d4-44a7-b758-0cbc66df2bf8",
+    "created_at": "2025-08-01T15:57:26.117911",
+    "updated_at": "2025-08-01T15:57:26.117920",
+    "custom_emoji_id": "5343600264446227506",
+    "name": "😁_EmojiCatalogbot66_5343600264446227506",
+    "img_url": "https://ai.avocado.ceo/api/upload/5b478f2a-051a-49e1-9292-27d3628317e7.webp"
+  },
+  {
+    "id": "26c4bc93-4b5a-4c1c-9c7e-4312b41eeed7",
+    "created_at": "2025-08-01T15:57:26.641102",
+    "updated_at": "2025-08-01T15:57:26.641110",
+    "custom_emoji_id": "5343775142629616963",
+    "name": "😁_EmojiCatalogbot66_5343775142629616963",
+    "img_url": "https://ai.avocado.ceo/api/upload/a17098a4-e3bc-4731-ad10-1f59f19f113d.webp"
+  },
+  {
+    "id": "af73c3c8-4146-4044-af34-5692fefc188f",
+    "created_at": "2025-08-01T15:57:27.200632",
+    "updated_at": "2025-08-01T15:57:27.200643",
+    "custom_emoji_id": "5344076743823077872",
+    "name": "😁_EmojiCatalogbot66_5344076743823077872",
+    "img_url": "https://ai.avocado.ceo/api/upload/9300b863-f9ee-4251-9209-2ba0b2e2a53c.webp"
+  },
+  {
+    "id": "e0068bdc-87de-4591-8459-dda4755759c1",
+    "created_at": "2025-08-01T15:57:27.778220",
+    "updated_at": "2025-08-01T15:57:27.778230",
+    "custom_emoji_id": "5346110698600539437",
+    "name": "😁_EmojiCatalogbot66_5346110698600539437",
+    "img_url": "https://ai.avocado.ceo/api/upload/23f27067-0550-4e13-a84e-d88bf4f66713.webp"
+  },
+  {
+    "id": "2a5da375-818f-4669-8f40-67049ca21313",
+    "created_at": "2025-08-01T15:57:28.316688",
+    "updated_at": "2025-08-01T15:57:28.316696",
+    "custom_emoji_id": "5346234294874418191",
+    "name": "😁_EmojiCatalogbot66_5346234294874418191",
+    "img_url": "https://ai.avocado.ceo/api/upload/8522828d-4293-48ec-ac0f-0ffe2d6110ee.webp"
+  },
+  {
+    "id": "d96ce517-5044-49d0-a000-b4399c3445ce",
+    "created_at": "2025-08-01T15:57:28.895151",
+    "updated_at": "2025-08-01T15:57:28.895179",
+    "custom_emoji_id": "5344081695920370682",
+    "name": "😁_EmojiCatalogbot66_5344081695920370682",
+    "img_url": "https://ai.avocado.ceo/api/upload/277927f7-102d-40a4-847c-c1bac08261f8.webp"
+  },
+  {
+    "id": "85edd25a-d016-4773-bb1b-f574d5ccf9da",
+    "created_at": "2025-08-01T15:57:29.447974",
+    "updated_at": "2025-08-01T15:57:29.447983",
+    "custom_emoji_id": "5346065292206290317",
+    "name": "😁_EmojiCatalogbot66_5346065292206290317",
+    "img_url": "https://ai.avocado.ceo/api/upload/41495ff3-5630-4ff6-9296-bfa98da326ef.webp"
+  },
+  {
+    "id": "75272311-22ee-4170-a3c3-0f1193cdac61",
+    "created_at": "2025-08-01T15:57:29.929523",
+    "updated_at": "2025-08-01T15:57:29.929532",
+    "custom_emoji_id": "5343545645347123261",
+    "name": "😁_EmojiCatalogbot66_5343545645347123261",
+    "img_url": "https://ai.avocado.ceo/api/upload/39e86d08-d7b1-4119-864f-6175337f3733.webp"
+  },
+  {
+    "id": "b70eabfa-f99e-46df-9c09-db25fc6c2a77",
+    "created_at": "2025-08-01T15:57:30.491627",
+    "updated_at": "2025-08-01T15:57:30.491633",
+    "custom_emoji_id": "5344055973361232558",
+    "name": "😁_EmojiCatalogbot66_5344055973361232558",
+    "img_url": "https://ai.avocado.ceo/api/upload/2ceb506d-3c86-4723-8266-be3d3ac3fe87.webp"
+  },
+  {
+    "id": "e0069727-1743-45e6-9490-94197bea1df4",
+    "created_at": "2025-08-01T15:57:31.139621",
+    "updated_at": "2025-08-01T15:57:31.139772",
+    "custom_emoji_id": "5345816484750830422",
+    "name": "😁_EmojiCatalogbot66_5345816484750830422",
+    "img_url": "https://ai.avocado.ceo/api/upload/c1e234ae-6f04-41c0-9dc2-047800f7a96d.webp"
+  },
+  {
+    "id": "08156467-e45c-4499-94cb-80d0819efe49",
+    "created_at": "2025-08-01T15:57:31.681486",
+    "updated_at": "2025-08-01T15:57:31.681573",
+    "custom_emoji_id": "5346285800122232282",
+    "name": "😁_EmojiCatalogbot66_5346285800122232282",
+    "img_url": "https://ai.avocado.ceo/api/upload/d4891255-1ac1-4253-8976-08262f5a21ab.webp"
+  },
+  {
+    "id": "8ad15513-a6c6-4fc1-a405-eaae5af19e89",
+    "created_at": "2025-08-01T15:57:32.290476",
+    "updated_at": "2025-08-01T15:57:32.290487",
+    "custom_emoji_id": "5346219086395225666",
+    "name": "😁_EmojiCatalogbot66_5346219086395225666",
+    "img_url": "https://ai.avocado.ceo/api/upload/d86f7327-6c7e-4304-bfb6-fc8d8c884fc0.webp"
+  },
+  {
+    "id": "d98cd722-1acd-4adf-b397-ff134765b847",
+    "created_at": "2025-08-01T15:57:32.865049",
+    "updated_at": "2025-08-01T15:57:32.865060",
+    "custom_emoji_id": "5343959581410209729",
+    "name": "😁_EmojiCatalogbot66_5343959581410209729",
+    "img_url": "https://ai.avocado.ceo/api/upload/553eeb8c-324c-4b7d-8a4f-c1a6a989c677.webp"
+  },
+  {
+    "id": "f45de4a8-b8a6-412f-ac9d-08997a87d356",
+    "created_at": "2025-08-01T15:57:33.452989",
+    "updated_at": "2025-08-01T15:57:33.452996",
+    "custom_emoji_id": "5343948672193277562",
+    "name": "😁_EmojiCatalogbot66_5343948672193277562",
+    "img_url": "https://ai.avocado.ceo/api/upload/f0a996a2-e7b1-4aa3-8c4d-59d3ca7e1ece.webp"
+  },
+  {
+    "id": "210e6e51-424a-4937-9ada-81c5ff6a8028",
+    "created_at": "2025-08-01T15:57:33.963825",
+    "updated_at": "2025-08-01T15:57:33.963838",
+    "custom_emoji_id": "5346186925680111284",
+    "name": "😁_EmojiCatalogbot66_5346186925680111284",
+    "img_url": "https://ai.avocado.ceo/api/upload/26f7660f-358a-4bf7-a7e7-c03374997ede.webp"
+  },
+  {
+    "id": "44b2f86c-b436-4a46-a8e1-d7b2ae502803",
+    "created_at": "2025-08-01T15:57:34.499573",
+    "updated_at": "2025-08-01T15:57:34.499583",
+    "custom_emoji_id": "5343522615732482258",
+    "name": "😁_EmojiCatalogbot66_5343522615732482258",
+    "img_url": "https://ai.avocado.ceo/api/upload/1dd6c089-b468-4cf5-9ced-8fc9aca53737.webp"
+  },
+  {
+    "id": "6d398220-8c8b-4b9c-87e0-60a7ebcab8fb",
+    "created_at": "2025-08-01T15:57:35.026265",
+    "updated_at": "2025-08-01T15:57:35.026271",
+    "custom_emoji_id": "5343939244740063369",
+    "name": "😁_EmojiCatalogbot66_5343939244740063369",
+    "img_url": "https://ai.avocado.ceo/api/upload/16e91bfe-38bf-4c88-b20a-1c74a24ceb5b.webp"
+  },
+  {
+    "id": "a3d572c0-c830-4414-ab50-031244917ba4",
+    "created_at": "2025-08-01T15:57:35.622298",
+    "updated_at": "2025-08-01T15:57:35.622313",
+    "custom_emoji_id": "5343901260049296438",
+    "name": "😁_EmojiCatalogbot66_5343901260049296438",
+    "img_url": "https://ai.avocado.ceo/api/upload/ab95f5a7-6aa4-4c19-ad10-ecc026557ab8.webp"
+  },
+  {
+    "id": "bd752669-a6a9-463b-ace6-553aee1011b1",
+    "created_at": "2025-08-01T15:57:36.168396",
+    "updated_at": "2025-08-01T15:57:36.168409",
+    "custom_emoji_id": "5343602450584580293",
+    "name": "😁_EmojiCatalogbot66_5343602450584580293",
+    "img_url": "https://ai.avocado.ceo/api/upload/3c695219-5785-4f69-9c2c-f175ba5c8f30.webp"
+  },
+  {
+    "id": "61fc08d8-5a70-4ad4-9e74-ff69d1cb3dc4",
+    "created_at": "2025-08-01T15:57:36.757672",
+    "updated_at": "2025-08-01T15:57:36.757682",
+    "custom_emoji_id": "5346279306131678494",
+    "name": "😁_EmojiCatalogbot66_5346279306131678494",
+    "img_url": "https://ai.avocado.ceo/api/upload/b8b3f04a-a338-45c6-96af-048bded7350c.webp"
+  },
+  {
+    "id": "56295a07-ea60-418c-8f14-30b408786589",
+    "created_at": "2025-08-01T15:57:37.455935",
+    "updated_at": "2025-08-01T15:57:37.455948",
+    "custom_emoji_id": "5343727782025244602",
+    "name": "😁_EmojiCatalogbot66_5343727782025244602",
+    "img_url": "https://ai.avocado.ceo/api/upload/e06a56d7-1c0e-457e-b4f3-c20f82a9a543.webp"
+  },
+  {
+    "id": "25742d1f-4792-473f-a1f5-25f4a530a013",
+    "created_at": "2025-08-01T15:57:37.979088",
+    "updated_at": "2025-08-01T15:57:37.979095",
+    "custom_emoji_id": "5346307966448446795",
+    "name": "😁_EmojiCatalogbot66_5346307966448446795",
+    "img_url": "https://ai.avocado.ceo/api/upload/d67d4c57-2a5f-4ab6-9a23-828893b589a2.webp"
+  },
+  {
+    "id": "2486d44c-e375-4315-b4ac-bd633d87d351",
+    "created_at": "2025-08-01T15:57:38.657247",
+    "updated_at": "2025-08-01T15:57:38.657262",
+    "custom_emoji_id": "5346214009743878535",
+    "name": "😁_EmojiCatalogbot66_5346214009743878535",
+    "img_url": "https://ai.avocado.ceo/api/upload/d677647f-5110-403b-a0d4-a093cb671777.webp"
+  },
+  {
+    "id": "fcd9b13b-abf6-4fb3-943b-4aeac5474472",
+    "created_at": "2025-08-01T15:57:39.221839",
+    "updated_at": "2025-08-01T15:57:39.221846",
+    "custom_emoji_id": "5345957144929775175",
+    "name": "😁_EmojiCatalogbot66_5345957144929775175",
+    "img_url": "https://ai.avocado.ceo/api/upload/534c8979-147d-442e-92ba-93f600ca535c.webp"
+  },
+  {
+    "id": "3cbbffa6-4120-441f-b395-7a0555e4c9cf",
+    "created_at": "2025-08-01T15:57:39.771718",
+    "updated_at": "2025-08-01T15:57:39.771731",
+    "custom_emoji_id": "5343873355646775152",
+    "name": "😁_EmojiCatalogbot66_5343873355646775152",
+    "img_url": "https://ai.avocado.ceo/api/upload/6d9dd47d-39dc-40cc-aed0-662d715e852a.webp"
+  },
+  {
+    "id": "336962f1-f830-43d1-ad2e-7573732e9474",
+    "created_at": "2025-08-01T15:57:40.291690",
+    "updated_at": "2025-08-01T15:57:40.291699",
+    "custom_emoji_id": "5345919297677961952",
+    "name": "😁_EmojiCatalogbot66_5345919297677961952",
+    "img_url": "https://ai.avocado.ceo/api/upload/7f31d208-204f-453e-ad2e-53060346e095.webp"
+  },
+  {
+    "id": "8106366a-102f-4a2a-973b-846e87855423",
+    "created_at": "2025-08-01T15:57:40.807143",
+    "updated_at": "2025-08-01T15:57:40.807154",
+    "custom_emoji_id": "5343830126800940840",
+    "name": "😁_EmojiCatalogbot66_5343830126800940840",
+    "img_url": "https://ai.avocado.ceo/api/upload/66bd7f33-43ae-4e7b-823a-0c1fb71eeded.webp"
+  },
+  {
+    "id": "2f2e61de-4b1f-4058-86ce-f866c91f643f",
+    "created_at": "2025-08-01T15:57:41.347334",
+    "updated_at": "2025-08-01T15:57:41.347346",
+    "custom_emoji_id": "5346167903269955861",
+    "name": "😁_EmojiCatalogbot66_5346167903269955861",
+    "img_url": "https://ai.avocado.ceo/api/upload/ca79fc38-9ecb-402d-86d6-23b6809fab96.webp"
+  },
+  {
+    "id": "b401dbb6-be3e-469f-afb0-c3a076baf797",
+    "created_at": "2025-08-01T15:57:41.942806",
+    "updated_at": "2025-08-01T15:57:41.942814",
+    "custom_emoji_id": "5345784809367022527",
+    "name": "😁_EmojiCatalogbot66_5345784809367022527",
+    "img_url": "https://ai.avocado.ceo/api/upload/ef038817-d834-4e6c-9da9-23162ea2fdd3.webp"
+  },
+  {
+    "id": "c64512d0-50bd-4ddc-827d-a1ff4b4dde81",
+    "created_at": "2025-08-01T15:57:42.450354",
+    "updated_at": "2025-08-01T15:57:42.450364",
+    "custom_emoji_id": "5345812434596671609",
+    "name": "😁_EmojiCatalogbot66_5345812434596671609",
+    "img_url": "https://ai.avocado.ceo/api/upload/c4bbc0fd-05dd-4596-a56d-f18e30af267f.webp"
+  },
+  {
+    "id": "0b741e2f-2ec0-44a1-ae00-8d296252e2f1",
+    "created_at": "2025-08-01T15:57:42.985839",
+    "updated_at": "2025-08-01T15:57:42.985848",
+    "custom_emoji_id": "5346186328679656581",
+    "name": "😁_EmojiCatalogbot66_5346186328679656581",
+    "img_url": "https://ai.avocado.ceo/api/upload/ee41a2ee-ceeb-49da-a670-6566da3ba753.webp"
+  },
+  {
+    "id": "44fdd7fb-f21b-4cc8-ac8e-1ffea7c07f41",
+    "created_at": "2025-08-01T15:57:43.558454",
+    "updated_at": "2025-08-01T15:57:43.558464",
+    "custom_emoji_id": "5345951733270982625",
+    "name": "😁_EmojiCatalogbot66_5345951733270982625",
+    "img_url": "https://ai.avocado.ceo/api/upload/8bb643a9-5c89-43c7-8637-547d3488ac71.webp"
+  },
+  {
+    "id": "a3a76437-e3a0-4866-a1f4-5a5a9ac14f5d",
+    "created_at": "2025-08-01T15:57:44.095949",
+    "updated_at": "2025-08-01T15:57:44.095967",
+    "custom_emoji_id": "5346079319569477455",
+    "name": "😁_EmojiCatalogbot66_5346079319569477455",
+    "img_url": "https://ai.avocado.ceo/api/upload/edb756ec-f637-4f8d-9beb-4315172fa4b9.webp"
+  },
+  {
+    "id": "eb5e3aca-eb27-4e14-ac78-94bffbae90fc",
+    "created_at": "2025-08-01T15:57:44.670672",
+    "updated_at": "2025-08-01T15:57:44.670681",
+    "custom_emoji_id": "5344039673960344837",
+    "name": "😁_EmojiCatalogbot66_5344039673960344837",
+    "img_url": "https://ai.avocado.ceo/api/upload/873230c4-e4e8-48af-9329-97ed8e1bf532.webp"
+  },
+  {
+    "id": "9ec1e36e-cf95-4861-92f9-70b29946f24f",
+    "created_at": "2025-08-01T15:57:45.188361",
+    "updated_at": "2025-08-01T15:57:45.188368",
+    "custom_emoji_id": "5344074527619951705",
+    "name": "😁_EmojiCatalogbot66_5344074527619951705",
+    "img_url": "https://ai.avocado.ceo/api/upload/2c6dd484-de9e-4e4d-90b1-ad77723a820e.webp"
+  },
+  {
+    "id": "ee44f596-5d72-472f-b761-19a1d6b75c29",
+    "created_at": "2025-08-01T15:57:45.660133",
+    "updated_at": "2025-08-01T15:57:45.660140",
+    "custom_emoji_id": "5346078172813209587",
+    "name": "😁_EmojiCatalogbot66_5346078172813209587",
+    "img_url": "https://ai.avocado.ceo/api/upload/b6dfc1d3-0f7c-4e90-b377-b3608c39a7dc.webp"
+  },
+  {
+    "id": "889f78dc-68ef-44ed-a247-f6ba70eab57f",
+    "created_at": "2025-08-01T15:57:46.231617",
+    "updated_at": "2025-08-01T15:57:46.231626",
+    "custom_emoji_id": "5343898249277223264",
+    "name": "😁_EmojiCatalogbot66_5343898249277223264",
+    "img_url": "https://ai.avocado.ceo/api/upload/731779ff-a4d5-4af7-975a-604d7f8bc628.webp"
+  },
+  {
+    "id": "03a2395e-64cd-4778-818a-8b93008a72d0",
+    "created_at": "2025-08-01T15:57:46.770162",
+    "updated_at": "2025-08-01T15:57:46.770169",
+    "custom_emoji_id": "5343864267495977063",
+    "name": "😁_EmojiCatalogbot66_5343864267495977063",
+    "img_url": "https://ai.avocado.ceo/api/upload/32836ae5-08ca-446a-8fab-5a75e169f893.webp"
+  },
+  {
+    "id": "d5ca419b-7358-487e-b478-14fcfc0aaf54",
+    "created_at": "2025-08-01T15:57:47.304219",
+    "updated_at": "2025-08-01T15:57:47.304227",
+    "custom_emoji_id": "5343961844857973520",
+    "name": "😁_EmojiCatalogbot66_5343961844857973520",
+    "img_url": "https://ai.avocado.ceo/api/upload/ae67687b-2d2c-491d-8388-2834912c7962.webp"
+  },
+  {
+    "id": "2b420191-8d1b-46c2-abad-c239d8ec90d6",
+    "created_at": "2025-08-01T15:57:47.873239",
+    "updated_at": "2025-08-01T15:57:47.873249",
+    "custom_emoji_id": "5343909802739249278",
+    "name": "😁_EmojiCatalogbot66_5343909802739249278",
+    "img_url": "https://ai.avocado.ceo/api/upload/5f550449-015c-4226-a58c-36a77abf34f6.webp"
+  },
+  {
+    "id": "29e5683b-70db-4f06-84e5-08defa89afc3",
+    "created_at": "2025-08-01T15:57:48.378078",
+    "updated_at": "2025-08-01T15:57:48.378087",
+    "custom_emoji_id": "5343878767305567049",
+    "name": "😁_EmojiCatalogbot66_5343878767305567049",
+    "img_url": "https://ai.avocado.ceo/api/upload/3f05c5b7-785c-4222-9525-b26e2303bbff.webp"
+  },
+  {
+    "id": "497606cf-939f-4e2f-a425-ebb1b4188793",
+    "created_at": "2025-08-01T15:57:48.958082",
+    "updated_at": "2025-08-01T15:57:48.958089",
+    "custom_emoji_id": "5346078254417586179",
+    "name": "😁_EmojiCatalogbot66_5346078254417586179",
+    "img_url": "https://ai.avocado.ceo/api/upload/e5c7c171-9aa8-4717-a9eb-4aa6ad79bc74.webp"
+  },
+  {
+    "id": "0f051abc-0c24-4a1b-962a-850431c929fc",
+    "created_at": "2025-08-01T15:57:49.451129",
+    "updated_at": "2025-08-01T15:57:49.451138",
+    "custom_emoji_id": "5343733807864362193",
+    "name": "😁_EmojiCatalogbot66_5343733807864362193",
+    "img_url": "https://ai.avocado.ceo/api/upload/329afc8a-5caf-4bd2-a7e7-1d0c51af7284.webp"
+  },
+  {
+    "id": "9adc7c99-4c90-4155-9e0a-ad35561106bb",
+    "created_at": "2025-08-01T15:57:50.007669",
+    "updated_at": "2025-08-01T15:57:50.007676",
+    "custom_emoji_id": "5345944277207755575",
+    "name": "😁_EmojiCatalogbot66_5345944277207755575",
+    "img_url": "https://ai.avocado.ceo/api/upload/23e3b65a-95c2-4e80-b197-2ace3117dace.webp"
+  },
+  {
+    "id": "df75d827-026b-4403-83aa-e0cd1487dd81",
+    "created_at": "2025-08-01T15:57:50.539898",
+    "updated_at": "2025-08-01T15:57:50.539907",
+    "custom_emoji_id": "5346278279634496018",
+    "name": "😁_EmojiCatalogbot66_5346278279634496018",
+    "img_url": "https://ai.avocado.ceo/api/upload/aa4866e7-0f7e-49ea-a850-20951a65c8d3.webp"
+  },
+  {
+    "id": "9b1cb0e5-4e5e-4389-bd8f-5e5b39d50f85",
+    "created_at": "2025-08-01T15:57:51.118870",
+    "updated_at": "2025-08-01T15:57:51.118875",
+    "custom_emoji_id": "5343787039689027387",
+    "name": "😁_EmojiCatalogbot66_5343787039689027387",
+    "img_url": "https://ai.avocado.ceo/api/upload/421c0d6c-f2b1-4da6-b8a7-ad7b9cb85fbb.webp"
+  },
+  {
+    "id": "c8b5cae5-9022-4787-bd68-7546373c728e",
+    "created_at": "2025-08-01T15:57:51.680411",
+    "updated_at": "2025-08-01T15:57:51.680422",
+    "custom_emoji_id": "5343828773886242873",
+    "name": "😁_EmojiCatalogbot66_5343828773886242873",
+    "img_url": "https://ai.avocado.ceo/api/upload/e05d81b0-54e1-4bca-9d60-ad2ef622e96f.webp"
+  },
+  {
+    "id": "6c9bfca5-f52e-43e3-af6b-47f26c27a232",
+    "created_at": "2025-08-01T15:57:52.256454",
+    "updated_at": "2025-08-01T15:57:52.256466",
+    "custom_emoji_id": "5345893867176602674",
+    "name": "😁_EmojiCatalogbot66_5345893867176602674",
+    "img_url": "https://ai.avocado.ceo/api/upload/a6b12a7c-533c-465a-8cdb-0a24d83a102c.webp"
+  },
+  {
+    "id": "6f56f91e-49c4-41f3-afea-4c2f80a00580",
+    "created_at": "2025-08-01T15:57:52.805977",
+    "updated_at": "2025-08-01T15:57:52.805985",
+    "custom_emoji_id": "5346312514818812433",
+    "name": "😁_EmojiCatalogbot66_5346312514818812433",
+    "img_url": "https://ai.avocado.ceo/api/upload/9e058976-5c41-48ec-befd-986313325f80.webp"
+  },
+  {
+    "id": "e78b867f-e634-4534-9dae-a80c4b8d8e29",
+    "created_at": "2025-08-01T15:57:53.383024",
+    "updated_at": "2025-08-01T15:57:53.383052",
+    "custom_emoji_id": "5343948981430922384",
+    "name": "😁_EmojiCatalogbot66_5343948981430922384",
+    "img_url": "https://ai.avocado.ceo/api/upload/951badcb-9252-44d3-b8e4-727ee8f8cb6c.webp"
+  },
+  {
+    "id": "1dfaa59d-0326-4710-bd0c-7030454e182d",
+    "created_at": "2025-08-01T15:57:53.922070",
+    "updated_at": "2025-08-01T15:57:53.922079",
+    "custom_emoji_id": "5343543296000012582",
+    "name": "😁_EmojiCatalogbot66_5343543296000012582",
+    "img_url": "https://ai.avocado.ceo/api/upload/3de85304-2043-45b8-947b-75b6358bb636.webp"
+  },
+  {
+    "id": "133aa3b7-0548-4ca9-8730-cd59433f63c4",
+    "created_at": "2025-08-01T15:57:54.537829",
+    "updated_at": "2025-08-01T15:57:54.537836",
+    "custom_emoji_id": "5343602248721116651",
+    "name": "😁_EmojiCatalogbot66_5343602248721116651",
+    "img_url": "https://ai.avocado.ceo/api/upload/945654ba-4b1f-4940-938d-63a7f05c1dfc.webp"
+  },
+  {
+    "id": "e37e5fae-b608-4009-b95d-b6637c2a0085",
+    "created_at": "2025-08-01T15:57:55.126174",
+    "updated_at": "2025-08-01T15:57:55.126182",
+    "custom_emoji_id": "5345839016149266074",
+    "name": "😁_EmojiCatalogbot66_5345839016149266074",
+    "img_url": "https://ai.avocado.ceo/api/upload/1e2cec10-41a5-447c-ba34-ce6c134e33ca.webp"
+  },
+  {
+    "id": "91b90b70-7e39-499b-941c-8cc75d3a9e80",
+    "created_at": "2025-08-01T15:57:55.666187",
+    "updated_at": "2025-08-01T15:57:55.666195",
+    "custom_emoji_id": "5346034385621626964",
+    "name": "😁_EmojiCatalogbot66_5346034385621626964",
+    "img_url": "https://ai.avocado.ceo/api/upload/f755fbf9-2bc2-42a1-8aba-a663ca24b818.webp"
+  },
+  {
+    "id": "2e683432-a777-4bbb-b87c-8d8ff680a548",
+    "created_at": "2025-08-01T15:57:56.306651",
+    "updated_at": "2025-08-01T15:57:56.306661",
+    "custom_emoji_id": "5343750180279694007",
+    "name": "😁_EmojiCatalogbot66_5343750180279694007",
+    "img_url": "https://ai.avocado.ceo/api/upload/e43005e2-6834-486e-875e-a1c29876bc1f.webp"
+  },
+  {
+    "id": "44eb387e-35d4-4e66-b63c-d105a81d51dd",
+    "created_at": "2025-08-01T15:57:56.914252",
+    "updated_at": "2025-08-01T15:57:56.914262",
+    "custom_emoji_id": "5343675830100831448",
+    "name": "😁_EmojiCatalogbot66_5343675830100831448",
+    "img_url": "https://ai.avocado.ceo/api/upload/673f2977-3c04-4394-9c2d-457f3f2be44b.webp"
+  },
+  {
+    "id": "d4ae3496-7c48-4bb7-9372-36ded909ba9b",
+    "created_at": "2025-08-01T15:57:57.532090",
+    "updated_at": "2025-08-01T15:57:57.532100",
+    "custom_emoji_id": "5343569830307968318",
+    "name": "😁_EmojiCatalogbot66_5343569830307968318",
+    "img_url": "https://ai.avocado.ceo/api/upload/bf75c20b-a3c7-47e7-8a91-718f8e62a71d.webp"
+  },
+  {
+    "id": "33eb472d-fbea-4b87-b31a-48a6b63b0e22",
+    "created_at": "2025-08-01T15:57:58.066647",
+    "updated_at": "2025-08-01T15:57:58.066663",
+    "custom_emoji_id": "5343800491526599289",
+    "name": "😁_EmojiCatalogbot66_5343800491526599289",
+    "img_url": "https://ai.avocado.ceo/api/upload/5a415a7a-1c93-4db6-aaf2-21c598d7a976.webp"
+  },
+  {
+    "id": "75876807-9eb9-4c42-8f03-48d9de740df0",
+    "created_at": "2025-08-01T15:57:58.560917",
+    "updated_at": "2025-08-01T15:57:58.560922",
+    "custom_emoji_id": "5345977747887892711",
+    "name": "😁_EmojiCatalogbot66_5345977747887892711",
+    "img_url": "https://ai.avocado.ceo/api/upload/e226d8ff-1e15-4179-8e50-d3550458f126.webp"
+  },
+  {
+    "id": "8042b08e-7937-4d49-a0ab-58df1de668e5",
+    "created_at": "2025-08-01T15:57:59.102122",
+    "updated_at": "2025-08-01T15:57:59.102128",
+    "custom_emoji_id": "5346238800295110630",
+    "name": "😁_EmojiCatalogbot66_5346238800295110630",
+    "img_url": "https://ai.avocado.ceo/api/upload/748d4106-8c47-484e-b423-2d56f00b86f0.webp"
+  },
+  {
+    "id": "e53299b3-7bb3-49f2-b1c7-67dfe1985cc7",
+    "created_at": "2025-08-01T15:57:59.639047",
+    "updated_at": "2025-08-01T15:57:59.639055",
+    "custom_emoji_id": "5345984546821125869",
+    "name": "😁_EmojiCatalogbot66_5345984546821125869",
+    "img_url": "https://ai.avocado.ceo/api/upload/9fc3110d-2d0a-4457-b12f-33cb7d7e14ed.webp"
+  },
+  {
+    "id": "1feca318-d68a-4000-addb-45a16e4ef5f1",
+    "created_at": "2025-08-01T15:58:00.196328",
+    "updated_at": "2025-08-01T15:58:00.196338",
+    "custom_emoji_id": "5346268358260043662",
+    "name": "😁_EmojiCatalogbot66_5346268358260043662",
+    "img_url": "https://ai.avocado.ceo/api/upload/86df2d6d-5760-4eb2-807d-979773d1f774.webp"
+  },
+  {
+    "id": "0dc59737-5725-4dd0-a2cf-73641ea2f60a",
+    "created_at": "2025-08-01T15:58:00.854100",
+    "updated_at": "2025-08-01T15:58:00.854107",
+    "custom_emoji_id": "5346051973512701610",
+    "name": "😁_EmojiCatalogbot66_5346051973512701610",
+    "img_url": "https://ai.avocado.ceo/api/upload/016f7a0e-8301-44f9-96a5-091358da9969.webp"
+  },
+  {
+    "id": "e6621c7a-230f-4df1-a949-febcd6530536",
+    "created_at": "2025-08-01T15:58:01.412508",
+    "updated_at": "2025-08-01T15:58:01.412516",
+    "custom_emoji_id": "5343844265833279537",
+    "name": "😁_EmojiCatalogbot66_5343844265833279537",
+    "img_url": "https://ai.avocado.ceo/api/upload/7c44e505-ebcb-4f7e-8469-a237f5b42fd7.webp"
+  },
+  {
+    "id": "441145b1-dd71-460b-8076-b54bd4d284b2",
+    "created_at": "2025-08-01T15:58:01.909409",
+    "updated_at": "2025-08-01T15:58:01.909414",
+    "custom_emoji_id": "5345992307827025466",
+    "name": "😁_EmojiCatalogbot66_5345992307827025466",
+    "img_url": "https://ai.avocado.ceo/api/upload/55c7d987-05a6-4ff6-a485-b6c4087973e7.webp"
+  },
+  {
+    "id": "af47fd0e-6d2a-49f9-acb0-11307b85a563",
+    "created_at": "2025-08-01T15:58:02.460799",
+    "updated_at": "2025-08-01T15:58:02.460807",
+    "custom_emoji_id": "5346194970153855923",
+    "name": "😁_EmojiCatalogbot66_5346194970153855923",
+    "img_url": "https://ai.avocado.ceo/api/upload/bf968495-7a1f-45a6-b485-e9c210d0ca47.webp"
+  },
+  {
+    "id": "24e9a97a-e922-4e1a-a4de-fcced1b120c5",
+    "created_at": "2025-08-01T15:58:03.014779",
+    "updated_at": "2025-08-01T15:58:03.014789",
+    "custom_emoji_id": "5343719101896339635",
+    "name": "😁_EmojiCatalogbot66_5343719101896339635",
+    "img_url": "https://ai.avocado.ceo/api/upload/2f69321f-55b9-4fc8-a1ef-e1de805a1410.webp"
+  },
+  {
+    "id": "bc013e99-b6a1-4d22-82fb-da7f815d1c9b",
+    "created_at": "2025-08-01T15:58:03.552679",
+    "updated_at": "2025-08-01T15:58:03.552690",
+    "custom_emoji_id": "5345804497497108454",
+    "name": "😁_EmojiCatalogbot66_5345804497497108454",
+    "img_url": "https://ai.avocado.ceo/api/upload/f537d077-90d9-4a6c-a34a-577047d6e366.webp"
+  },
+  {
+    "id": "f37f6394-ab41-4cda-a89f-7f7c158e1177",
+    "created_at": "2025-08-01T15:58:04.228378",
+    "updated_at": "2025-08-01T15:58:04.228389",
+    "custom_emoji_id": "5346113748027321215",
+    "name": "😁_EmojiCatalogbot66_5346113748027321215",
+    "img_url": "https://ai.avocado.ceo/api/upload/c8172c4f-c454-4899-9563-726afeed24f1.webp"
+  },
+  {
+    "id": "a7d8fba8-6485-464c-8c99-315d71ad2ae3",
+    "created_at": "2025-08-01T15:58:04.827501",
+    "updated_at": "2025-08-01T15:58:04.827513",
+    "custom_emoji_id": "5343766415256072790",
+    "name": "😁_EmojiCatalogbot66_5343766415256072790",
+    "img_url": "https://ai.avocado.ceo/api/upload/8114e104-05bc-4747-8e16-a2c4d2107a85.webp"
+  },
+  {
+    "id": "16cbf20e-baad-491c-9024-f5ad5216bd94",
+    "created_at": "2025-08-01T15:58:05.347724",
+    "updated_at": "2025-08-01T15:58:05.347730",
+    "custom_emoji_id": "5343712912848465670",
+    "name": "😁_EmojiCatalogbot66_5343712912848465670",
+    "img_url": "https://ai.avocado.ceo/api/upload/f5094550-7ce9-4430-aec4-2dd2cf8da5e7.webp"
+  },
+  {
+    "id": "64832925-5f7b-4647-a51c-7b01b533e6f2",
+    "created_at": "2025-08-01T15:58:05.880584",
+    "updated_at": "2025-08-01T15:58:05.880608",
+    "custom_emoji_id": "5343942500325274514",
+    "name": "😁_EmojiCatalogbot66_5343942500325274514",
+    "img_url": "https://ai.avocado.ceo/api/upload/f3828466-a1ac-47f4-a24a-3e82b2c19173.webp"
+  },
+  {
+    "id": "bd44b633-6b67-49f0-a1b5-aec5566895f0",
+    "created_at": "2025-08-01T15:58:06.428550",
+    "updated_at": "2025-08-01T15:58:06.428556",
+    "custom_emoji_id": "5343889496133873462",
+    "name": "😁_EmojiCatalogbot66_5343889496133873462",
+    "img_url": "https://ai.avocado.ceo/api/upload/165efa28-1f07-4924-9510-572c466c98a6.webp"
+  },
+  {
+    "id": "33b9e4c5-e0ef-4e39-9782-9c59aa51236b",
+    "created_at": "2025-08-01T15:58:06.936255",
+    "updated_at": "2025-08-01T15:58:06.936264",
+    "custom_emoji_id": "5346211449943370008",
+    "name": "😁_EmojiCatalogbot66_5346211449943370008",
+    "img_url": "https://ai.avocado.ceo/api/upload/1d5459e5-884b-4e48-acc7-5170b13a51d7.webp"
+  },
+  {
+    "id": "9e57b5a6-e4df-4e13-97f3-6b462a29fa30",
+    "created_at": "2025-08-01T15:58:07.498689",
+    "updated_at": "2025-08-01T15:58:07.498694",
+    "custom_emoji_id": "5345913482292243870",
+    "name": "😁_EmojiCatalogbot66_5345913482292243870",
+    "img_url": "https://ai.avocado.ceo/api/upload/26ce18c8-ec58-4520-b297-09ac86881230.webp"
+  },
+  {
+    "id": "281ccd6b-e591-494e-ba4a-9bdcba5023cd",
+    "created_at": "2025-08-01T15:58:08.052441",
+    "updated_at": "2025-08-01T15:58:08.052483",
+    "custom_emoji_id": "5346094467919132669",
+    "name": "😁_EmojiCatalogbot66_5346094467919132669",
+    "img_url": "https://ai.avocado.ceo/api/upload/b37c2540-65c8-4e18-9705-6dca0e5158b9.webp"
+  },
+  {
+    "id": "a48cd7df-586f-481a-9c8f-21605404000e",
+    "created_at": "2025-08-01T15:58:08.564436",
+    "updated_at": "2025-08-01T15:58:08.564444",
+    "custom_emoji_id": "5346270510038658782",
+    "name": "😁_EmojiCatalogbot66_5346270510038658782",
+    "img_url": "https://ai.avocado.ceo/api/upload/7833fe87-7e39-4dd2-aa1d-deda3f65e9aa.webp"
+  },
+  {
+    "id": "71b76604-8ab5-4985-ad1a-b7f5e9e79d52",
+    "created_at": "2025-08-01T15:58:09.069531",
+    "updated_at": "2025-08-01T15:58:09.069539",
+    "custom_emoji_id": "5346098363454467288",
+    "name": "😁_EmojiCatalogbot66_5346098363454467288",
+    "img_url": "https://ai.avocado.ceo/api/upload/b266ff5b-0f50-4784-b069-fab2d7ce2852.webp"
+  },
+  {
+    "id": "255e44ba-708f-4e8d-a43c-eaa5b27882b1",
+    "created_at": "2025-08-01T15:58:09.620714",
+    "updated_at": "2025-08-01T15:58:09.620722",
+    "custom_emoji_id": "5343578922753733980",
+    "name": "😁_EmojiCatalogbot66_5343578922753733980",
+    "img_url": "https://ai.avocado.ceo/api/upload/98c8bd3f-3c3f-4b45-bb74-64076515ed5f.webp"
+  },
+  {
+    "id": "9027bfb0-c578-405c-ba28-2a0cd89e77f5",
+    "created_at": "2025-08-01T15:58:10.188492",
+    "updated_at": "2025-08-01T15:58:10.188501",
+    "custom_emoji_id": "5346273142853611615",
+    "name": "😁_EmojiCatalogbot66_5346273142853611615",
+    "img_url": "https://ai.avocado.ceo/api/upload/ce82d194-f17b-45ed-a9bb-e0c4ded150a6.webp"
+  },
+  {
+    "id": "db3ae4bc-3920-45e8-8de3-dd9bd74161e3",
+    "created_at": "2025-08-01T15:58:10.790060",
+    "updated_at": "2025-08-01T15:58:10.790070",
+    "custom_emoji_id": "5345876008702584396",
+    "name": "😁_EmojiCatalogbot66_5345876008702584396",
+    "img_url": "https://ai.avocado.ceo/api/upload/ecb448d5-e477-4eca-9f04-aa80b055efef.webp"
+  },
+  {
+    "id": "a26d491a-fb50-4322-8d06-c3091aa9a367",
+    "created_at": "2025-08-01T15:58:11.341823",
+    "updated_at": "2025-08-01T15:58:11.341831",
+    "custom_emoji_id": "5346180543358710050",
+    "name": "😁_EmojiCatalogbot66_5346180543358710050",
+    "img_url": "https://ai.avocado.ceo/api/upload/e847b239-7588-42ca-a4a4-9c2496c9b11f.webp"
+  },
+  {
+    "id": "784221e7-dc0b-4d69-aee1-41f4ee9067a8",
+    "created_at": "2025-08-01T15:58:11.879699",
+    "updated_at": "2025-08-01T15:58:11.879709",
+    "custom_emoji_id": "5345784701992840887",
+    "name": "😁_EmojiCatalogbot66_5345784701992840887",
+    "img_url": "https://ai.avocado.ceo/api/upload/1e73b74d-47a7-48c6-a501-ca38a992cb47.webp"
+  },
+  {
+    "id": "5715af76-9fd7-41dd-882a-de8defae7815",
+    "created_at": "2025-08-01T15:58:12.455104",
+    "updated_at": "2025-08-01T15:58:12.455126",
+    "custom_emoji_id": "5345930279909336913",
+    "name": "😁_EmojiCatalogbot66_5345930279909336913",
+    "img_url": "https://ai.avocado.ceo/api/upload/f0b70fcf-fe40-46ab-99e4-2e8504ce7bfb.webp"
+  },
+  {
+    "id": "222da145-9289-41c7-8e0c-29dbcbd9f48d",
+    "created_at": "2025-08-01T15:58:12.981391",
+    "updated_at": "2025-08-01T15:58:12.981400",
+    "custom_emoji_id": "5346241304261042955",
+    "name": "😁_EmojiCatalogbot66_5346241304261042955",
+    "img_url": "https://ai.avocado.ceo/api/upload/b38f0aad-0f82-4d61-9a34-646405925950.webp"
+  }
+]

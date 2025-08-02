@@ -43,6 +43,17 @@ class EmojiRepository(
                 emoji = await session.get(self.entity, emoji_id)
                 await session.delete(emoji)
 
+    async def get_all(self, limit: int = 100, offset: int = 0, joined: bool = True) -> list[EmojiModel]:
+        async with self.session_maker() as session:
+            res = (await session.execute(
+                select(self.entity)
+            )).scalars().all()
+
+        return [
+            self.entity_to_model(entity)
+            for entity in res
+        ]
+
     def create_dto_to_entity(self, dto: CreateEmojiDTO) -> Emoji:
         return Emoji(
             id=dto.id,
