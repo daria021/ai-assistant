@@ -39,6 +39,7 @@ export interface Post {
     image_path: string | null;
     html?: string | null;
     entities?: MessageEntityDTO[];
+    is_template: boolean;
 }
 
 interface ChatItem {
@@ -87,6 +88,7 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
     const [title, setTitle] = useState("");
     const [scheduleType, setScheduleType] = useState<"once" | "daily">("once");
+    const [isTemplate, setIsTemplate] = useState(false);
 
     /* ───────── Chats ───────── */
     const [chats, setChats] = useState<ChatItem[]>([]);
@@ -117,6 +119,8 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
     const {userId, role} = useAuth();
 
     const [managers, setManagers] = useState<User[]>([]);
+    // прямо под const { template, openCreate } = ...
+
 
     /* ───────── Initial fetch ───────── */
     useEffect(() => {
@@ -144,9 +148,11 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
             setEditorHtml(template.html || "");
             setEditorEntities(template.entities || []);
             if (template.image_path) setPhotoPreview(template.image_path);
+            setIsTemplate(template.is_template);
             setActiveTab("create");
         }
     }, [template]);
+
 
     /* ───────── Helpers ───────── */
     const filteredChats = useMemo(
@@ -202,8 +208,10 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
       if (p.scheduled_type === "single") {
         // 3) одиночные: только дата >= сегодня
         if (!p.scheduled_date) continue;
-        const dt = new Date(p.scheduled_date);
-        if (dt < today) continue;
+        const [h, m] = p.scheduled_time.split(':').map(Number);
+const dt = new Date(p.scheduled_date);
+dt.setHours(h, m, 0, 0);
+if (dt < new Date()) continue;
         const iso = dt.toISOString().slice(0,10);
         map[iso] = (map[iso]||[]).concat(base);
       } else {
@@ -335,83 +343,90 @@ const fetchSent = useCallback(async () => {
         return () => remove();
     }, [navigate]);
 
+/* ───────── Save Post ───────── */
+const handleSave = async () => {
+    if (!title.trim() || !editorText.trim()) {
+        alert("Введите название и текст поста");
+        return;
+    }
+    if (scheduleType === "once" && !scheduledAt) {
+        alert("Выберите дату и время");
+        return;
+    }
+    if (scheduleType === "daily" && !timeOnly) {
+        alert("Выберите время для ежедневной рассылки");
+        return;
+    }
+    if (!userId) {
+        alert("Не удалось определить менеджера");
+        return;
+    }
 
-    /* ───────── Save Post ───────── */
-    const handleSave = async () => {
-        if (!title.trim() || !editorText.trim()) {
-            alert("Введите название и текст поста");
-            return;
-        }
-        if (scheduleType === "once" && !scheduledAt) {
-            alert("Выберите дату и время");
-            return;
-        }
-        if (scheduleType === "daily" && !timeOnly) {
-            alert("Выберите время для ежедневной рассылки");
-            return;
-        }
-        if (!userId) {
-            alert("Не удалось определить менеджера");
-            return;
-        }
-
-        try {
-            const postId = await createPost(
+    try {
+        let postId: string;
+        if (template) {
+            postId = template.id;
+        } else {
+            postId = await createPost(
                 title,
                 editorText,
+                isTemplate,
                 editorHtml,
                 editorEntities,
                 photoFile ?? undefined
             );
-
-            let scheduled_date: string | null = null;
-            let scheduled_time: string;
-
-            if (scheduleType === "once") {
-                scheduled_date = scheduledAt!.toLocaleDateString("sv-SE");
-                scheduled_time = scheduledAt!.toLocaleTimeString("ru-RU", {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                });
-            } else {
-                scheduled_time = timeOnly!.toLocaleTimeString("ru-RU", {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                });
-            }
-
-            const dto: CreatePostToPublishDTO = {
-                post_id: postId,
-                scheduled_type: scheduleType === "once" ? "single" : "everyday",
-                responsible_manager_id: responsibleManagerId,
-                scheduled_date,
-                scheduled_time,
-                chat_ids: selectedChats,
-                manager_id: userId,
-                status: "pending"
-            };
-
-            await createPostToPublish(dto);
-            await fetchSchedule();
-
-            /* reset */
-            setPhotoFile(null);
-            setPhotoPreview(null);
-            setTitle("");
-            setEditorText("");
-            setEditorHtml("");
-            setEditorEntities([]);
-            setScheduledAt(null);
-            setTimeOnly(null);
-            setScheduleType("once");
-            setSelectedChats([]);
-            setChatSearch("");
-            setActiveTab("schedule");
-        } catch (err) {
-            console.error("Ошибка при сохранении поста:", err);
-            alert("Не удалось создать пост.");
         }
-    };
+
+        let scheduled_date: string | null = null;
+        let scheduled_time: string;
+
+        if (scheduleType === "once") {
+            scheduled_date = scheduledAt!.toLocaleDateString("sv-SE");
+            scheduled_time = scheduledAt!.toLocaleTimeString("ru-RU", {
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        } else {
+            scheduled_time = timeOnly!.toLocaleTimeString("ru-RU", {
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        }
+
+        const dto: CreatePostToPublishDTO = {
+            post_id: postId,
+            scheduled_type: scheduleType === "once" ? "single" : "everyday",
+            responsible_manager_id: responsibleManagerId,
+            scheduled_date,
+            scheduled_time,
+            chat_ids: selectedChats,
+            manager_id: userId,
+            status: "pending"
+        };
+
+        await createPostToPublish(dto);
+        await fetchSchedule();
+
+        /* reset */
+        setPhotoFile(null);
+        setPhotoPreview(null);
+        setTitle("");
+        setEditorText("");
+        setEditorHtml("");
+        setEditorEntities([]);
+        setScheduledAt(null);
+        setTimeOnly(null);
+        setScheduleType("once");
+        setSelectedChats([]);
+        setIsTemplate(false);
+        setChatSearch("");
+        setActiveTab("schedule");
+    } catch (err) {
+        console.error("Ошибка при сохранении поста:", err);
+        alert("Не удалось создать пост.");
+    }
+};
+
 
     /* ───────── Delete Schedule Item ───────── */
     const handleDelete = async (day: string, ev: EventItem) => {
@@ -630,7 +645,25 @@ const fetchSent = useCallback(async () => {
                                 <div className="text-gray-500 italic">Чаты не найдены</div>
                             )}
                         </div>
+
                     </div>
+                    {/* Сделать шаблоном */}
+{/* Сделать шаблоном (показываем, только если ещё не шаблон) */}
+{!template?.is_template && (
+  <div>
+    <label className="flex items-center space-x-2 mt-2">
+      <input
+        type="checkbox"
+        checked={isTemplate}
+        onChange={() => setIsTemplate(!isTemplate)}
+        className="form-checkbox h-5 w-5 text-brand focus:ring-brand"
+      />
+      <span>Сделать шаблоном</span>
+    </label>
+  </div>
+)}
+
+
 
                     {/* Сохранить */}
                     <button

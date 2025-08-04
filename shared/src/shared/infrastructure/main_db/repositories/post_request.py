@@ -102,6 +102,7 @@ class SendPostRequestRepository(
                 id=post.id,
                 text=post.text,
                 name=post.name,
+                is_template=post.is_template,
                 html=post.html,
                 entities=[MessageEntityDTO.model_validate(x) for x in post.entities] if post.entities else None,
                 image_path=post.image_path,

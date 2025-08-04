@@ -28,13 +28,13 @@ def parse_args():
     parser.add_argument(
         "--exclude-files",
         nargs="*",
-        default=["*.lock", "*~", "package-lock.json"],
+        default=["*.lock", "*~", "package-lock.json", "*.json", "dasha.txt", "service.txt", "scrape.py"],
         help="File patterns to exclude (default: ['*.lock', '*~'])."
     )
     parser.add_argument(
         "--exclude-dirs",
         nargs="*",
-        default=["__pycache__", ".git", "node_modules", ".venv", "migrations"],
+        default=["__pycache__", ".git", "node_modules", ".venv", "migrations", ".newvenv", ".idea"],
         help="Directory names to exclude (default: ['__pycache__', '.git', 'node_modules'])."
     )
     return parser.parse_args()

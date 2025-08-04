@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getPosts } from '../services/api';
+import {getPosts, updatePost} from '../services/api';
 import {on} from "@telegram-apps/sdk";
 
 export interface MessageEntityDTO {
@@ -18,17 +18,34 @@ export interface Post {
   image_path: string | null;
   html?: string | null;
   entities?: MessageEntityDTO[];
+  is_template: boolean;
 }
 
 export default function PostTemplatesPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const navigate = useNavigate();
 
+  const handleDeleteTemplate = async (post: Post) => {
+    if (!window.confirm(`Удалить шаблон "${post.name}"?`)) return;
+    try {
+      await updatePost(
+        post.id,
+        null,
+        false
+      );
+      setPosts(prev => prev.filter(p => p.id !== post.id));
+    } catch (err) {
+      console.error('Ошибка при удалении шаблона:', err);
+      alert('Не удалось удалить шаблон.');
+    }
+  };
+
+
   useEffect(() => {
     (async () => {
       try {
         const data = await getPosts();
-        setPosts(data);
+        setPosts(data.filter(p => p.is_template));
       } catch (err) {
         console.error('Ошибка при загрузке шаблонов:', err);
         alert('Не удалось загрузить список шаблонов.');
@@ -75,8 +92,14 @@ export default function PostTemplatesPage() {
           {posts.map(post => (
             <div
               key={post.id}
-              className="bg-white rounded-2xl shadow p-4 flex flex-col"
+              className="relative bg-white rounded-2xl shadow p-4 flex flex-col"
             >
+              <img
+                src="/icons/trash.png"
+                alt="Удалить шаблон"
+                className="absolute top-2 right-2 h-6 w-6 cursor-pointer opacity-60 hover:opacity-100 transition"
+                onClick={e => { e.stopPropagation(); handleDeleteTemplate(post); }}
+              />
               {post.image_path && (
                 <img
                   src={post.image_path}

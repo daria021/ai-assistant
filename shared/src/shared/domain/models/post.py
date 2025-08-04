@@ -11,6 +11,7 @@ class Post(Model):
     text: str
     name: str
     image_path: Optional[str] = None
+    is_template: bool
 
     html: Optional[str] = None
     entities: Optional[list[MessageEntityDTO]] = None

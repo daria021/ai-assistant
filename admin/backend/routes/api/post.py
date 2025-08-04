@@ -25,6 +25,7 @@ async def create_post(
         name: str = Form(...),
         text: str = Form(...),
         html: str = Form(...),
+        is_template: bool = Form(...),
         entities: str = Form(...),
         image: Optional[UploadFile] = File(None),
         upload_service: UploadServiceInterface = Depends(get_upload_service),
@@ -51,6 +52,7 @@ async def create_post(
     post = CreatePostDTO(
         name=name,
         text=text,
+        is_template=is_template,
         image_path=image_path,
         html=html,
         entities=entities,

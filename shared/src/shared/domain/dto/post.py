@@ -11,7 +11,7 @@ class CreatePostDTO(CreateDTO):
     name: str
     text: str
     image_path: Optional[str] = None
-
+    is_template: bool
     html: Optional[str] = None
     entities: Optional[list[MessageEntityDTO]] = None
 
@@ -35,6 +35,7 @@ class UpdatePostDTO(UpdateDTO):
     name: Optional[str] = None
     text: Optional[str] = None
     image_path: Optional[str] = None
+    is_template: Optional[bool] = None
     html: Optional[str] = None
     entities: Optional[list[MessageEntityDTO]] = None
 

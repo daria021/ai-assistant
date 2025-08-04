@@ -32,6 +32,7 @@ export interface Post {
     image_path: string | null;
     html?: string | null;
     entities?: MessageEntityDTO[];
+    is_template: boolean;
 }
 
 export interface PostToPublish {
@@ -86,6 +87,7 @@ export interface UpdatePostDTO {
     post_id: string;
     name?: string;
     text?: string;
+    is_template?: boolean;
     /** путь к изображению, если нужно заменить или убрать */
     image_path?: string | null;
     /** HTML версия текста (если используете rich editor) */
@@ -189,6 +191,7 @@ export async function updateChat(
 export async function createPost(
     name: string,
     text: string,
+    is_template: boolean,
     html: string,
     entities: MessageEntityDTO[],
     imageFile?: File,
@@ -197,6 +200,7 @@ export async function createPost(
     const form = new FormData();
     form.append("name", name);
     form.append("text", text);
+form.append("is_template", String(is_template));   // "true" | "false"
     form.append("html", html);
     form.append("entities", JSON.stringify(entities));
     if (imageFile) form.append("image", imageFile);
@@ -211,6 +215,7 @@ export async function createPost(
 export async function updatePost(
     postId: string,
     title?: string | null,
+    is_template?: boolean,
     editorText?: string | null,
     editorHtml?: string | null,
     editorEntities?: MessageEntityDTO[] | null,
@@ -219,6 +224,7 @@ export async function updatePost(
     const form = new FormData()
     if (title) form.append("name", title);
     if (editorText) form.append("text", editorText);
+    if (editorText) form.append("is_template", String(is_template));
     if (editorHtml) form.append("html", editorHtml);
     if (editorEntities) form.append('entities', JSON.stringify(editorEntities));
     if (photoFile) form.append('image', photoFile);

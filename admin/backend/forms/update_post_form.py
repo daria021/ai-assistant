@@ -7,6 +7,7 @@ from pydantic import BaseModel
 class UpdatePostForm(BaseModel):
     name: Optional[str] = None
     text: Optional[str] = None
+    is_template: Optional[bool] = None
     html: Optional[str] = None
     entities: Optional[str] = None
     image: Optional[UploadFile] = None

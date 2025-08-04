@@ -113,6 +113,7 @@ class Post(AbstractBase):
     name: Mapped[str]
     text: Mapped[str]
     image_path: Mapped[Optional[str]]
+    is_template: Mapped[bool] = mapped_column(default=False, server_default='false')
 
     html: Mapped[Optional[str]]
     entities: Mapped[Optional[list[dict]]] = mapped_column(JSONB)
