@@ -103,6 +103,11 @@ class TelethonTelegramMessagesRepository(
                         entities_to_send.append(entity_to_add)
 
                 sending_args['formatting_entities'] = entities_to_send
+                logger.debug(
+                    "TELETHON_SEND text=%r ENT=%s",
+                    sending_args.get("message", "")[:200],
+                    sending_args.get("formatting_entities", [])[:8],
+                )
 
             message = await client.send_message(**sending_args)
             logger.info('Message sent')

@@ -22,11 +22,9 @@ router = APIRouter(
 async def create_post_to_publish(request: Request, post_to_publish: CreatePostToPublishDTO) -> UUID:
     post_service = get_post_service()
     post = await post_service.get_post(post_to_publish.post_id)
-    logger.debug(
-        'BACK-IN text=%r entities=%s',
-        post.text[:200],                # первые 200 символов текста
-        post.entities[:5],              # первые 5 сущностей
-    )
+    logger.debug("BACK_GET_POST text=%r ENT=%s\", post.text[:200], post.entities[:8]")
+
+    logger.debug('BACK_IN_POST', repr(post.text)[:200], post.entities[:8])
     post_to_publish_service = get_post_to_publish_service()
     user_id = get_user_id_from_request(request)
     post_to_publish.creator_id = user_id

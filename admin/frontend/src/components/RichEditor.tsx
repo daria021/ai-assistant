@@ -72,7 +72,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
           custom_emoji_id: ids[i++] ?? '',
         } as MessageEntityDTO);
       }
-      console.log('FRONT', JSON.stringify(text), entities);
+      console.log('EDITOR_SERIALIZE', JSON.stringify(text), entities);
 
       return { html, text, entities };
     };

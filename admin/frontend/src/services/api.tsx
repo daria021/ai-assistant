@@ -196,7 +196,6 @@ export async function createPost(
     entities: MessageEntityDTO[],
     imageFile?: File,
 ): Promise<string> {
-    console.log(`SENDING FUCKING ENTITIES ${JSON.stringify(entities)}`);
     const form = new FormData();
     form.append("name", name);
     form.append("text", text);
@@ -204,6 +203,8 @@ form.append("is_template", String(is_template));   // "true" | "false"
     form.append("html", html);
     form.append("entities", JSON.stringify(entities));
     if (imageFile) form.append("image", imageFile);
+
+    console.log('API_OUT', JSON.stringify(text), entities);
 
     // Вернёт UUID созданного поста
     const response = await apiClient.post<string>("post", form, {

@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
@@ -16,7 +17,7 @@ from shared.domain.models import WorkerMessage as WorkerMessageModel
 from shared.infrastructure.main_db.entities import User, WorkerMessage
 from .abstract import AbstractMainDBRepository
 
-
+logger = logging.getLogger(__name__)
 @dataclass
 class WorkerMessageRepository(
     AbstractMainDBRepository[WorkerMessage, WorkerMessageModel, CreateWorkerMessageDTO, UpdateWorkerMessageDTO],
@@ -98,6 +99,7 @@ class WorkerMessageRepository(
         )
 
     def create_dto_to_entity(self, dto: CreateWorkerMessageDTO) -> WorkerMessage:
+        logger.debug("DB_SAVE text=%r ENT=%s\", dto.text[:200], dto.entities[:8]")
         return WorkerMessage(
             id=dto.id,
             user_id=dto.user_id,

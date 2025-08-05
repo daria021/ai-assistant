@@ -54,6 +54,8 @@ class AccountManager(AccountManagerInterface):
         logger.info(f"Sending post request {worker_message_dto}")
         logger.info(f"Request was {request}")
 
+        logger.info("WM_OUT text=%r ENT=%s\", worker_message_dto.text[:200], worker_message_dto.entities[:8]")
+
         await self.worker_message_repository.create(worker_message_dto)
 
         await self.ensure_worker_running(request.user_id)
