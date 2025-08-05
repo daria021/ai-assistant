@@ -57,7 +57,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
 
       // 3. Получаем итоговые строки
       const html = clone.innerHTML;
-      const text = clone.innerText; // именно innerText → учитывает \n так же, как Telegram
+      const text = clone.innerText.replace(/\n/g, '\r\n');// именно innerText → учитывает \n так же, как Telegram
 
       // 4. Строим entities по найденным 🦏
       const entities: MessageEntityDTO[] = [];
