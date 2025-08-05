@@ -224,11 +224,10 @@ export async function updatePost(
     const form = new FormData()
     if (title) form.append("name", title);
     if (editorText) form.append("text", editorText);
-    if (editorText) form.append("is_template", String(is_template));
+    if (is_template) form.append("is_template", String(is_template));
     if (editorHtml) form.append("html", editorHtml);
     if (editorEntities) form.append('entities', JSON.stringify(editorEntities));
     if (photoFile) form.append('image', photoFile);
-
     return apiClient.patch(`/post/${postId}`, form, {
         headers: {"Content-Type": "multipart/form-data"},
     });
