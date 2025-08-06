@@ -225,7 +225,7 @@ export async function updatePost(
     const form = new FormData()
     if (title) form.append("name", title);
     if (editorText) form.append("text", editorText);
-    if (is_template) form.append("is_template", String(is_template));
+    if (is_template !== undefined) form.append("is_template", String(is_template));
     if (editorHtml) form.append("html", editorHtml);
     if (editorEntities) form.append('entities', JSON.stringify(editorEntities));
     if (photoFile) form.append('image', photoFile);
@@ -233,7 +233,6 @@ export async function updatePost(
         headers: {"Content-Type": "multipart/form-data"},
     });
 }
-
 
 /** 2) Создать запись поста для публикации */
 export async function createPostToPublish(dto: CreatePostToPublishDTO): Promise<string> {
