@@ -63,6 +63,12 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             idsRef.current = ids;
 
             const html = clone.innerHTML;
+            console.log("start log");
+            console.log(html);
+            console.log(clone);
+            console.log(el);
+            console.log(el.innerHTML);
+            console.log("end log");
             const text = clone.innerText.replace(/\n/g, '\r\n');
             const entities: MessageEntityDTO[] = [];
 
