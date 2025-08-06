@@ -1,9 +1,8 @@
 from datetime import date, time
-from typing import Optional, List
+from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, field_validator, ConfigDict
-from pydantic_core.core_schema import FieldValidationInfo
+from pydantic import BaseModel, ConfigDict
 
 from shared.domain.enums import ScheduledType, PublicationStatus
 from .abstract import CreateDTO, UpdateDTO
@@ -13,6 +12,7 @@ class MessageEntityDTO(BaseModel):
     type: str
     offset: int
     length: int
+    url: Optional[str] = None
     custom_emoji_id: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)

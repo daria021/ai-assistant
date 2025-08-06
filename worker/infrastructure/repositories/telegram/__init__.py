@@ -9,7 +9,15 @@ from shared.domain.dto.post_to_publish import MessageEntityDTO
 from telethon import TelegramClient as Client
 from telethon.sessions import StringSession
 from telethon.tl.functions.channels import JoinChannelRequest
-from telethon.tl.types import MessageEntityCustomEmoji
+from telethon.tl.types import (
+    MessageEntityCustomEmoji,
+    MessageEntityBold,
+    MessageEntityItalic,
+    MessageEntityUnderline,
+    MessageEntityStrike,
+    MessageEntityTextUrl,
+    TypeMessageEntity
+)
 
 from abstractions.repositories import TelegramMessagesRepositoryInterface
 from shared.domain.models import UserWithSessionString
@@ -92,16 +100,7 @@ class TelethonTelegramMessagesRepository(
                 sending_args['file'] = upload_service.get_file_path(media_path)
 
             if entities:
-                entities_to_send = []
-                for raw_entity in entities:
-                    if raw_entity.type == 'custom_emoji':
-                        entity_to_add = MessageEntityCustomEmoji(
-                            offset=raw_entity.offset,
-                            length=raw_entity.length,
-                            document_id=raw_entity.custom_emoji_id,
-                        )
-                        entities_to_send.append(entity_to_add)
-
+                entities_to_send = self._prepare_entities(entities)
                 sending_args['formatting_entities'] = entities_to_send
                 logger.debug(
                     "TELETHON_SEND text=%r ENT=%s",
@@ -166,3 +165,49 @@ class TelethonTelegramMessagesRepository(
         # PySocks/Telethon-compatible format
         proxy = (proxy_type, host, port, True, username, password)
         return proxy
+
+    @staticmethod
+    def _prepare_entities(raw_entities: list[MessageEntityDTO]) -> list[TypeMessageEntity]:
+        entities = []
+        for raw_entity in raw_entities:
+            match raw_entity.type:
+                case "custom_emoji":
+                    entity_to_add = MessageEntityCustomEmoji(
+                        offset=raw_entity.offset,
+                        length=raw_entity.length,
+                        document_id=raw_entity.custom_emoji_id,
+                    )
+                    entities.append(entity_to_add)
+                case 'bold':
+                    entity_to_add = MessageEntityBold(
+                        offset=raw_entity.offset,
+                        length=raw_entity.length,
+                    )
+                    entities.append(entity_to_add)
+                case 'italic':
+                    entity_to_add = MessageEntityItalic(
+                        offset=raw_entity.offset,
+                        length=raw_entity.length,
+                    )
+                    entities.append(entity_to_add)
+                case 'underline':
+                    entity_to_add = MessageEntityUnderline(
+                        offset=raw_entity.offset,
+                        length=raw_entity.length,
+                    )
+                    entities.append(entity_to_add)
+                case 'strikethrough':
+                    entity_to_add = MessageEntityStrike(
+                        offset=raw_entity.offset,
+                        length=raw_entity.length,
+                    )
+                    entities.append(entity_to_add)
+                case 'text_link':
+                    entity_to_add = MessageEntityTextUrl(
+                        offset=raw_entity.offset,
+                        length=raw_entity.length,
+                        url=raw_entity.url,
+                    )
+                    entities.append(entity_to_add)
+
+        return entities

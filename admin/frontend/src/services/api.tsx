@@ -60,6 +60,7 @@ export interface UpdateUserDTO {
     role?: UserRole;
     is_banned?: boolean;
 }
+
 // export interface Chat {
 //     id: string;
 //     name: string;
@@ -98,93 +99,99 @@ export interface UpdatePostDTO {
 
 /** Тип для сущности в тексте (копируйте из вашего MessageEntityDTO) */
 export interface MessageEntityDTO {
-    type: "custom_emoji" | "bold" | "italic" | "underline";
+    type:
+        | "custom_emoji"
+        | "bold"
+        | "italic"
+        | "underline"
+        | "strikethrough"
+        | "text_link";
     offset: number;
     length: number;
     custom_emoji_id?: string;
+    url?: string;
 }
-
 
 
 export interface Chat {
-  id: string;
-  name: string;
-  chat_id: number;
-  invite_link?: string;
-  chat_type_id?: string | null;
+    id: string;
+    name: string;
+    chat_id: number;
+    invite_link?: string;
+    chat_type_id?: string | null;
 }
 
 export interface CreateChatDTO {
-  invite_link: string;
-  chat_type_id: string;
-  responsible_manager_id: string;
+    invite_link: string;
+    chat_type_id: string;
+    responsible_manager_id: string;
 }
 
 export interface UpdateChatDTO {
-  chat_type_id?: string | null;
-  invite_link?: string;
+    chat_type_id?: string | null;
+    invite_link?: string;
 }
 
 export interface ChatType {
-  id: string;
-  name: string;
-  description: string;
+    id: string;
+    name: string;
+    description: string;
 }
 
 export interface CreateChatTypeDTO {
-  name: string;
-  description: string;
+    name: string;
+    description: string;
 }
 
 export interface UpdateChatTypeDTO {
-  name?: string;
-  description?: string;
+    name?: string;
+    description?: string;
 }
 
 export async function getChatTypes(): Promise<ChatType[]> {
-  return (await apiClient.get<ChatType[]>(`/chat_type`)).data;
+    return (await apiClient.get<ChatType[]>(`/chat_type`)).data;
 }
 
 export async function createChatType(
-  payload: CreateChatTypeDTO
+    payload: CreateChatTypeDTO
 ): Promise<void> {
-  await apiClient.post(`/chat_type`, payload);
+    await apiClient.post(`/chat_type`, payload);
 }
 
 export async function updateChatType(
-  id: string,
-  payload: UpdateChatTypeDTO
+    id: string,
+    payload: UpdateChatTypeDTO
 ): Promise<void> {
-  await apiClient.patch(`/chat_type/${id}`, payload);
+    await apiClient.patch(`/chat_type/${id}`, payload);
 }
 
 export async function deleteChatType(
-  id: string
+    id: string
 ): Promise<void> {
-  await apiClient.delete(`/chat_type/${id}`);
+    await apiClient.delete(`/chat_type/${id}`);
 }
 
 
 export async function getChatsByType(
-  typeId: string
+    typeId: string
 ): Promise<Chat[]> {
-  return (
-    await apiClient.get<Chat[]>(`/chat/type/${typeId}`)
-  ).data;
+    return (
+        await apiClient.get<Chat[]>(`/chat/type/${typeId}`)
+    ).data;
 }
 
 export async function createChat(
-  payload: CreateChatDTO
+    payload: CreateChatDTO
 ): Promise<Chat> {
-  const { data } = await apiClient.post<Chat>(`/chat`, payload);
-  return data;
+    const {data} = await apiClient.post<Chat>(`/chat`, payload);
+    return data;
 }
 
 export async function updateChat(
-  id: string,
-  payload: UpdateChatDTO
+    id: string,
+    payload: UpdateChatDTO
 ): Promise<void> {
-  await apiClient.patch(`/chat/${id}`, payload);
+    await apiClient.patch(`/chat/${id}`, payload);
 }
 
 /** 1) Создать сущность Post (multipart/form-data) */
@@ -199,12 +206,17 @@ export async function createPost(
     const form = new FormData();
     form.append("name", name);
     form.append("text", text);
-form.append("is_template", String(is_template));   // "true" | "false"
+    form.append("is_template", String(is_template));   // "true" | "false"
     form.append("html", html);
     form.append("entities", JSON.stringify(entities));
     if (imageFile) form.append("image", imageFile);
 
     console.log('API_OUT', JSON.stringify(text), entities);
+    console.group('%cupdatePost FormData', 'color: purple; font-weight: bold;');
+    for (const [key, value] of Array.from(form.entries())) {
+        console.log(key, value);
+    }
+    console.groupEnd();
 
     // Вернёт UUID созданного поста
     const response = await apiClient.post<string>("post", form, {
@@ -260,11 +272,11 @@ export async function getUsers(): Promise<User[]> {
 }
 
 export async function updateUser(
-  id: string,
-  payload: UpdateUserDTO
+    id: string,
+    payload: UpdateUserDTO
 ): Promise<User> {
-  const { data } = await apiClient.patch<User>(`/users/${id}`, payload);
-  return data;
+    const {data} = await apiClient.patch<User>(`/users/${id}`, payload);
+    return data;
 }
 
 export async function getManagers(): Promise<User[]> {
@@ -272,10 +284,10 @@ export async function getManagers(): Promise<User[]> {
 }
 
 export async function deleteUser(userId: string) {
-  // формируем URL с query-параметром user_id
-  return (await apiClient.delete(`/users`, {
-    params: { user_id: userId }
-  })).data;
+    // формируем URL с query-параметром user_id
+    return (await apiClient.delete(`/users`, {
+        params: {user_id: userId}
+    })).data;
 }
 
 export async function getPostsToPublish(): Promise<PostToPublish[]> {

@@ -59,10 +59,17 @@ export interface CreatePostToPublishDTO {
 }
 
 export interface MessageEntityDTO {
-    type: "custom_emoji" | "bold" | "italic" | "underline";
+    type:
+    | "custom_emoji"
+    | "bold"
+    | "italic"
+    | "underline"
+    | "strikethrough"
+    | "text_link";
     offset: number;
     length: number;
     custom_emoji_id?: string;
+    url?: string;
 }
 
 export interface User {
@@ -175,7 +182,8 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
     const raw = await getPostsToPublish();
 
     // 1) общий фильтр по менеджеру/чат-типу/чату
-    const pre = raw.filter(p => {
+    const pre = raw
+        .filter(p => {
       if (managerFilter && p.responsible_manager_id !== managerFilter) return false;
       if (chatTypeFilter && !p.chats.some(c => c.chat_type_id === chatTypeFilter)) return false;
       if (chatFilter && !p.chats.some(c => c.id === chatFilter)) return false;
@@ -194,7 +202,6 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
     );
 
     const map: Record<string, EventItem[]> = {};
-    const today = new Date();
 
     for (const p of pre) {
       const base: EventItem = {
@@ -204,25 +211,29 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
         time: p.scheduled_time.slice(0,5),
         scheduledType: p.scheduled_type
       };
+      const now = new Date();
 
-      if (p.scheduled_type === "single") {
-        // 3) одиночные: только дата >= сегодня
-        if (!p.scheduled_date) continue;
-        const [h, m] = p.scheduled_time.split(':').map(Number);
-const dt = new Date(p.scheduled_date);
-dt.setHours(h, m, 0, 0);
-if (dt < new Date()) continue;
-        const iso = dt.toISOString().slice(0,10);
-        map[iso] = (map[iso]||[]).concat(base);
-      } else {
-        // 4) ежедневные: раскладываем на N дней вперёд
-        for (let i = 0; i < 7; i++) {
-          const dt = new Date(today);
-          dt.setDate(today.getDate() + i);
-          const iso = dt.toISOString().slice(0,10);
-          map[iso] = (map[iso]||[]).concat(base);
-        }
-      }
+
+if (p.scheduled_type === "single") {
+  if (!p.scheduled_date) continue;
+  const [h, m] = p.scheduled_time.split(':').map(Number);
+  const dt = new Date(p.scheduled_date);
+  dt.setHours(h, m, 0, 0);
+  if (dt < now) continue;            // <-- отрезаем прошлые
+  const iso = dt.toISOString().slice(0,10);
+  map[iso] = (map[iso]||[]).concat(base);
+} else {
+  const [h, m] = p.scheduled_time.split(':').map(Number);
+  for (let i = 0; i < 7; i++) {
+    const dt = new Date();
+    dt.setDate(dt.getDate() + i);
+    dt.setHours(h, m, 0, 0);
+    if (dt < now) continue;          // <-- отрезаем прошлые
+    const iso = dt.toISOString().slice(0,10);
+    map[iso] = (map[iso]||[]).concat(base);
+  }
+}
+
     }
 
     // 5) сортировка по времени
@@ -262,14 +273,18 @@ const fetchSent = useCallback(async () => {
     );
 
     const map: Record<string, EventItem[]> = {};
-    const today = new Date();
+    const now = new Date();
+
 
     // 3) одиночные до вчера
     pre
-      .filter(p => p.scheduled_type === "single" && p.scheduled_date && new Date(p.scheduled_date) < today)
-      .forEach(p => {
-        const dt = new Date(p.scheduled_date!);
-        const iso = dt.toISOString().slice(0,10);
+  .filter(p => p.scheduled_type === "single" && p.scheduled_date)
+  .forEach(p => {
+    const [h, m] = p.scheduled_time.split(':').map(Number);
+    const dt = new Date(p.scheduled_date!);
+    dt.setHours(h, m, 0, 0);
+    if (dt >= now) return;           // <-- остаются только прошлые
+    const iso = dt.toISOString().slice(0,10);
         map[iso] = (map[iso]||[]).concat({
           id: p.id,
           postId: p.post_id,
@@ -281,12 +296,15 @@ const fetchSent = useCallback(async () => {
 
     // 4) ежедневные: последние 7 дней
     pre
-      .filter(p => p.scheduled_type === "everyday")
-      .forEach(p => {
-        for (let i = 1; i <= 7; i++) {
-          const dt = new Date(today);
-          dt.setDate(today.getDate() - i);
-          const iso = dt.toISOString().slice(0,10);
+  .filter(p => p.scheduled_type === "everyday")
+  .forEach(p => {
+    const [h, m] = p.scheduled_time.split(':').map(Number);
+    for (let i = 1; i <= 7; i++) {
+      const dt = new Date();
+      dt.setDate(dt.getDate() - i);
+      dt.setHours(h, m, 0, 0);
+      if (dt >= now) continue;       // <-- оставляем только прошлые
+      const iso = dt.toISOString().slice(0,10);
           map[iso] = (map[iso]||[]).concat({
             id: p.id,
             postId: p.post_id,
@@ -662,8 +680,6 @@ const handleSave = async () => {
     </label>
   </div>
 )}
-
-
 
                     {/* Сохранить */}
                     <button

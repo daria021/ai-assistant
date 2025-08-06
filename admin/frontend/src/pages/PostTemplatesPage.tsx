@@ -4,10 +4,17 @@ import {getPosts, updatePost} from '../services/api';
 import {on} from "@telegram-apps/sdk";
 
 export interface MessageEntityDTO {
-  type: "custom_emoji" | "bold" | "italic" | "underline";
-  offset: number;
-  length: number;
-  custom_emoji_id?: string;
+    type:
+    | "custom_emoji"
+    | "bold"
+    | "italic"
+    | "underline"
+    | "strikethrough"
+    | "text_link";
+    offset: number;
+    length: number;
+    custom_emoji_id?: string;
+    url?: string;
 }
 
 export interface Post {

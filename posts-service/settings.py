@@ -13,7 +13,7 @@ class Settings(AbstractSettings):
     db: MainDBSettings = Field(default_factory=MainDBSettings)
     scheduler: SchedulerSettings = Field(default_factory=SchedulerSettings)
     watcher: WatcherSettings = Field(default_factory=WatcherSettings)
-    sender_id: UUID
+    sender_id: UUID = Field(alias="SENDER_MANAGER_ID")
 
     model_config = SettingsConfigDict(
         extra="ignore",

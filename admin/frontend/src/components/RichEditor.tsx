@@ -1,4 +1,4 @@
-import {forwardRef, useEffect, useImperativeHandle, useRef,} from 'react';
+import {forwardRef, useEffect, useImperativeHandle, useRef, useState,} from 'react';
 import type {Emoji, MessageEntityDTO} from '../services/api';
 
 /* ───────── константы ───────── */
@@ -26,7 +26,53 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
     ({emojis, initialContent = '', onChange}, ref) => {
 
         const editorRef = useRef<HTMLDivElement>(null);
+        const [isUrlModalOpen, setIsUrlModalOpen] = useState(false);
+        const [pendingUrl, setPendingUrl] = useState('');
+
+        const openUrlModal = () => {
+            setPendingUrl('');
+            setIsUrlModalOpen(true);
+        };
+        const closeUrlModal = () => setIsUrlModalOpen(false);
+        const handleInsertUrl = () => {
+            if (pendingUrl.trim()) {
+                wrapSelection('a', {href: pendingUrl.trim(), target: '_blank'});
+            }
+            closeUrlModal();
+        };
+
         // очередь ID для восстановления эмодзи
+        function wrapSelection(tagName: string, attrs: Record<string, string> = {}) {
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return;
+            const range = sel.getRangeAt(0);
+            if (range.collapsed) return;
+
+            const editor = editorRef.current;
+            if (!editor) return;
+            console.log("editor", editor);
+            editor.focus();
+
+            const wrapper = document.createElement(tagName);
+            for (const [k, v] of Object.entries(attrs)) {
+                wrapper.setAttribute(k, v);
+            }
+
+            wrapper.appendChild(range.extractContents());
+
+            range.insertNode(wrapper);
+
+            const newSel = window.getSelection();
+            if (newSel && editor) {
+                newSel.removeAllRanges();
+                const r = document.createRange();
+                r.selectNodeContents(editor);
+                r.collapse(false); // в конец
+                newSel.addRange(r);
+            }
+
+            editor.dispatchEvent(new Event('input'));
+        }
 
         // возвращает URL эмодзи по его custom_emoji_id
         const getUrlById = (id: string): string => {
@@ -48,39 +94,97 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             const clone = el.cloneNode(true) as HTMLDivElement;
             const ids: string[] = [];
 
+            // 1) заменяем все <img> и <video> emoji на плейсхолдер RHINO и собираем их ID
             clone
                 .querySelectorAll('img[data-custom-emoji-id],video[data-custom-emoji-id]')
                 .forEach(node => {
-                    const id = node.getAttribute('data-custom-emoji-id')!;
-                    ids.push(id);
+                    const id = node.getAttribute('data-custom-emoji-id')!
+                    ids.push(id)
                     node.parentNode!.replaceChild(
-                        document.createTextNode('🦏'),
+                        document.createTextNode(RHINO),
                         node
-                    );
-                });
+                    )
+                })
+            idsRef.current = ids
 
-            // сохраняем порядок для восстановления
-            idsRef.current = ids;
+            // 2) получаем html и plain-text
+            const html = el.innerHTML
+            const text = clone.innerText.replace(/\n/g, '\r\n')
 
-            const html = el.innerHTML;
-            const text = clone.innerText.replace(/\n/g, '\r\n');
-            const entities: MessageEntityDTO[] = [];
+            // 3) рассчитываем сущности
+            const entities: MessageEntityDTO[] = []
+            const walker = document.createTreeWalker(clone, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null)
+            let offset = 0
 
-            const rx = new RegExp(RHINO, 'g');
-            let match: RegExpExecArray | null;
-            let i = 0;
+            while (walker.nextNode()) {
+                const node = walker.currentNode
+
+                // текстовые куски
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const text = (node as Text).data.replace(/\n/g, '\r\n')
+                    offset += text.length
+                    continue
+                }
+
+                // элементы форматирования
+                const eln = node as HTMLElement
+                const inner = eln.innerText.replace(/\n/g, '\r\n')
+                let type: MessageEntityDTO['type'] | null = null
+
+                switch (eln.tagName) {
+                    case 'B':
+                        type = 'bold';
+                        break
+                    case 'I':
+                        type = 'italic';
+                        break
+                    case 'U':
+                        type = 'underline';
+                        break
+                    case 'S':
+                        type = 'strikethrough';
+                        break
+                    case 'A':
+                        type = 'text_link';
+                        break
+                }
+
+                if (!type) continue
+
+                // сформировать сущность
+                // …
+                let entity: MessageEntityDTO = {type, offset, length: inner.length};
+                if (type === 'text_link') {
+                    entity = {
+                        type: 'text_link',
+                        offset,
+                        length: inner.length,
+                        url: eln.getAttribute('href') || undefined
+                    };
+                }
+                entities.push(entity);
+
+                // сдвинуть offset на длину этого фрагмента
+                offset += inner.length
+            }
+
+            // 4) добавляем кастом-эмодзи
+            const rx = new RegExp(RHINO, 'g')
+            let match: RegExpExecArray | null
+            let i = 0
+
             while ((match = rx.exec(text))) {
                 entities.push({
                     type: 'custom_emoji',
                     offset: match.index,
                     length: RHINO_LEN,
-                    custom_emoji_id: ids[i++] ?? '',
-                } as MessageEntityDTO);
+                    custom_emoji_id: ids[i++] || '',
+                } as MessageEntityDTO)
             }
-            console.log('EDITOR_SERIALIZE', JSON.stringify(text), entities, JSON.stringify(html));
 
-            return {html, text, entities};
-        };
+            return {html, text, entities}
+        }
+
 
         function restoreRhinos(root: HTMLElement) {
             const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
@@ -120,6 +224,11 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             // сначала сериализуем и сохраняем ids
             const result = serialize(el);
 
+            console.group('%cRichEditor Input Result', 'color: teal; font-weight: bold;');
+            console.log('HTML:', result.html);
+            console.log('Text:', result.text);
+            console.log('Entities:', result.entities);
+            console.groupEnd();
             // тут же восстанавливаем все 🦏 → <img>
             restoreRhinos(el);
 
@@ -200,13 +309,76 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
 
         return (
             <div className="relative">
+                {/* ——— Панель кнопок форматирования ——— */}
+                <div className="flex items-center mb-2 space-x-1">
+                    <button
+                        type="button"
+                        onClick={() => wrapSelection('b')}
+                        className="px-2 py-1 border rounded"
+                    ><b>Ж</b></button>
+
+                    <button
+                        type="button"
+                        onClick={() => wrapSelection('i')}
+                        className="px-2 py-1 border rounded"
+                    ><i>К</i></button>
+
+                    <button
+                        type="button"
+                        onClick={() => wrapSelection('u')}
+                        className="px-2 py-1 border rounded"
+                    ><u>П</u></button>
+
+                    <button
+                        type="button"
+                        onClick={() => wrapSelection('s')}
+                        className="px-2 py-1 border rounded"
+                    ><s>З</s></button>
+
+                    <button
+                        type="button"
+                        onClick={openUrlModal}
+                        className="px-2 py-1 border rounded"
+                    >🔗
+                    </button>
+                </div>
+
                 <div
                     ref={editorRef}
                     contentEditable
                     suppressContentEditableWarning
                     className="border p-2 rounded min-h-[150px] focus:outline-none"
                 />
+
+                {isUrlModalOpen && (
+                    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+                            <button
+                                onClick={closeUrlModal}
+                                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                            >
+                                ✕
+                            </button>
+                            <h2 className="text-xl font-semibold mb-4">Вставить ссылку</h2>
+                            <input
+                                type="url"
+                                placeholder="https://example.com"
+                                value={pendingUrl}
+                                onChange={e => setPendingUrl(e.target.value)}
+                                className="w-full mb-4 p-2 border rounded focus:ring-2 focus:ring-brand"
+                                autoFocus
+                            />
+                            <button
+                                onClick={handleInsertUrl}
+                                className="w-full py-2 bg-brand text-white rounded hover:bg-brand transition"
+                            >
+                                Вставить
+                            </button>
+                        </div>
+                    </div>
+                )};
             </div>
+
         );
     },
 );

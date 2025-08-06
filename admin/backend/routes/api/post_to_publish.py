@@ -24,7 +24,12 @@ async def create_post_to_publish(request: Request, post_to_publish: CreatePostTo
     post = await post_service.get_post(post_to_publish.post_id)
     logger.debug("BACK_GET_POST text=%r ENT=%s\", post.text[:200], post.entities[:8]")
 
-    logger.debug('BACK_IN_POST', repr(post.text)[:200], post.entities[:8])
+    logger.debug(
+        'BACK_IN_POST',
+        repr(post.text)[:200],
+        (post.entities or [])[:8]
+    )
+
     post_to_publish_service = get_post_to_publish_service()
     user_id = get_user_id_from_request(request)
     post_to_publish.creator_id = user_id
