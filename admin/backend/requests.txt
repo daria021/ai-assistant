@@ -1,0 +1,49 @@
+POST https://ai.avocado.ceo/api/post-to-publish 200
+
+Request Data
+
+{"post_id":"3243793b-dca3-4e58-900b-f404f39cdc3e","scheduled_type":"single","responsible_manager_id":"a9d9b221-8ccd-45fa-acd3-a5513161d79f","scheduled_date":"2025-08-06","scheduled_time":"02:15","chat_ids":["be6ffc15-665e-4c8d-8353-692b1754259c"],"manager_id":"3c70753e-829b-4418-b6b7-b25434e48b01","status":"pending"}
+
+Request Headers
+
+Accept: application/json, text/plain, */*
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzYzcwNzUzZS04MjliLTQ0MTgtYjZiNy1iMjU0MzRlNDhiMDEiLCJleHAiOjE3NTQ1MjUzNjMsImlzcyI6ImFzc2lzdGFudC1hZG1pbi1iYWNrIiwiYXVkIjoiYXNzaXN0YW50LWFkbWluLWZyb250In0.QxUMJ2pwytKt84E-tH6KW40DuB_bi23PERXNEKlSaU4
+ngrok-skip-browser-warning: true
+
+Response Headers
+
+access-control-allow-credentials: true
+connection: keep-alive
+content-length: 38
+content-type: application/json
+date: Tue, 05 Aug 2025 23
+server: nginx/1.27.5
+
+"4602f37f-dcb6-4b83-809b-c4fb7b24d83a"
+
+
+
+POST https://ai.avocado.ceo/api/post-to-publish 200
+
+Request Data
+
+{"post_id":"3243793b-dca3-4e58-900b-f404f39cdc3e","scheduled_type":"single","responsible_manager_id":"a9d9b221-8ccd-45fa-acd3-a5513161d79f","scheduled_date":"2025-08-06","scheduled_time":"02:15","chat_ids":["be6ffc15-665e-4c8d-8353-692b1754259c"],"manager_id":"3c70753e-829b-4418-b6b7-b25434e48b01","status":"pending"}
+
+Request Headers
+
+Accept: application/json, text/plain, */*
+Content-Type: application/json
+Authorization:
+ngrok-skip-browser-warning: true
+
+Response Headers
+
+access-control-allow-credentials: true
+connection: keep-alive
+content-length: 38
+content-type: application/json
+date: Tue, 05 Aug 2025 23
+server: nginx/1.27.5
+
+"abf2d1fa-c249-4f39-b821-2530c8d7e63b"

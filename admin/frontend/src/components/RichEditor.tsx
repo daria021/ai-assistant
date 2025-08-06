@@ -9,6 +9,8 @@ import type { Emoji, MessageEntityDTO } from '../services/api';
 /* ───────── константы ───────── */
 const RHINO = '🦏';          // плейсхолдер
 const RHINO_LEN = 2;         // 1 юникод-символ = 2 UTF-16 code units
+// очередь ID для восстановления эмодзи
+const idsRef = { current: [] as string[] };
 
 /* ───────── наружу отдаём только insertEmoji ───────── */
 export type RichEditorHandle = {
@@ -26,8 +28,17 @@ export interface RichEditorProps {
 }
 
 export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
-  ({ initialContent = '', onChange }, ref) => {
+  ({ emojis, initialContent = '', onChange }, ref) => {
+
     const editorRef = useRef<HTMLDivElement>(null);
+      // очередь ID для восстановления эмодзи
+
+  // возвращает URL эмодзи по его custom_emoji_id
+  const getUrlById = (id: string): string => {
+    const found = emojis.find(e => e.custom_emoji_id === id);
+    return found ? found.img_url : '';
+  };
+
 
     /* ставим начальный HTML один раз */
     useEffect(() => {
@@ -38,29 +49,28 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
     }, []);
 
     /* ---------- универсальная сериализация ---------- */
-    const serialize = (el: HTMLDivElement) => {
-      // 1. Клонируем, чтобы не портить реальный DOM
-      const clone = el.cloneNode(true) as HTMLDivElement;
+const serialize = (el: HTMLDivElement) => {
+  const clone = el.cloneNode(true) as HTMLDivElement;
+  const ids: string[] = [];
 
-      // 2. Собираем custom_emoji_id в порядке обхода
-      const ids: string[] = [];
-      clone
-        .querySelectorAll(
-          'img[data-custom-emoji-id],video[data-custom-emoji-id]',
-        )
-        .forEach(node => {
-          const id = (node as HTMLElement).dataset.customEmojiId;
-          if (id) ids.push(id);
-          // меняем <img>/<video> на 🦏
-          node.replaceWith(document.createTextNode(RHINO));
-        });
+  clone
+    .querySelectorAll('img[data-custom-emoji-id],video[data-custom-emoji-id]')
+    .forEach(node => {
+      const id = node.getAttribute('data-custom-emoji-id')!;
+      ids.push(id);
+      node.parentNode!.replaceChild(
+        document.createTextNode('🦏'),
+        node
+      );
+    });
 
-      // 3. Получаем итоговые строки
-      const html = clone.innerHTML;
-      const text = clone.innerText.replace(/\n/g, '\r\n');// именно innerText → учитывает \n так же, как Telegram
+  // сохраняем порядок для восстановления
+  idsRef.current = ids;
 
-      // 4. Строим entities по найденным 🦏
-      const entities: MessageEntityDTO[] = [];
+  const html = clone.innerHTML;
+  const text = clone.innerText.replace(/\n/g, '\r\n');
+  const entities: MessageEntityDTO[] = [];
+
       const rx = new RegExp(RHINO, 'g');
       let match: RegExpExecArray | null;
       let i = 0;
@@ -77,12 +87,51 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
       return { html, text, entities };
     };
 
+function restoreRhinos(root: HTMLElement) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+  const textNodes: Text[] = [];
+
+  while (walker.nextNode()) {
+    const node = walker.currentNode as Text;
+    if (node.nodeValue?.includes('🦏')) textNodes.push(node);
+  }
+
+  textNodes.forEach(textNode => {
+    const parts = textNode.nodeValue!.split('🦏');
+    const frag = document.createDocumentFragment();
+
+    parts.forEach((part, idx) => {
+      frag.appendChild(document.createTextNode(part));
+      if (idx < parts.length - 1) {
+        const emojiId = idsRef.current.shift()!;
+        const img = document.createElement('img');
+        img.setAttribute('data-custom-emoji-id', emojiId);
+        img.src = getUrlById(emojiId);  // ваша функция получения URL по id
+        img.width = img.height = 24;
+        frag.appendChild(img);
+      }
+    });
+
+    textNode.parentNode!.replaceChild(frag, textNode);
+  });
+}
+
+
     /* ---------- единый обработчик input ---------- */
-    const handleInput = () => {
-      const el = editorRef.current;
-      if (!el) return;
-      onChange(serialize(el));
-    };
+const handleInput = () => {
+  const el = editorRef.current;
+  if (!el) return;
+
+  // сначала сериализуем и сохраняем ids
+  const result = serialize(el);
+
+  // тут же восстанавливаем все 🦏 → <img>
+  restoreRhinos(el);
+
+  // отдаём готовые html/text/entities
+  onChange(result);
+};
+
 
     useEffect(() => {
       const el = editorRef.current;
