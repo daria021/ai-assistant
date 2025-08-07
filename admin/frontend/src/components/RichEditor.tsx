@@ -122,13 +122,24 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
 
             // 3) рассчитываем сущности — обход только текстовых узлов
             const entities: MessageEntityDTO[] = []
-            const walker = document.createTreeWalker(clone, NodeFilter.SHOW_TEXT, null)
+            const walker = document.createTreeWalker(clone, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, null)
             let offset = 0
 
             while (walker.nextNode()) {
-                const node = walker.currentNode as Text
-                const txt = node.data;
-                console.log("txtie", text);
+                const node = walker.currentNode;
+                if (node.nodeType === Node.ELEMENT_NODE && (node as Element).tagName === 'BR') {
+                    offset += 2
+                    continue
+                }
+
+                // дальше только текстовые узлы
+                if (node.nodeType !== Node.TEXT_NODE) {
+                    continue
+                }
+
+                const txt = (node as Text).data;
+                console.log("txtie", txt);
+                console.log("node", node);
 
                 const parent = node.parentElement!
                 let type: MessageEntityDTO['type'] | null = null
@@ -147,9 +158,6 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                         break
                     case 'A':
                         type = 'text_link';
-                        break
-                    case 'BR':
-                        offset += 2;
                         break
                 }
 
