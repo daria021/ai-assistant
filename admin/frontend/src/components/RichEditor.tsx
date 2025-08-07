@@ -124,12 +124,29 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             const entities: MessageEntityDTO[] = []
             const walker = document.createTreeWalker(clone, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, null)
             let offset = 0
+            // let isOnTopLevel = false;
 
             while (walker.nextNode()) {
                 const node = walker.currentNode;
-                if (node.nodeType === Node.ELEMENT_NODE && (node as Element).tagName === 'BR') {
-                    offset += 2
-                    continue
+                console.log(node);
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    const element = node as Element;
+                    if (element.tagName === 'BR') {
+                        offset += 2;
+                        console.log("br offset: ", offset);
+                        continue;
+                    }
+                    // if (element.tagName == 'DIV' && element.parentElement == clone) {
+                    //     if (isOnTopLevel) {
+                    //         offset += 2;
+                    //         console.log("div offset: ", offset);
+                    //     }
+                    //     else {
+                    //         isOnTopLevel = true;
+                    //         console.log('first top level div is detected')
+                    //     }
+                    //     continue;
+                    // }
                 }
 
                 // дальше только текстовые узлы
