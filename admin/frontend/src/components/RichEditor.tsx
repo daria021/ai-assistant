@@ -117,7 +117,6 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
 
             // 2) получаем html и plain-text
             const html = el.innerHTML
-            // const text = clone.innerText.replace(/\n/g, '\r\n')
             const text = clone.innerText;
             console.log("textie", text);
 
@@ -129,7 +128,6 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             while (walker.nextNode()) {
                 const node = walker.currentNode as Text
                 const txt = node.data;
-                // const txt = node.data.replace(/\n/g, '\r\n')
                 console.log("txtie", text);
 
                 const parent = node.parentElement!
@@ -165,7 +163,8 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 console.log("txt.length")
                 console.log(txt.length)
                 console.log("offset")
-                offset += txt.length
+                const newlineCount = (txt.match(/\n/g) || []).length;
+                offset += txt.length + newlineCount;
                 console.log(offset)
 
             }
