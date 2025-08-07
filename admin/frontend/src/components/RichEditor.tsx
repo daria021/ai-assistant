@@ -28,14 +28,22 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
         const editorRef = useRef<HTMLDivElement>(null);
         const [isUrlModalOpen, setIsUrlModalOpen] = useState(false);
         const [pendingUrl, setPendingUrl] = useState('');
+        const savedRangeRef = useRef<Range | null>(null);
 
         const openUrlModal = () => {
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0) {
+                savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+            }
             setPendingUrl('');
             setIsUrlModalOpen(true);
         };
         const closeUrlModal = () => setIsUrlModalOpen(false);
         const handleInsertUrl = () => {
-            if (pendingUrl.trim()) {
+            if (pendingUrl.trim() && savedRangeRef.current) {
+                const sel = window.getSelection();
+                sel?.removeAllRanges();
+                sel?.addRange(savedRangeRef.current);
                 wrapSelection('a', {href: pendingUrl.trim(), target: '_blank'});
             }
             closeUrlModal();
@@ -152,7 +160,6 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 if (!type) continue
 
                 // сформировать сущность
-                // …
                 let entity: MessageEntityDTO = {type, offset, length: inner.length};
                 if (type === 'text_link') {
                     entity = {
@@ -376,9 +383,8 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                             </button>
                         </div>
                     </div>
-                )};
+                )}
             </div>
-
         );
     },
 );

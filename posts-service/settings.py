@@ -8,12 +8,15 @@ from shared.services.watcher_client import WatcherSettings
 from shared.settings import AbstractSettings
 from shared.settings.scheduler import SchedulerSettings
 
+class SenderSettings(AbstractSettings):
+    id: UUID = Field(..., alias="SENDER_MANAGER_ID")
+
 
 class Settings(AbstractSettings):
     db: MainDBSettings = Field(default_factory=MainDBSettings)
     scheduler: SchedulerSettings = Field(default_factory=SchedulerSettings)
     watcher: WatcherSettings = Field(default_factory=WatcherSettings)
-    sender_id: UUID = Field(alias="SENDER_MANAGER_ID")
+    sender: SenderSettings
 
     model_config = SettingsConfigDict(
         extra="ignore",

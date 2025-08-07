@@ -102,11 +102,11 @@ class TelethonTelegramMessagesRepository(
             if entities:
                 entities_to_send = self._prepare_entities(entities)
                 sending_args['formatting_entities'] = entities_to_send
-                logger.debug(
-                    "TELETHON_SEND text=%r ENT=%s",
-                    sending_args.get("message", "")[:200],
-                    sending_args.get("formatting_entities", [])[:8],
+                logger.info(
+                    f"TELETHON_SEND text={sending_args.get("message", "")[:200]} "
+                    f"ENT={sending_args.get('formatting_entities', [])[:8]}",
                 )
+                sending_args['link_preview'] = False
 
             message = await client.send_message(**sending_args)
             logger.info('Message sent')

@@ -29,7 +29,7 @@ async def publish(post_id: UUID) -> None:
             post_request_dto = CreateSendPostRequestDTO(
                 post_id=post.post_id,
                 chat_id=chat.id,
-                user_id=settings.sender_id,
+                user_id=settings.sender.id,
                 status=SendPostRequestStatus.PLANNED,
                 publication_id=post.id,
             )

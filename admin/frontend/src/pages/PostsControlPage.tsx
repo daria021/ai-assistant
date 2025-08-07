@@ -60,12 +60,12 @@ export interface CreatePostToPublishDTO {
 
 export interface MessageEntityDTO {
     type:
-    | "custom_emoji"
-    | "bold"
-    | "italic"
-    | "underline"
-    | "strikethrough"
-    | "text_link";
+        | "custom_emoji"
+        | "bold"
+        | "italic"
+        | "underline"
+        | "strikethrough"
+        | "text_link";
     offset: number;
     length: number;
     custom_emoji_id?: string;
@@ -178,165 +178,164 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
 
     /* ───────── Schedule fetch ───────── */
     const fetchSchedule = useCallback(async () => {
-  try {
-    const raw = await getPostsToPublish();
+        try {
+            const raw = await getPostsToPublish();
 
-    // 1) общий фильтр по менеджеру/чат-типу/чату
-    const pre = raw
-        .filter(p => {
-      if (managerFilter && p.responsible_manager_id !== managerFilter) return false;
-      if (chatTypeFilter && !p.chats.some(c => c.chat_type_id === chatTypeFilter)) return false;
-      if (chatFilter && !p.chats.some(c => c.id === chatFilter)) return false;
-      return true;
-    });
+            // 1) общий фильтр по менеджеру/чат-типу/чату
+            const pre = raw
+                .filter(p => {
+                    if (managerFilter && p.responsible_manager_id !== managerFilter) return false;
+                    if (chatTypeFilter && !p.chats.some(c => c.chat_type_id === chatTypeFilter)) return false;
+                    if (chatFilter && !p.chats.some(c => c.id === chatFilter)) return false;
+                    return true;
+                });
 
-    // 2) подгружаем все заголовки
-    const titles = new Map<string,string>();
-    await Promise.all(
-      pre.map(async p => {
-        if (!titles.has(p.post_id)) {
-          const post = await getPost(p.post_id);
-          titles.set(p.post_id, post.name);
+            // 2) подгружаем все заголовки
+            const titles = new Map<string, string>();
+            await Promise.all(
+                pre.map(async p => {
+                    if (!titles.has(p.post_id)) {
+                        const post = await getPost(p.post_id);
+                        titles.set(p.post_id, post.name);
+                    }
+                })
+            );
+
+            const map: Record<string, EventItem[]> = {};
+
+            for (const p of pre) {
+                const base: EventItem = {
+                    id: p.id,
+                    postId: p.post_id,
+                    title: titles.get(p.post_id)!,
+                    time: p.scheduled_time.slice(0, 5),
+                    scheduledType: p.scheduled_type
+                };
+                const now = new Date();
+
+
+                if (p.scheduled_type === "single") {
+                    if (!p.scheduled_date) continue;
+                    const [h, m] = p.scheduled_time.split(':').map(Number);
+                    const dt = new Date(p.scheduled_date);
+                    dt.setHours(h, m, 0, 0);
+                    if (dt < now) continue;            // <-- отрезаем прошлые
+                    const iso = dt.toISOString().slice(0, 10);
+                    map[iso] = (map[iso] || []).concat(base);
+                } else {
+                    const [h, m] = p.scheduled_time.split(':').map(Number);
+                    for (let i = 0; i < 7; i++) {
+                        const dt = new Date();
+                        dt.setDate(dt.getDate() + i);
+                        dt.setHours(h, m, 0, 0);
+                        if (dt < now) continue;          // <-- отрезаем прошлые
+                        const iso = dt.toISOString().slice(0, 10);
+                        map[iso] = (map[iso] || []).concat(base);
+                    }
+                }
+
+            }
+
+            // 5) сортировка по времени
+            Object.values(map).forEach(arr =>
+                arr.sort((a, b) => a.time.localeCompare(b.time))
+            );
+
+            setSchedule(map);
+            setOpenDays(Object.fromEntries(Object.keys(map).map(d => [d, true])));
+        } catch (err) {
+            console.error(err);
+            alert("Не удалось загрузить запланированные посты");
         }
-      })
-    );
+    }, [managerFilter, chatTypeFilter, chatFilter]);
 
-    const map: Record<string, EventItem[]> = {};
+    const fetchSent = useCallback(async () => {
+        try {
+            const raw = await getPostsToPublish();
 
-    for (const p of pre) {
-      const base: EventItem = {
-        id: p.id,
-        postId: p.post_id,
-        title: titles.get(p.post_id)!,
-        time: p.scheduled_time.slice(0,5),
-        scheduledType: p.scheduled_type
-      };
-      const now = new Date();
+            // 1) общий фильтр по менеджеру/чат-типу/чату
+            const pre = raw.filter(p => {
+                if (managerFilter && p.responsible_manager_id !== managerFilter) return false;
+                if (chatTypeFilter && !p.chats.some(c => c.chat_type_id === chatTypeFilter)) return false;
+                if (chatFilter && !p.chats.some(c => c.id === chatFilter)) return false;
+                return true;
+            });
+
+            // 2) загружаем все заголовки
+            const titles = new Map<string, string>();
+            await Promise.all(
+                pre.map(async p => {
+                    if (!titles.has(p.post_id)) {
+                        const post = await getPost(p.post_id);
+                        titles.set(p.post_id, post.name);
+                    }
+                })
+            );
+
+            const map: Record<string, EventItem[]> = {};
+            const now = new Date();
 
 
-if (p.scheduled_type === "single") {
-  if (!p.scheduled_date) continue;
-  const [h, m] = p.scheduled_time.split(':').map(Number);
-  const dt = new Date(p.scheduled_date);
-  dt.setHours(h, m, 0, 0);
-  if (dt < now) continue;            // <-- отрезаем прошлые
-  const iso = dt.toISOString().slice(0,10);
-  map[iso] = (map[iso]||[]).concat(base);
-} else {
-  const [h, m] = p.scheduled_time.split(':').map(Number);
-  for (let i = 0; i < 7; i++) {
-    const dt = new Date();
-    dt.setDate(dt.getDate() + i);
-    dt.setHours(h, m, 0, 0);
-    if (dt < now) continue;          // <-- отрезаем прошлые
-    const iso = dt.toISOString().slice(0,10);
-    map[iso] = (map[iso]||[]).concat(base);
-  }
-}
+            // 3) одиночные до вчера
+            pre
+                .filter(p => p.scheduled_type === "single" && p.scheduled_date)
+                .forEach(p => {
+                    const [h, m] = p.scheduled_time.split(':').map(Number);
+                    const dt = new Date(p.scheduled_date!);
+                    dt.setHours(h, m, 0, 0);
+                    if (dt >= now) return;           // <-- остаются только прошлые
+                    const iso = dt.toISOString().slice(0, 10);
+                    map[iso] = (map[iso] || []).concat({
+                        id: p.id,
+                        postId: p.post_id,
+                        title: titles.get(p.post_id)!,
+                        time: p.scheduled_time.slice(0, 5),
+                        scheduledType: "single"
+                    });
+                });
 
-    }
+            // 4) ежедневные: последние 7 дней
+            pre
+                .filter(p => p.scheduled_type === "everyday")
+                .forEach(p => {
+                    const [h, m] = p.scheduled_time.split(':').map(Number);
+                    for (let i = 1; i <= 7; i++) {
+                        const dt = new Date();
+                        dt.setDate(dt.getDate() - i);
+                        dt.setHours(h, m, 0, 0);
+                        if (dt >= now) continue;       // <-- оставляем только прошлые
+                        const iso = dt.toISOString().slice(0, 10);
+                        map[iso] = (map[iso] || []).concat({
+                            id: p.id,
+                            postId: p.post_id,
+                            title: titles.get(p.post_id)!,
+                            time: p.scheduled_time.slice(0, 5),
+                            scheduledType: "everyday"
+                        });
+                    }
+                });
 
-    // 5) сортировка по времени
-    Object.values(map).forEach(arr =>
-      arr.sort((a,b)=>a.time.localeCompare(b.time))
-    );
+            // 5) сортировка
+            Object.values(map).forEach(arr =>
+                arr.sort((a, b) => a.time.localeCompare(b.time))
+            );
 
-    setSchedule(map);
-    setOpenDays(Object.fromEntries(Object.keys(map).map(d=>[d,true])));
-  } catch(err) {
-    console.error(err);
-    alert("Не удалось загрузить запланированные посты");
-  }
-}, [managerFilter, chatTypeFilter, chatFilter]);
-
-const fetchSent = useCallback(async () => {
-  try {
-    const raw = await getPostsToPublish();
-
-    // 1) общий фильтр по менеджеру/чат-типу/чату
-    const pre = raw.filter(p => {
-      if (managerFilter && p.responsible_manager_id !== managerFilter) return false;
-      if (chatTypeFilter && !p.chats.some(c => c.chat_type_id === chatTypeFilter)) return false;
-      if (chatFilter && !p.chats.some(c => c.id === chatFilter)) return false;
-      return true;
-    });
-
-    // 2) загружаем все заголовки
-    const titles = new Map<string,string>();
-    await Promise.all(
-      pre.map(async p => {
-        if (!titles.has(p.post_id)) {
-          const post = await getPost(p.post_id);
-          titles.set(p.post_id, post.name);
+            setSchedule(map);
+            setOpenDays(Object.fromEntries(Object.keys(map).map(d => [d, true])));
+        } catch (err) {
+            console.error(err);
+            alert("Не удалось загрузить отправленные посты");
         }
-      })
-    );
-
-    const map: Record<string, EventItem[]> = {};
-    const now = new Date();
+    }, [managerFilter, chatTypeFilter, chatFilter]);
 
 
-    // 3) одиночные до вчера
-    pre
-  .filter(p => p.scheduled_type === "single" && p.scheduled_date)
-  .forEach(p => {
-    const [h, m] = p.scheduled_time.split(':').map(Number);
-    const dt = new Date(p.scheduled_date!);
-    dt.setHours(h, m, 0, 0);
-    if (dt >= now) return;           // <-- остаются только прошлые
-    const iso = dt.toISOString().slice(0,10);
-        map[iso] = (map[iso]||[]).concat({
-          id: p.id,
-          postId: p.post_id,
-          title: titles.get(p.post_id)!,
-          time: p.scheduled_time.slice(0,5),
-          scheduledType: "single"
-        });
-      });
-
-    // 4) ежедневные: последние 7 дней
-    pre
-  .filter(p => p.scheduled_type === "everyday")
-  .forEach(p => {
-    const [h, m] = p.scheduled_time.split(':').map(Number);
-    for (let i = 1; i <= 7; i++) {
-      const dt = new Date();
-      dt.setDate(dt.getDate() - i);
-      dt.setHours(h, m, 0, 0);
-      if (dt >= now) continue;       // <-- оставляем только прошлые
-      const iso = dt.toISOString().slice(0,10);
-          map[iso] = (map[iso]||[]).concat({
-            id: p.id,
-            postId: p.post_id,
-            title: titles.get(p.post_id)!,
-            time: p.scheduled_time.slice(0,5),
-            scheduledType: "everyday"
-          });
+    useEffect(() => {
+        if (viewMode === "scheduled") {
+            fetchSchedule();
+        } else {
+            fetchSent();
         }
-      });
-
-    // 5) сортировка
-    Object.values(map).forEach(arr =>
-      arr.sort((a,b)=>a.time.localeCompare(b.time))
-    );
-
-    setSchedule(map);
-    setOpenDays(Object.fromEntries(Object.keys(map).map(d=>[d,true])));
-  } catch(err) {
-    console.error(err);
-    alert("Не удалось загрузить отправленные посты");
-  }
-}, [managerFilter, chatTypeFilter, chatFilter]);
-
-
-      useEffect(() => {
-    if (viewMode === "scheduled") {
-      fetchSchedule();
-    } else {
-      fetchSent();
-    }
-  }, [viewMode, fetchSchedule, fetchSent]);
-
+    }, [viewMode, fetchSchedule, fetchSent]);
 
 
     /* ───────── Chats fetch ───────── */
@@ -361,89 +360,89 @@ const fetchSent = useCallback(async () => {
         return () => remove();
     }, [navigate]);
 
-/* ───────── Save Post ───────── */
-const handleSave = async () => {
-    if (!title.trim() || !editorText.trim()) {
-        alert("Введите название и текст поста");
-        return;
-    }
-    if (scheduleType === "once" && !scheduledAt) {
-        alert("Выберите дату и время");
-        return;
-    }
-    if (scheduleType === "daily" && !timeOnly) {
-        alert("Выберите время для ежедневной рассылки");
-        return;
-    }
-    if (!userId) {
-        alert("Не удалось определить менеджера");
-        return;
-    }
-
-    try {
-        let postId: string;
-        if (template) {
-            postId = template.id;
-        } else {
-            postId = await createPost(
-                title,
-                editorText,
-                isTemplate,
-                editorHtml,
-                editorEntities,
-                photoFile ?? undefined
-            );
+    /* ───────── Save Post ───────── */
+    const handleSave = async () => {
+        if (!title.trim() || !editorText.trim()) {
+            alert("Введите название и текст поста");
+            return;
+        }
+        if (scheduleType === "once" && !scheduledAt) {
+            alert("Выберите дату и время");
+            return;
+        }
+        if (scheduleType === "daily" && !timeOnly) {
+            alert("Выберите время для ежедневной рассылки");
+            return;
+        }
+        if (!userId) {
+            alert("Не удалось определить менеджера");
+            return;
         }
 
-        let scheduled_date: string | null = null;
-        let scheduled_time: string;
+        try {
+            let postId: string;
+            if (template) {
+                postId = template.id;
+            } else {
+                postId = await createPost(
+                    title,
+                    editorText,
+                    isTemplate,
+                    editorHtml,
+                    editorEntities,
+                    photoFile ?? undefined
+                );
+            }
 
-        if (scheduleType === "once") {
-            scheduled_date = scheduledAt!.toLocaleDateString("sv-SE");
-            scheduled_time = scheduledAt!.toLocaleTimeString("ru-RU", {
-                hour: "2-digit",
-                minute: "2-digit"
-            });
-        } else {
-            scheduled_time = timeOnly!.toLocaleTimeString("ru-RU", {
-                hour: "2-digit",
-                minute: "2-digit"
-            });
+            let scheduled_date: string | null = null;
+            let scheduled_time: string;
+
+            if (scheduleType === "once") {
+                scheduled_date = scheduledAt!.toLocaleDateString("sv-SE");
+                scheduled_time = scheduledAt!.toLocaleTimeString("ru-RU", {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                });
+            } else {
+                scheduled_time = timeOnly!.toLocaleTimeString("ru-RU", {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                });
+            }
+
+            const dto: CreatePostToPublishDTO = {
+                post_id: postId,
+                scheduled_type: scheduleType === "once" ? "single" : "everyday",
+                responsible_manager_id: responsibleManagerId,
+                scheduled_date,
+                scheduled_time,
+                chat_ids: selectedChats,
+                manager_id: userId,
+                status: "pending"
+            };
+
+            await createPostToPublish(dto);
+            await fetchSchedule();
+
+            /* reset */
+            setPhotoFile(null);
+            setPhotoPreview(null);
+            setTitle("");
+            setEditorText("");
+            setEditorHtml("");
+            setEditorEntities([]);
+            setScheduledAt(null);
+            setTimeOnly(null);
+            setScheduleType("once");
+            setSelectedChats([]);
+            setIsTemplate(false);
+            setChatSearch("");
+            setActiveTab("schedule");
+        } catch (err) {
+            console.error("Ошибка при сохранении поста:", err);
+            alert("Не удалось создать пост.");
         }
-
-        const dto: CreatePostToPublishDTO = {
-            post_id: postId,
-            scheduled_type: scheduleType === "once" ? "single" : "everyday",
-            responsible_manager_id: responsibleManagerId,
-            scheduled_date,
-            scheduled_time,
-            chat_ids: selectedChats,
-            manager_id: userId,
-            status: "pending"
-        };
-
-        await createPostToPublish(dto);
-        await fetchSchedule();
-
-        /* reset */
-        setPhotoFile(null);
-        setPhotoPreview(null);
-        setTitle("");
-        setEditorText("");
-        setEditorHtml("");
-        setEditorEntities([]);
-        setScheduledAt(null);
-        setTimeOnly(null);
-        setScheduleType("once");
-        setSelectedChats([]);
-        setIsTemplate(false);
-        setChatSearch("");
-        setActiveTab("schedule");
-    } catch (err) {
-        console.error("Ошибка при сохранении поста:", err);
-        alert("Не удалось создать пост.");
-    }
-};
+    };
 
 
     /* ───────── Delete Schedule Item ───────── */
@@ -548,7 +547,6 @@ const handleSave = async () => {
                                     setPickerOpen(false)
                                 }}
                             />
-
                         )}
                     </div>
 
@@ -666,20 +664,20 @@ const handleSave = async () => {
 
                     </div>
                     {/* Сделать шаблоном */}
-{/* Сделать шаблоном (показываем, только если ещё не шаблон) */}
-{!template?.is_template && (
-  <div>
-    <label className="flex items-center space-x-2 mt-2">
-      <input
-        type="checkbox"
-        checked={isTemplate}
-        onChange={() => setIsTemplate(!isTemplate)}
-        className="form-checkbox h-5 w-5 text-brand focus:ring-brand"
-      />
-      <span>Сделать шаблоном</span>
-    </label>
-  </div>
-)}
+                    {/* Сделать шаблоном (показываем, только если ещё не шаблон) */}
+                    {!template?.is_template && (
+                        <div>
+                            <label className="flex items-center space-x-2 mt-2">
+                                <input
+                                    type="checkbox"
+                                    checked={isTemplate}
+                                    onChange={() => setIsTemplate(!isTemplate)}
+                                    className="form-checkbox h-5 w-5 text-brand focus:ring-brand"
+                                />
+                                <span>Сделать шаблоном</span>
+                            </label>
+                        </div>
+                    )}
 
                     {/* Сохранить */}
                     <button
@@ -698,16 +696,14 @@ const handleSave = async () => {
                 <div className="space-y-4 text-brand">
                     <div className="flex flex-wrap gap-4 mb-6">
 
-<select
-  value={viewMode}
-  onChange={e => setViewMode(e.target.value as "scheduled" | "sent")}
-  className="border border-brand rounded p-2"
->
-  <option value="scheduled">— Запланированные —</option>
-  <option value="sent">— Отправленные —</option>
-</select>
-
-
+                        <select
+                            value={viewMode}
+                            onChange={e => setViewMode(e.target.value as "scheduled" | "sent")}
+                            className="border border-brand rounded p-2"
+                        >
+                            <option value="scheduled">— Запланированные —</option>
+                            <option value="sent">— Отправленные —</option>
+                        </select>
 
                         {/* manager */}
                         {role !== "manager" && (
@@ -765,7 +761,7 @@ const handleSave = async () => {
                             </button>
                         )}
                     </div>
-   {Object.keys(schedule)
+                    {Object.keys(schedule)
                         .sort()
                         .map((iso) => {
                             const label = new Date(iso).toLocaleDateString("ru-RU", {

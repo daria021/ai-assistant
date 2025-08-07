@@ -1,3 +1,5 @@
 {
-  "sender_id": "fd18303e-ff9c-43e5-a281-facdd662da42"
+  "sender": {
+      "id": "fd18303e-ff9c-43e5-a281-facdd662da42"
+  }
 }
