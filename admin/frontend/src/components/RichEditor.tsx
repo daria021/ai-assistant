@@ -123,13 +123,18 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             const entities: MessageEntityDTO[] = []
             const walker = document.createTreeWalker(clone, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null)
             let offset = 0
+            console.log("BEGIN")
 
             while (walker.nextNode()) {
                 const node = walker.currentNode
 
                 // текстовые куски
+                console.log("node.nodeType === Node.TEXT_NODE")
+                console.log(node.nodeType === Node.TEXT_NODE)
                 if (node.nodeType === Node.TEXT_NODE) {
                     const text = (node as Text).data.replace(/\n/g, '\r\n')
+                    console.log("text.length")
+                    console.log(text.length)
                     offset += text.length
                     continue
                 }
@@ -172,6 +177,8 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 entities.push(entity);
 
                 // сдвинуть offset на длину этого фрагмента
+                console.log("inner.length")
+                console.log(inner.length)
                 offset += inner.length
             }
 
