@@ -148,6 +148,9 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                     case 'A':
                         type = 'text_link';
                         break
+                    case 'BR':
+                        offset += 2;
+                        break
                 }
 
                 if (type) {
