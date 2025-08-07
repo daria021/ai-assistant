@@ -160,13 +160,13 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                     entities.push(entity)
                 }
 
-                console.log("txt.length")
-                console.log(txt.length)
-                console.log("offset")
+                console.log("txt: ", txt);
+                console.log(txt);
+                console.log("offset before: ", offset);
                 const newlineCount = (txt.match(/\n/g) || []).length;
+                console.log("newlines: ", newlineCount);
                 offset += txt.length + newlineCount;
-                console.log(offset)
-
+                console.log(offset);
             }
 
             // 4) добавляем кастом-эмодзи
