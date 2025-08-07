@@ -117,45 +117,58 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
 
             // 2) получаем html и plain-text
             const html = el.innerHTML
-            const text = clone.innerText.replace(/\n/g, '\r\n')
+            // const text = clone.innerText.replace(/\n/g, '\r\n')
+            const text = clone.innerText;
+            console.log("textie", text);
 
-            // 3) рассчитываем сущности
-// 3) рассчитываем сущности — обход только текстовых узлов
-const entities: MessageEntityDTO[] = []
-const walker = document.createTreeWalker(clone, NodeFilter.SHOW_TEXT, null)
-let offset = 0
+            // 3) рассчитываем сущности — обход только текстовых узлов
+            const entities: MessageEntityDTO[] = []
+            const walker = document.createTreeWalker(clone, NodeFilter.SHOW_TEXT, null)
+            let offset = 0
 
-while (walker.nextNode()) {
-    const node = walker.currentNode as Text
-    const txt = node.data.replace(/\n/g, '\r\n')
+            while (walker.nextNode()) {
+                const node = walker.currentNode as Text
+                const txt = node.data;
+                // const txt = node.data.replace(/\n/g, '\r\n')
+                console.log("txtie", text);
 
-    const parent = node.parentElement!
-    let type: MessageEntityDTO['type'] | null = null
-    switch (parent.tagName) {
-        case 'B': type = 'bold'; break
-        case 'I': type = 'italic'; break
-        case 'U': type = 'underline'; break
-        case 'S': type = 'strikethrough'; break
-        case 'A': type = 'text_link'; break
-    }
+                const parent = node.parentElement!
+                let type: MessageEntityDTO['type'] | null = null
+                switch (parent.tagName) {
+                    case 'B':
+                        type = 'bold';
+                        break
+                    case 'I':
+                        type = 'italic';
+                        break
+                    case 'U':
+                        type = 'underline';
+                        break
+                    case 'S':
+                        type = 'strikethrough';
+                        break
+                    case 'A':
+                        type = 'text_link';
+                        break
+                }
 
-    if (type) {
-        const entity: MessageEntityDTO = {
-            type,
-            offset,
-            length: txt.length,
-            ...(type === 'text_link' ? {url: parent.getAttribute('href')!} : {})
-        }
-        entities.push(entity)
-    }
+                if (type) {
+                    const entity: MessageEntityDTO = {
+                        type,
+                        offset,
+                        length: txt.length,
+                        ...(type === 'text_link' ? {url: parent.getAttribute('href')!} : {})
+                    }
+                    entities.push(entity)
+                }
 
-    console.log("txt.length")
-    console.log(txt.length)
-    console.log("offset")
-    offset += txt.length
-    console.log(offset)
+                console.log("txt.length")
+                console.log(txt.length)
+                console.log("offset")
+                offset += txt.length
+                console.log(offset)
 
-}
+            }
 
             // 4) добавляем кастом-эмодзи
             const rx = new RegExp(RHINO, 'g')
@@ -171,6 +184,7 @@ while (walker.nextNode()) {
                 } as MessageEntityDTO)
             }
 
+            console.log("text to send: ", text);
             return {html, text, entities}
         }
 
