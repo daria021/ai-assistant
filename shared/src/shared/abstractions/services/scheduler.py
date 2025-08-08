@@ -12,6 +12,7 @@ class SchedulerInterface(ABC):
             runs_on: datetime,
             args: tuple[Any, ...] = (),
             job_id: str = None,
+            misfire_grace_time: int = 60,
     ) -> None:
         ...
 

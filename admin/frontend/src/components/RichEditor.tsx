@@ -97,123 +97,134 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             // eslint-disable-next-line react-hooks/exhaustive-deps
         }, []);
 
-        /* ---------- универсальная сериализация ---------- */
         const serialize = (el: HTMLDivElement) => {
             const clone = el.cloneNode(true) as HTMLDivElement;
-            const ids: string[] = [];
 
-            // 1) заменяем все <img> и <video> emoji на плейсхолдер RHINO и собираем их ID
-            clone
-                .querySelectorAll('img[data-custom-emoji-id],video[data-custom-emoji-id]')
-                .forEach(node => {
-                    const id = node.getAttribute('data-custom-emoji-id')!
-                    ids.push(id)
-                    node.parentNode!.replaceChild(
-                        document.createTextNode(RHINO),
-                        node
-                    )
-                })
-            idsRef.current = ids
+            // 1) html как есть
+            const html = el.innerHTML;
 
-            // 2) получаем html и plain-text
-            const html = el.innerHTML
-            const text = clone.innerText;
-            console.log("textie", text);
+            const entities: MessageEntityDTO[] = [];
+            let text = '';
+            let offset = 0;
 
-            // 3) рассчитываем сущности — обход только текстовых узлов
-            const entities: MessageEntityDTO[] = []
-            const walker = document.createTreeWalker(clone, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, null)
-            let offset = 0
-            // let isOnTopLevel = false;
+            // считаем оффсеты как в payload (multipart -> CRLF)
+            const USING_FORMDATA = true;                 // если перейдёшь на JSON, поставь false
+            const NL = USING_FORMDATA ? '\r\n' : '\n';
+            const NL_LEN = NL.length;
 
-            while (walker.nextNode()) {
-                const node = walker.currentNode;
-                console.log(node);
-                if (node.nodeType === Node.ELEMENT_NODE) {
-                    const element = node as Element;
-                    if (element.tagName === 'BR') {
-                        offset += 2;
-                        console.log("br offset: ", offset);
-                        continue;
-                    }
-                    // if (element.tagName == 'DIV' && element.parentElement == clone) {
-                    //     if (isOnTopLevel) {
-                    //         offset += 2;
-                    //         console.log("div offset: ", offset);
-                    //     }
-                    //     else {
-                    //         isOnTopLevel = true;
-                    //         console.log('first top level div is detected')
-                    //     }
-                    //     continue;
-                    // }
-                }
 
-                // дальше только текстовые узлы
-                if (node.nodeType !== Node.TEXT_NODE) {
-                    continue
-                }
-
-                const txt = (node as Text).data;
-                console.log("txtie", txt);
-                console.log("node", node);
-
-                const parent = node.parentElement!
-                let type: MessageEntityDTO['type'] | null = null
-                switch (parent.tagName) {
-                    case 'B':
-                        type = 'bold';
-                        break
-                    case 'I':
-                        type = 'italic';
-                        break
-                    case 'U':
-                        type = 'underline';
-                        break
-                    case 'S':
-                        type = 'strikethrough';
-                        break
-                    case 'A':
-                        type = 'text_link';
-                        break
-                }
-
-                if (type) {
-                    const entity: MessageEntityDTO = {
-                        type,
-                        offset,
-                        length: txt.length,
-                        ...(type === 'text_link' ? {url: parent.getAttribute('href')!} : {})
-                    }
-                    entities.push(entity)
-                }
-
-                console.log("txt: ", txt);
-                console.log(txt);
-                console.log("offset before: ", offset);
-                const newlineCount = (txt.match(/\n/g) || []).length;
-                console.log("newlines: ", newlineCount);
-                offset += txt.length + newlineCount;
-                console.log(offset);
+            // верхнеуровневый пустой блок: визуальная пустая строка
+            function isBlankLineDiv(div: HTMLElement): boolean {
+                if (div.tagName !== 'DIV' || div.parentElement !== clone) return false;
+                // есть ли хоть какой-то видимый текст
+                const hasText = (div.textContent ?? '').replace(/\u00A0/g, ' ').trim().length > 0;
+                if (hasText) return false;
+                // пустой считаем только если есть <br> и НЕТ кастом-эмодзи
+                if (div.querySelector('img[data-custom-emoji-id],video[data-custom-emoji-id]')) return false;
+                return !!div.querySelector('br');
             }
 
-            // 4) добавляем кастом-эмодзи
-            const rx = new RegExp(RHINO, 'g')
-            let match: RegExpExecArray | null
-            let i = 0
+            // рекурсивная сериализация инлайнов + entities
+            function emitInline(node: Node) {
+                node.childNodes.forEach((child) => {
+                    console.log("node: ", node);
+                    if (child.nodeType === Node.TEXT_NODE) {
+                        const s = (child as Text).data.replace(/\u00A0/g, ' ');
+                        if (s) {
+                            text += s;
+                            offset += s.length;
+                        }
+                        return;
+                    }
 
-            while ((match = rx.exec(text))) {
-                entities.push({
-                    type: 'custom_emoji',
-                    offset: match.index,
-                    length: RHINO_LEN,
-                    custom_emoji_id: ids[i++] || '',
-                } as MessageEntityDTO)
+                    if (child.nodeType === Node.ELEMENT_NODE) {
+                        const eln = child as HTMLElement;
+                        console.log("eln: ", eln);
+
+                        // кастом-эмодзи
+                        if (
+                            (eln.tagName === 'IMG' || eln.tagName === 'VIDEO') &&
+                            eln.hasAttribute('data-custom-emoji-id')
+                        ) {
+                            const id = eln.getAttribute('data-custom-emoji-id')!;
+                            text += RHINO;
+                            entities.push({
+                                type: 'custom_emoji',
+                                offset,
+                                length: RHINO_LEN,
+                                custom_emoji_id: id,
+                            } as MessageEntityDTO);
+                            offset += RHINO_LEN;
+                            return;
+                        }
+
+                        // перенос строки
+                        if (eln.tagName === 'BR') {
+                            text += NL;
+                            offset += NL_LEN;
+                            return;
+                        }
+
+                        // форматирование
+                        let type: MessageEntityDTO['type'] | null = null;
+                        if (eln.tagName === 'B') type = 'bold';
+                        else if (eln.tagName === 'I') type = 'italic';
+                        else if (eln.tagName === 'U') type = 'underline';
+                        else if (eln.tagName === 'S') type = 'strikethrough';
+                        else if (eln.tagName === 'A') type = 'text_link';
+
+                        const start = offset;
+                        emitInline(eln);
+                        const len = offset - start;
+
+                        if (type && len > 0) {
+                            // не захватываем переносы в конец сущности
+                            const slice = text.slice(start, start + len)
+                            const cleanLen = slice.replace(/\r?\n+$/g, '').length
+                            if (cleanLen > 0) {
+                                const ent: MessageEntityDTO = {type, offset: start, length: cleanLen}
+                                if (type === 'text_link') ent.url = eln.getAttribute('href') || undefined
+                                entities.push(ent)
+                            }
+                        }
+                    }
+                });
             }
 
-            console.log("text to send: ", text);
-            return {html, text, entities}
-        }
+            // 2) проходим верхнеуровневые блоки-строки
+            const blocks = Array.from(clone.children) as HTMLElement[];
+            for (let i = 0; i < blocks.length; i++) {
+                const div = blocks[i];
+
+                if (isBlankLineDiv(div)) {
+                    // пустая строка даёт один \n
+                    if (i < blocks.length - 1) {
+                        text += NL;
+                        offset += NL_LEN;
+                    }
+                    continue;
+                }
+
+                emitInline(div);
+
+                // \n после каждого непустого блока, кроме последнего
+                if (i < blocks.length - 1) {
+                    text += NL;
+                    offset += NL_LEN;
+                }
+            }
+
+            entities.sort((a, b) => a.offset - b.offset)
+
+            const cleanEntities = entities.map((e: any) => {
+                const base: MessageEntityDTO = {type: e.type, offset: e.offset, length: e.length}
+                if (e.type === 'text_link' && e.url) base.url = e.url
+                if (e.type === 'custom_emoji' && e.custom_emoji_id) base.custom_emoji_id = e.custom_emoji_id
+                return base
+            })
+
+            return {html, text, entities: cleanEntities}
+        };
 
 
         function restoreRhinos(root: HTMLElement) {

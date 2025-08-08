@@ -18,15 +18,15 @@ class CreatePostDTO(CreateDTO):
     @field_validator("entities", mode="after")
     def check_bounds(cls, entities: List[MessageEntityDTO], info: FieldValidationInfo) -> List[MessageEntityDTO]:
         txt = info.data.get("text", "")
-        custom_emojis = 0
+        custom_emojis, newlines = 0, txt.count('\n') * 2
         for e in entities:
             if e.type == 'custom_emoji':
                 custom_emojis += 1
 
-            text_len = len(txt) + custom_emojis + txt.count('\n')
+            text_len = len(txt) + custom_emojis + newlines + 1
             if not (0 <= e.offset < text_len and e.offset + e.length <= text_len):
                 raise ValueError(
-                    f"Entity out of bounds: offset={e.offset} length={e.length} for text of length {len(txt)}")
+                    f"Entity out of bounds: offset={e.offset} length={e.length} for text of length {text_len}")
 
         return entities
 

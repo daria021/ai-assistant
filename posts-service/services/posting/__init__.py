@@ -57,6 +57,6 @@ class PostingService(
         self.scheduler.schedule_once(
             callback=publish,
             runs_on=schedule_at,
-            args=(post_id,),
+            args=(post_id, ),
             job_id=f"post_{post_id}",
         )

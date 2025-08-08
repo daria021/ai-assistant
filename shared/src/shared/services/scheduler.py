@@ -33,6 +33,7 @@ class Scheduler(
             jobstores=jobstores,
             executors=executors,
             job_defaults=job_defaults,
+
         )
         self.scheduler.start()
 
@@ -45,6 +46,7 @@ class Scheduler(
             runs_on: datetime,
             args: tuple[Any, ...] = (),
             job_id: str = None,
+            misfire_grace_time: int = 60,
     ) -> None:
         self.scheduler.add_job(
             callback,
@@ -52,4 +54,5 @@ class Scheduler(
             args=args,
             id=job_id,
             replace_existing=True if job_id else False,
+            misfire_grace_time=misfire_grace_time,
         )
