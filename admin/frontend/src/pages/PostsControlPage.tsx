@@ -13,7 +13,7 @@ import {
     getChatTypes,
     getManagers,
     getPost,
-    getPostsToPublish
+    getPostsToPublish, updatePost
 } from "../services/api";
 import {useAuth} from "../contexts/auth";
 import DatePicker from "react-datepicker";
@@ -381,18 +381,37 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
 
         try {
             let postId: string;
-            if (template) {
-                postId = template.id;
-            } else {
-                postId = await createPost(
-                    title,
-                    editorText,
-                    isTemplate,
-                    editorHtml,
-                    editorEntities,
-                    photoFile ?? undefined
-                );
-            }
+
+if (template) {
+  // вычисляем, что реально изменилось
+  const entitiesChanged =
+    JSON.stringify(editorEntities ?? []) !== JSON.stringify(template.entities ?? []);
+  const htmlBaseline = template.html ?? template.text;
+
+  // PATCH /post/:id — обновляем сам шаблон
+  await updatePost(
+    template.id,
+    title !== template.name ? title : undefined,
+    isTemplate !== template.is_template ? isTemplate : undefined,
+    editorText !== template.text ? editorText : undefined,
+    editorHtml !== htmlBaseline ? editorHtml : undefined,
+    entitiesChanged ? editorEntities : undefined,
+    photoFile ?? undefined
+  );
+
+  postId = template.id;
+} else {
+  // создаём обычный пост (как было)
+  postId = await createPost(
+    title,
+    editorText,
+    isTemplate,
+    editorHtml,
+    editorEntities,
+    photoFile ?? undefined
+  );
+}
+
 
             let scheduled_date: string | null = null;
             let scheduled_time: string;

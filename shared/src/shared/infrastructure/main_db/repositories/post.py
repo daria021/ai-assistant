@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -8,6 +9,7 @@ from shared.domain.models import Post as PostModel
 from shared.infrastructure.main_db.entities import Post
 from .abstract import AbstractMainDBRepository
 
+logger = logging.getLogger(__name__)
 
 @dataclass
 class PostRepository(
@@ -18,11 +20,12 @@ class PostRepository(
         async with self.session_maker() as session:
             async with session.begin():
                 entity = await session.get(self.entity, obj_id, options=self.options)
-                for key, value in obj.model_dump(exclude_unset=True).items():
-                    if key == 'entities' and value is not None:
-                        value = [x.model_dump(mode='json') for x in value]
-
+                logger.info(obj.entities)
+                for key, value in obj.model_dump(exclude_unset=True, exclude={'entiites'}).items():
                     setattr(entity, key, value)
+
+                if obj.entities:
+                    entity.entities = [x.model_dump(mode='json') for x in obj.entities]
 
             await session.refresh(entity)
 

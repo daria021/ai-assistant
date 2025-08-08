@@ -107,4 +107,19 @@
     border-left: 1px solid var(--color-brand2) !important;
   }
 
+  .rich-editor a {
+  color: #2563eb;             /* синий */
+  text-decoration: underline; /* подчёркивание */
+  cursor: text;               /* не «рука», а текстовый курсор */
+}
+
+/* опционально небольшой индикатор */
+.rich-editor a::after {
+  content: "↗";
+  font-size: 0.8em;
+  opacity: 0.5;
+  margin-left: 2px;
+}
+
+
 }

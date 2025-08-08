@@ -94,7 +94,12 @@ async def update_post(
         entities = [MessageEntityDTO.model_validate(e) for e in json.loads(data.entities)]
         data_dump["entities"] = entities
 
+    logger.info(data.entities)
+    logger.info(data_dump["entities"])
+
     post_dto = UpdatePostDTO.model_validate(data_dump)
+
+    logger.info(post_dto.entities)
 
     return await post_service.update_post(post_id=post_id, post=post_dto)
 

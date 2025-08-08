@@ -225,6 +225,7 @@ export async function createPost(
     return response.data;
 }
 
+
 export async function updatePost(
     postId: string,
     title?: string | null,

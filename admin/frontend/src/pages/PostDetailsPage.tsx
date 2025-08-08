@@ -5,7 +5,8 @@ import FileUploader from "../components/FileUploader";
 import DatePicker from "react-datepicker";
 // import "react-datepicker/dist/react-datepicker.css";
 import {RichEditor} from "../components/RichEditor";
-import type {Emoji, MessageEntityDTO} from "../services/api";
+import type { Emoji, MessageEntityDTO} from "../services/api";
+import { createPostToPublish } from "../services/api";
 import {
     getChats,
     getPostToPublish,
@@ -44,7 +45,9 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
 
     const [editorHtml, setEditorHtml] = useState<string>('');
     const [editorText, setEditorText] = useState<string>('');
+    const [is_template, setIsTemplate] = useState<boolean>(false);
     const [editorEntities, setEditorEntities] = useState<MessageEntityDTO[]>([]);
+
 
     // загрузить все чаты из API
     useEffect(() => {
@@ -75,6 +78,7 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
                 setTitle(e.post.name);
                 setEditorHtml(e.post.html || e.post.text); // если бекенд хранит HTML
                 setEditorText(e.post.text);
+                setIsTemplate(e.post.is_template)
                 setEditorEntities(e.post.entities || []);
 
                 if (e.post.image_path) setPhotoPreview(e.post.image_path);
@@ -101,7 +105,6 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
         })();
     }, [postToPublishId, navigate]);
 
-    // кнопка «назад» в телеге
     useEffect(() => {
         return on("back_button_pressed", () => navigate(-1));
     }, [navigate]);
@@ -118,47 +121,71 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
       const m = String(d.getMinutes()).padStart(2, "0");
       return `${h}:${m}`;             // "HH:mm"
         }
+
     const handleSave = async () => {
-      if (!entry || !userId) return;
+  const e = entry;
+  const uid = userId;
+  if (!e || !uid) {
+    console.log('handleSave: early return', { hasEntry: !!e, hasUser: !!uid });
+    return;
+  }
 
-      // 1) Обновляем содержимое поста
-      await updatePost(
-        entry.post.id,
-        title !== entry.post.name ? title : null,
-        editorText !== entry.post.text ? editorText : null,
-        editorHtml !== entry.post.html ? editorHtml : null,
-        editorEntities !== entry.post.entities ? editorEntities : null,
-        photoFile ?? null
-      );
+  const entitiesChanged =
+    JSON.stringify(editorEntities ?? []) !== JSON.stringify(e.post.entities ?? []);
+  const htmlBaseline = e.post.html ?? e.post.text;
+  const isTemplateChanged = is_template !== e.post.is_template;
 
-      // 2) Готовим поля расписания
-      let scheduled_date: string | null = null;
-      let scheduled_time: string;
+  try {
+    // 1) обновляем сам пост (всегда PATCH /post/:id)
+    await updatePost(
+      e.post.id,
+      title !== e.post.name ? title : undefined,
+      isTemplateChanged ? is_template : undefined,
+      editorText !== e.post.text ? editorText : undefined,
+      editorHtml !== htmlBaseline ? editorHtml : undefined,
+      entitiesChanged ? editorEntities : undefined,
+      photoFile ?? undefined
+    );
 
-      if (scheduleType === "once" && scheduledAt) {
-        scheduled_date = formatLocalDate(scheduledAt);   // "YYYY-MM-DD" локально
-        scheduled_time = formatLocalTime(scheduledAt);   // "HH:mm" локально
-      } else if (scheduleType === "daily" && timeOnly) {
-        scheduled_time = formatLocalTime(timeOnly);      // "HH:mm" локально
-      } else {
-        alert("Выберите дату и время");
-        return;
-      }
+    // 2) собираем payload расписания
+    let scheduled_date: string | null = null;
+    let scheduled_time: string;
 
-  // 3) Обновляем запись в расписании через API
-  await updatePostToPublish(entry.id, {
-    post_id: entry.post.id,
-    manager_id: userId,
-    scheduled_type: scheduleType === "once" ? "single" : "everyday",
-    scheduled_date,
-    scheduled_time,
-    chat_ids: selectedChats,
-    status: entry.status,
-  });
+    if (scheduleType === "once" && scheduledAt) {
+      scheduled_date = formatLocalDate(scheduledAt);
+      scheduled_time = formatLocalTime(scheduledAt);
+    } else if (scheduleType === "daily" && timeOnly) {
+      scheduled_time = formatLocalTime(timeOnly);
+    } else {
+      alert("Выберите дату и время");
+      return;
+    }
 
-  alert("Изменения сохранены");
-  navigate(-1);
+    const payload = {
+      post_id: e.post.id,
+      manager_id: uid,
+      scheduled_type: scheduleType === "once" ? "single" : "everyday",
+      scheduled_date,
+      scheduled_time,
+      chat_ids: selectedChats,
+      status: e.status,
+    } as const;
+
+    // 3) create vs update для PostToPublish
+    if (e.id) {
+      await updatePostToPublish(e.id, payload);   // PATCH /post-to-publish/:id
+    } else {
+      await createPostToPublish(payload);         // POST  /post-to-publish
+    }
+
+    alert("Изменения сохранены");
+    navigate(-1);
+  } catch (err) {
+    console.error('handleSave error', err);
+    alert('Не удалось сохранить изменения');
+  }
 };
+
 
     if (!entry) {
         return <div>Загрузка…</div>;
@@ -281,6 +308,7 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
             <div className="flex justify-end">
                 <button
                     onClick={handleSave}
+                    disabled={!entry || !userId}
                     className="px-5 py-2 bg-brand text-white rounded hover:bg-brand2"
                 >
                     Сохранить

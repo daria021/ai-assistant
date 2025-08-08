@@ -1,14 +1,121 @@
 [
   {
+    "url": null,
     "type": "custom_emoji",
     "length": 2,
     "offset": 0,
-    "custom_emoji_id": 5406769475204692909
+    "custom_emoji_id": 5442607073164540686
   },
   {
+    "url": null,
     "type": "custom_emoji",
     "length": 2,
     "offset": 2,
-    "custom_emoji_id": 5407072334823570356
+    "custom_emoji_id": 5440872743895575862
+  },
+  {
+    "url": null,
+    "type": "custom_emoji",
+    "length": 2,
+    "offset": 4,
+    "custom_emoji_id": 5370599150423384088
+  },
+  {
+    "url": null,
+    "type": "custom_emoji",
+    "length": 2,
+    "offset": 6,
+    "custom_emoji_id": 5440872743895575862
+  },
+  {
+    "url": null,
+    "type": "custom_emoji",
+    "length": 2,
+    "offset": 8,
+    "custom_emoji_id": 5371068208096746299
+  },
+  {
+    "url": null,
+    "type": "custom_emoji",
+    "length": 2,
+    "offset": 10,
+    "custom_emoji_id": 5370822544557351394
+  },
+  {
+    "url": null,
+    "type": "custom_emoji",
+    "length": 2,
+    "offset": 12,
+    "custom_emoji_id": 5370783314326069446
+  },
+  {
+    "url": null,
+    "type": "custom_emoji",
+    "length": 2,
+    "offset": 14,
+    "custom_emoji_id": 5372992224596336543
+  },
+  {
+    "url": null,
+    "type": "custom_emoji",
+    "length": 2,
+    "offset": 16,
+    "custom_emoji_id": 5371046836339481997
+  },
+  {
+    "url": null,
+    "type": "custom_emoji",
+    "length": 2,
+    "offset": 22,
+    "custom_emoji_id": 5431747364320716081
+  },
+  {
+    "url": null,
+    "type": "bold",
+    "length": 6,
+    "offset": 24,
+    "custom_emoji_id": null
+  },
+  {
+    "url": null,
+    "type": "custom_emoji",
+    "length": 2,
+    "offset": 106,
+    "custom_emoji_id": 5345927337856740600
+  },
+  {
+    "url": null,
+    "type": "italic",
+    "length": 4,
+    "offset": 108,
+    "custom_emoji_id": null
+  },
+  {
+    "url": null,
+    "type": "custom_emoji",
+    "length": 2,
+    "offset": 216,
+    "custom_emoji_id": 5274099962655816924
+  },
+  {
+    "url": null,
+    "type": "underline",
+    "length": 3,
+    "offset": 218,
+    "custom_emoji_id": null
+  },
+  {
+    "url": null,
+    "type": "custom_emoji",
+    "length": 2,
+    "offset": 313,
+    "custom_emoji_id": 5413523216788385992
+  },
+  {
+    "url": null,
+    "type": "strikethrough",
+    "length": 6,
+    "offset": 315,
+    "custom_emoji_id": null
   }
 ]

@@ -23,7 +23,7 @@ class CreatePostDTO(CreateDTO):
             if e.type == 'custom_emoji':
                 custom_emojis += 1
 
-            text_len = len(txt) + custom_emojis + newlines + 1
+            text_len = len(txt) + custom_emojis + newlines
             if not (0 <= e.offset < text_len and e.offset + e.length <= text_len):
                 raise ValueError(
                     f"Entity out of bounds: offset={e.offset} length={e.length} for text of length {text_len}")
