@@ -36,6 +36,12 @@ export default function HomePage() {
               Управление пользователями
             </button>
             <button
+              onClick={() => navigate('/chats')}
+              className="w-full py-6 text-xl bg-brandlight text-brand border border-brand rounded-lg shadow hover:bg-brand hover:text-brandlight transition"
+            >
+              Управление группами
+            </button>
+            <button
               onClick={() => navigate('/posts')}
               className="w-full py-6 text-xl bg-brandlight text-brand border border-brand rounded-lg shadow hover:bg-brand hover:text-brandlight transition"
             >
