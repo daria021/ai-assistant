@@ -108,6 +108,8 @@ class TelethonTelegramMessagesRepository(
                 )
                 sending_args['link_preview'] = False
 
+            logger.info(f"Sending {sending_args}")
+
             message = await client.send_message(**sending_args)
             logger.info('Message sent')
 
