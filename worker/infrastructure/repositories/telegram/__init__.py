@@ -80,7 +80,7 @@ class TelethonTelegramMessagesRepository(
             api_hash=self.api_hash,
             base_logger=client_logger,
             proxy=self.parse_proxy(self.worker.proxy.proxy_string) if self.worker.proxy else None,
-            auto_reconnect=False,
+            auto_reconnect=True,
         )
 
         try:
@@ -109,14 +109,13 @@ class TelethonTelegramMessagesRepository(
                 sending_args['link_preview'] = False
 
             logger.info(f"Sending {sending_args}")
-
             message = await client.send_message(**sending_args)
             logger.info('Message sent')
 
             await client.disconnect()
             logger.info("Client disconnected")
             return message.id
-        except (RuntimeError, IncompleteReadError) as e:
+        except (RuntimeError, IncompleteReadError, ConnectionResetError) as e:
             try:
                 await client.disconnect()
             except:
