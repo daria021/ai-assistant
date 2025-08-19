@@ -411,8 +411,6 @@ if (template) {
     photoFile ?? undefined
   );
 }
-
-
             let scheduled_date: string | null = null;
             let scheduled_time: string;
 

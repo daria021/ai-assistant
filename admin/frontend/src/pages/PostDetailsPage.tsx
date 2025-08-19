@@ -242,6 +242,7 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
                     😊
                 </button>
                 <RichEditor
+                    ref={richEditorRef}
                     emojis={emojis}
                     initialContent={editorHtml}
                     onChange={({html, text, entities}) => {
@@ -256,7 +257,7 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
                         emojis={emojis}
                         onSelect={(emoji) => {
                             richEditorRef.current?.insertEmoji(emoji)
-                            setPickerOpen(false)
+                            // setPickerOpen(false)
                         }}
                     />
                 )}
