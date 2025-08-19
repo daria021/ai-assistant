@@ -6,6 +6,7 @@ from pydantic_core.core_schema import FieldValidationInfo
 from .abstract import CreateDTO, UpdateDTO
 from .post_to_publish import MessageEntityDTO
 
+RHINO = '🦏'
 
 class CreatePostDTO(CreateDTO):
     name: str
