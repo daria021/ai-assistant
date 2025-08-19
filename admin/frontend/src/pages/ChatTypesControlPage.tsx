@@ -4,8 +4,7 @@ import {
   createChatType,
   deleteChatType,
   getChatsByType,
-  updateChat,
-  createChatByLink,
+  createChatByLink, deleteChat,
 } from "../services/api";
 import { useAuth } from "../contexts/auth";
 import { FiPlus, FiTrash2, FiChevronDown, FiChevronUp } from "react-icons/fi";
@@ -97,7 +96,7 @@ export default function ChatTypesControlPage() {
   }
 
   async function handleRemoveChat(chatId: string) {
-    await updateChat(chatId, { chat_type_id: null });
+    await deleteChat(chatId);
     loadTypes()
   }
 

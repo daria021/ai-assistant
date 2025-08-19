@@ -26,6 +26,9 @@ class ChatService(ChatServiceInterface):
     async def update_chat(self, chat_id: UUID, chat: UpdateChatDTO) -> Chat:
         return await self.chats_repository.update(chat_id, chat)
 
+    async def delete_chat(self, chat_id: UUID) -> None:
+        return await self.chats_repository.delete(chat_id)
+
     async def get_chats_by_type(self, type_id: UUID) -> list[Chat]:
         return await self.chats_repository.get_by_type(type_id)
 

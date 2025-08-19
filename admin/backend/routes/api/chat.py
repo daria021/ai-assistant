@@ -37,6 +37,10 @@ async def update_chat(chat_id: UUID, request: UpdateChatDTO) -> Chat:
     chat_service = get_chat_service()
     return await chat_service.update_chat(chat_id=chat_id, chat=request)
 
+@router.delete('/{chat_id}')
+async def delete_chat(chat_id: UUID) -> None:
+    chat_service = get_chat_service()
+    return await chat_service.delete_chat(chat_id=chat_id)
 
 @router.post("")
 async def create_chat(request: CreateChatRequest) -> Chat:

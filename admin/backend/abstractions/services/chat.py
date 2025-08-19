@@ -17,6 +17,10 @@ class ChatServiceInterface(ABC):
         ...
 
     @abstractmethod
+    async def delete_chat(self, chat_id: UUID) -> None:
+        ...
+
+    @abstractmethod
     async def get_chats_by_type(self, type_id: UUID) -> list[Chat]:
         ...
 

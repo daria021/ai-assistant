@@ -247,6 +247,12 @@ export async function updatePost(
     });
 }
 
+export async function deleteChat(
+    id: string
+): Promise<void> {
+    await apiClient.delete(`/chat/${id}`);
+}
+
 /** 2) Создать запись поста для публикации */
 export async function createPostToPublish(dto: CreatePostToPublishDTO): Promise<string> {
     // Вернёт UUID записи в post-to-publish

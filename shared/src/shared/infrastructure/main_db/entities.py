@@ -122,8 +122,8 @@ class Post(AbstractBase):
 post_to_publish_chat_association = Table(
     "post_to_publish_chat_association",
     AbstractBase.metadata,
-    Column("post_to_publish_id", ForeignKey("posts_to_publish.id"), primary_key=True),
-    Column("chat_id", ForeignKey("chats.id"), primary_key=True),
+    Column("post_to_publish_id", ForeignKey("posts_to_publish.id", ondelete="CASCADE"), primary_key=True),
+    Column("chat_id", ForeignKey("chats.id", ondelete="CASCADE"), primary_key=True),
 )
 
 
@@ -216,7 +216,7 @@ class Emoji(AbstractBase):
     custom_emoji_id: Mapped[str] = mapped_column(unique=True)
     img_url: Mapped[str]
     format: Mapped[EmojiFormat] = mapped_column(
-        PgEnum(EmojiFormat, name="format"),
+        PgEnum(EmojiFormat, name='emoji_format'),
         server_default=EmojiFormat.video,
         nullable=False,
     )

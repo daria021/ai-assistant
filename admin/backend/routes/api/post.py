@@ -95,7 +95,7 @@ async def update_post(
         data_dump["entities"] = entities
 
     logger.info(data.entities)
-    logger.info(data_dump["entities"])
+    # logger.info(data_dump["entities"])
 
     post_dto = UpdatePostDTO.model_validate(data_dump)
 
