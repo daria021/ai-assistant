@@ -31,126 +31,132 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
         const savedRangeRef = useRef<Range | null>(null);
 
         useEffect(() => {
-  const el = editorRef.current;
-  if (!el) return;
+            const el = editorRef.current;
+            if (!el) return;
 
-  const onClick = (e: MouseEvent) => {
-    const target = e.target as HTMLElement;
-    const a = target.closest('a');
-    if (a && el.contains(a)) {
-      e.preventDefault();
-      e.stopPropagation();
+            const onClick = (e: MouseEvent) => {
+                const target = e.target as HTMLElement;
+                const a = target.closest('a');
+                if (a && el.contains(a)) {
+                    e.preventDefault();
+                    e.stopPropagation();
 
-      // выделяем содержимое ссылки и сохраняем range
-      const r = document.createRange();
-      r.selectNodeContents(a);
-      const sel = window.getSelection();
-      sel?.removeAllRanges();
-      sel?.addRange(r);
+                    // выделяем содержимое ссылки и сохраняем range
+                    const r = document.createRange();
+                    r.selectNodeContents(a);
+                    const sel = window.getSelection();
+                    sel?.removeAllRanges();
+                    sel?.addRange(r);
 
-      savedRangeRef.current = r.cloneRange();
-      setPendingUrl(a.getAttribute('href') || '');
-      setIsUrlModalOpen(true);
-    }
-  };
+                    savedRangeRef.current = r.cloneRange();
+                    setPendingUrl(a.getAttribute('href') || '');
+                    setIsUrlModalOpen(true);
+                }
+            };
 
-  el.addEventListener('click', onClick);
-  return () => el.removeEventListener('click', onClick);
-}, []);
+            el.addEventListener('click', onClick);
+            return () => el.removeEventListener('click', onClick);
+        }, []);
 
-const saveCurrentRange = () => {
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return;
-  if (!editorRef.current?.contains(sel.anchorNode)) return;
-  savedRangeRef.current = sel.getRangeAt(0).cloneRange();
-};
+        const saveCurrentRange = () => {
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return;
+            if (!editorRef.current?.contains(sel.anchorNode)) return;
+            savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+        };
 
-const restoreRange = () => {
-  const r = savedRangeRef.current;
-  if (!r) return false;
-  const sel = window.getSelection();
-  if (!sel) return false;
-  sel.removeAllRanges();
-  sel.addRange(r);
-  return true;
-};
+        const restoreRange = () => {
+            const r = savedRangeRef.current;
+            if (!r) return false;
+            const sel = window.getSelection();
+            if (!sel) return false;
+            sel.removeAllRanges();
+            sel.addRange(r);
+            return true;
+        };
 
 
-const openUrlModal = () => {
-  saveCurrentRange();         // <- сохраняем выделение
-  setPendingUrl('');
-  setIsUrlModalOpen(true);
-};
+        const openUrlModal = () => {
+            saveCurrentRange();         // <- сохраняем выделение
+            setPendingUrl('');
+            setIsUrlModalOpen(true);
+        };
 
-const handleInsertUrl = () => {
-  if (!pendingUrl.trim()) { setIsUrlModalOpen(false); return; }
-  if (!restoreRange()) { setIsUrlModalOpen(false); return; }  // <- возвращаем выделение в редактор
-  let href = pendingUrl.trim();
-  if (!/^https?:\/\//i.test(href)) href = 'https://' + href;  // легкая нормализация
-  wrapSelection('a', { href, target: '_blank', rel: 'noopener noreferrer' });
-  setIsUrlModalOpen(false);
-};
+        const handleInsertUrl = () => {
+            if (!pendingUrl.trim()) {
+                setIsUrlModalOpen(false);
+                return;
+            }
+            if (!restoreRange()) {
+                setIsUrlModalOpen(false);
+                return;
+            }  // <- возвращаем выделение в редактор
+            let href = pendingUrl.trim();
+            if (!/^https?:\/\//i.test(href)) href = 'https://' + href;  // легкая нормализация
+            wrapSelection('a', {href, target: '_blank', rel: 'noopener noreferrer'});
+            setIsUrlModalOpen(false);
+        };
 
         const closeUrlModal = () => setIsUrlModalOpen(false);
 
         // очередь ID для восстановления эмодзи
         function wrapSelection(tagName: string, attrs: Record<string, string> = {}) {
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return;
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return;
 
-  const range = sel.getRangeAt(0);
-  const editor = editorRef.current;
-  if (!editor) return;
+            const range = sel.getRangeAt(0);
+            const editor = editorRef.current;
+            if (!editor) return;
 
-  // Если работаем с ссылкой — сначала проверим, внутри ли мы уже <a>
-  if (tagName.toLowerCase() === 'a') {
-    const node = range.commonAncestorContainer;
-    const el = (node.nodeType === Node.ELEMENT_NODE
-      ? (node as Element)
-      : (node.parentElement as Element | null));
-    const existingA = el?.closest('a');
+            // Если работаем с ссылкой — сначала проверим, внутри ли мы уже <a>
+            if (tagName.toLowerCase() === 'a') {
+                const node = range.commonAncestorContainer;
+                const el = (node.nodeType === Node.ELEMENT_NODE
+                    ? (node as Element)
+                    : (node.parentElement as Element | null));
+                const existingA = el?.closest('a');
 
-    if (existingA && editor.contains(existingA)) {
-      // просто обновляем href/атрибуты у существующей ссылки
-      for (const [k, v] of Object.entries(attrs)) existingA.setAttribute(k, v);
-      editor.dispatchEvent(new Event('input'));
-      return;
-    }
-  }
+                if (existingA && editor.contains(existingA)) {
+                    // просто обновляем href/атрибуты у существующей ссылки
+                    for (const [k, v] of Object.entries(attrs)) existingA.setAttribute(k, v);
+                    editor.dispatchEvent(new Event('input'));
+                    return;
+                }
+            }
 
-  if (range.collapsed) return;
+            if (range.collapsed) return;
 
-  editor.focus();
+            editor.focus();
 
-  // создаём новый wrapper и переносим выделение внутрь
-  const wrapper = document.createElement(tagName);
-  for (const [k, v] of Object.entries(attrs)) wrapper.setAttribute(k, v);
-  const fragment = range.extractContents();
+            // создаём новый wrapper и переносим выделение внутрь
+            const wrapper = document.createElement(tagName);
+            for (const [k, v] of Object.entries(attrs)) wrapper.setAttribute(k, v);
+            const fragment = range.extractContents();
 
-  // На всякий случай убираем вложенные <a> внутри фрагмента (если были)
-  if (tagName.toLowerCase() === 'a') {
-    fragment.querySelectorAll?.('a')?.forEach(a => {
-      const parent = a.parentNode!;
-      while (a.firstChild) parent.insertBefore(a.firstChild, a);
-      parent.removeChild(a);
-    });
-  }
+            // На всякий случай убираем вложенные <a> внутри фрагмента (если были)
+            if (tagName.toLowerCase() === 'a') {
+                fragment.querySelectorAll?.('a')?.forEach(a => {
+                    const parent = a.parentNode!;
+                    while (a.firstChild) parent.insertBefore(a.firstChild, a);
+                    parent.removeChild(a);
+                });
+            }
 
-  wrapper.appendChild(fragment);
-  range.insertNode(wrapper);
+            wrapper.appendChild(fragment);
+            range.insertNode(wrapper);
 
-  // ставим курсор после wrapper
-  const newSel = window.getSelection();
-  if (newSel) {
-    const r2 = document.createRange();
-    r2.setStartAfter(wrapper);
-    r2.collapse(true);
-    newSel.removeAllRanges();
-    newSel.addRange(r2);
-  }
+            // ставим курсор после wrapper
+            const newSel = window.getSelection();
+            if (newSel) {
+                const r2 = document.createRange();
+                r2.setStartAfter(wrapper);
+                r2.collapse(true);
+                newSel.removeAllRanges();
+                newSel.addRange(r2);
+            }
 
-  editor.dispatchEvent(new Event('input'));
-}
+            editor.dispatchEvent(new Event('input'));
+        }
 
 
         // возвращает URL эмодзи по его custom_emoji_id
@@ -243,6 +249,7 @@ const handleInsertUrl = () => {
                         else if (eln.tagName === 'U') type = 'underline';
                         else if (eln.tagName === 'S') type = 'strikethrough';
                         else if (eln.tagName === 'A') type = 'text_link';
+                        else if (eln.tagName === 'BLOCKQUOTE') type = 'blockquote';  // ← добавили
 
                         const start = offset;
                         emitInline(eln);
@@ -261,8 +268,6 @@ const handleInsertUrl = () => {
                     }
                 });
             }
-
-
 
 
             // 2) проходим верхнеуровневые блоки-строки
@@ -289,20 +294,20 @@ const handleInsertUrl = () => {
             }
 
             entities.sort((a, b) => a.offset - b.offset)
-const cleanEntities: MessageEntityDTO[] = entities.map((e) => {
-  const base: MessageEntityDTO = {
-    type: e.type,
-    offset: e.offset,
-    length: e.length,
-  };
-  if (e.type === 'text_link' && e.url) {
-    base.url = e.url;
-  }
-  if (e.type === 'custom_emoji' && e.custom_emoji_id) {
-    base.custom_emoji_id = e.custom_emoji_id;
-  }
-  return base;
-});
+            const cleanEntities: MessageEntityDTO[] = entities.map((e) => {
+                const base: MessageEntityDTO = {
+                    type: e.type,
+                    offset: e.offset,
+                    length: e.length,
+                };
+                if (e.type === 'text_link' && e.url) {
+                    base.url = e.url;
+                }
+                if (e.type === 'custom_emoji' && e.custom_emoji_id) {
+                    base.custom_emoji_id = e.custom_emoji_id;
+                }
+                return base;
+            });
 
             return {html, text, entities: cleanEntities}
         };
@@ -458,12 +463,26 @@ const cleanEntities: MessageEntityDTO[] = entities.map((e) => {
                     ><s>З</s></button>
 
                     <button
-  type="button"
-  onMouseDown={(e) => { e.preventDefault(); openUrlModal(); }}
-  className="px-2 py-1 border rounded"
->
-  🔗
-</button>
+                        type="button"
+                        onMouseDown={(e) => {
+                            e.preventDefault();
+                            openUrlModal();
+                        }}
+                        className="px-2 py-1 border rounded"
+                    >
+                        🔗
+                    </button>
+
+
+                    {/* ← новая кнопка для цитаты */}
+                    <button
+                        type="button"
+                        onClick={() => wrapSelection('blockquote')}
+                        className="px-2 py-1 border rounded"
+                        title="Цитата"
+                    >
+                        ❝❞
+                    </button>
 
                 </div>
 

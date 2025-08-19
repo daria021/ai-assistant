@@ -16,6 +16,7 @@ from telethon.tl.types import (
     MessageEntityUnderline,
     MessageEntityStrike,
     MessageEntityTextUrl,
+    MessageEntityBlockquote,   # ← добавили
     TypeMessageEntity
 )
 
@@ -208,6 +209,12 @@ class TelethonTelegramMessagesRepository(
                         offset=raw_entity.offset,
                         length=raw_entity.length,
                         url=raw_entity.url,
+                    )
+                    entities.append(entity_to_add)
+                case 'blockquote':                                  # ← добавили
+                    entity_to_add = MessageEntityBlockquote(
+                        offset=raw_entity.offset,
+                        length=raw_entity.length,
                     )
                     entities.append(entity_to_add)
 

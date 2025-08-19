@@ -13,10 +13,11 @@ interface EmojiPickerProps {
  * EmojiPicker — все эмодзи простым src,
  * с новым key={nanoid()} на каждый рендер.
  */
-export const EmojiPicker: React.FC<EmojiPickerProps> = ({
-                                                            emojis,
-                                                            onSelect,
-                                                        }) => {
+export const EmojiPicker: React.FC<EmojiPickerProps> = (
+    {
+        emojis,
+        onSelect,
+    }) => {
     return (
         <div
             className="

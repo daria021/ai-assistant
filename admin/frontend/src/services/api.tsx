@@ -105,7 +105,8 @@ export interface MessageEntityDTO {
         | "italic"
         | "underline"
         | "strikethrough"
-        | "text_link";
+        | "text_link"
+        | "blockquote";
     offset: number;
     length: number;
     custom_emoji_id?: string;
