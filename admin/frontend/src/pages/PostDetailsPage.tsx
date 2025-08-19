@@ -4,14 +4,14 @@ import FileUploader from "../components/FileUploader";
 import DatePicker from "react-datepicker";
 // import "react-datepicker/dist/react-datepicker.css";
 import {RichEditor, type RichEditorHandle} from "../components/RichEditor";
-import type { Emoji, MessageEntityDTO} from "../services/api";
-import { createPostToPublish } from "../services/api";
+import type {Emoji, MessageEntityDTO} from "../services/api";
 import {
+    createPostToPublish,
     getChats,
     getPostToPublish,
     type PostToPublish,
     updatePost,
-    updatePostToPublish,
+    updatePostToPublish
 } from "../services/api";
 import {useAuth} from "../contexts/auth";
 import {on} from "@telegram-apps/sdk";
@@ -49,6 +49,16 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
     const [editorEntities, setEditorEntities] = useState<MessageEntityDTO[]>([]);
     const [pickerOpen, setPickerOpen] = useState(false)
     const richEditorRef = useRef<RichEditorHandle>(null)
+    // const [activeTab, setActiveTab] = useState<"schedule" | "create" | "templates">(
+    //     "schedule"
+    // );
+    // const location = useLocation();
+    // type LocationState = { template?: Post; openCreate?: true };
+    // const {template, openCreate} = (location.state as LocationState) || {};
+
+    // useEffect(() => {
+    //     if (openCreate) setActiveTab("create");
+    // }, [openCreate]);
 
     // загрузить все чаты из API
     useEffect(() => {
@@ -111,81 +121,86 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
     }, [navigate]);
 
     function formatLocalDate(d: Date): string {
-      const Y = d.getFullYear();
-      const M = String(d.getMonth() + 1).padStart(2, "0");
-      const D = String(d.getDate()).padStart(2, "0");
-      return `${Y}-${M}-${D}`;        // "YYYY-MM-DD"
+        const Y = d.getFullYear();
+        const M = String(d.getMonth() + 1).padStart(2, "0");
+        const D = String(d.getDate()).padStart(2, "0");
+        return `${Y}-${M}-${D}`;        // "YYYY-MM-DD"
     }
 
     function formatLocalTime(d: Date): string {
-      const h = String(d.getHours()).padStart(2, "0");
-      const m = String(d.getMinutes()).padStart(2, "0");
-      return `${h}:${m}`;             // "HH:mm"
-        }
+        const h = String(d.getHours()).padStart(2, "0");
+        const m = String(d.getMinutes()).padStart(2, "0");
+        return `${h}:${m}`;             // "HH:mm"
+    }
 
     const handleSave = async () => {
-  const e = entry;
-  const uid = userId;
-  if (!e || !uid) {
-    console.log('handleSave: early return', { hasEntry: !!e, hasUser: !!uid });
-    return;
-  }
+        const e = entry;
+        const uid = userId;
+        if (!e || !uid) {
+            console.log('handleSave: early return', {hasEntry: !!e, hasUser: !!uid});
+            return;
+        }
 
-  const entitiesChanged =
-    JSON.stringify(editorEntities ?? []) !== JSON.stringify(e.post.entities ?? []);
-  const htmlBaseline = e.post.html ?? e.post.text;
-  const isTemplateChanged = is_template !== e.post.is_template;
+        const entitiesChanged =
+            JSON.stringify(editorEntities ?? []) !== JSON.stringify(e.post.entities ?? []);
+        const htmlBaseline = e.post.html ?? e.post.text;
+        const isTemplateChanged = is_template !== e.post.is_template;
 
-  try {
-    // 1) обновляем сам пост (всегда PATCH /post/:id)
-    await updatePost(
-      e.post.id,
-      title !== e.post.name ? title : undefined,
-      isTemplateChanged ? is_template : undefined,
-      editorText !== e.post.text ? editorText : undefined,
-      editorHtml !== htmlBaseline ? editorHtml : undefined,
-      entitiesChanged ? editorEntities : undefined,
-      photoFile ?? undefined
-    );
+        try {
+            // 1) обновляем сам пост (всегда PATCH /post/:id)
 
-    // 2) собираем payload расписания
-    let scheduled_date: string | null = null;
-    let scheduled_time: string;
+            await updatePost(
+                e.post.id,
+                title !== e.post.name ? title : undefined,
+                isTemplateChanged ? is_template : undefined,
+                editorText !== e.post.text ? editorText : undefined,
+                editorHtml !== htmlBaseline ? editorHtml : undefined,
+                entitiesChanged ? editorEntities : undefined,
+                photoFile ?? undefined
+            );
 
-    if (scheduleType === "once" && scheduledAt) {
-      scheduled_date = formatLocalDate(scheduledAt);
-      scheduled_time = formatLocalTime(scheduledAt);
-    } else if (scheduleType === "daily" && timeOnly) {
-      scheduled_time = formatLocalTime(timeOnly);
-    } else {
-      alert("Выберите дату и время");
-      return;
-    }
+            // 2) собираем payload расписания
+            let scheduled_date: string | null = null;
+            let scheduled_time: string;
 
-    const payload = {
-      post_id: e.post.id,
-      manager_id: uid,
-      scheduled_type: scheduleType === "once" ? "single" : "everyday",
-      scheduled_date,
-      scheduled_time,
-      chat_ids: selectedChats,
-      status: e.status,
-    } as const;
+            if (scheduleType === "once" && scheduledAt) {
+                scheduled_date = formatLocalDate(scheduledAt);
+                scheduled_time = formatLocalTime(scheduledAt);
+            } else if (scheduleType === "daily" && timeOnly) {
+                scheduled_time = formatLocalTime(timeOnly);
+            } else {
+                alert("Выберите дату и время");
+                return;
+            }
 
-    // 3) create vs update для PostToPublish
-    if (e.id) {
-      await updatePostToPublish(e.id, payload);   // PATCH /post-to-publish/:id
-    } else {
-      await createPostToPublish(payload);         // POST  /post-to-publish
-    }
+            const payload = {
+                post_id: e.post.id,
+                manager_id: uid,
+                scheduled_type: scheduleType === "once" ? "single" : "everyday",
+                scheduled_date,
+                scheduled_time,
+                chat_ids: selectedChats,
+                status: e.status,
+            } as const;
 
-    alert("Изменения сохранены");
-    navigate(-1);
-  } catch (err) {
-    console.error('handleSave error', err);
-    alert('Не удалось сохранить изменения');
-  }
-};
+            // 3) create vs update для PostToPublish
+            if (e.id) {
+                await updatePostToPublish(e.id, payload);   // PATCH /post-to-publish/:id
+            } else {
+                await createPostToPublish(payload);         // POST  /post-to-publish
+            }
+
+            alert("Изменения сохранены");
+            navigate(-1);
+        } catch (err) {
+            console.error('handleSave error', err);
+            alert('Не удалось сохранить изменения');
+        }
+    };
+
+
+
+
 
 
     if (!entry) {
@@ -220,12 +235,12 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
             <div className="mb-4">
                 <label className="block mb-1 font-medium">Текст поста</label>
                 <button
-                                    type="button"
-                                    onClick={() => setPickerOpen((o) => !o)}
-                                    className="ml-2 px-2 py-1 mb-2 rounded hover:bg-gray-200"
-                                >
-                                    😊
-                                </button>
+                    type="button"
+                    onClick={() => setPickerOpen((o) => !o)}
+                    className="ml-2 px-2 py-1 mb-2 rounded hover:bg-gray-200"
+                >
+                    😊
+                </button>
                 <RichEditor
                     emojis={emojis}
                     initialContent={editorHtml}
@@ -237,14 +252,14 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
                 />
                 {pickerOpen && (
 
-                            <EmojiPicker
-                                emojis={emojis}
-                                onSelect={(emoji) => {
-                                    richEditorRef.current?.insertEmoji(emoji)
-                                    setPickerOpen(false)
-                                }}
-                            />
-                        )}
+                    <EmojiPicker
+                        emojis={emojis}
+                        onSelect={(emoji) => {
+                            richEditorRef.current?.insertEmoji(emoji)
+                            setPickerOpen(false)
+                        }}
+                    />
+                )}
 
             </div>
 
@@ -322,6 +337,23 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
                     ))}
                 </div>
             </div>
+
+{/* Сделать шаблоном */}
+<div className="mt-2">
+  <label className="flex items-center space-x-2">
+    <input
+      type="checkbox"
+      checked={is_template}
+      onChange={() => setIsTemplate((prev) => !prev)}
+      className="form-checkbox h-5 w-5 text-brand focus:ring-brand"
+    />
+    <span>Сделать шаблоном</span>
+  </label>
+  <p className="text-xs text-gray-500 mt-1">
+    Если включено — пост сохранится как шаблон (флаг is_template в /post/:id).
+  </p>
+</div>
+
 
             <div className="flex justify-end">
                 <button

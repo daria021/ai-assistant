@@ -563,7 +563,7 @@ if (template) {
                                 emojis={emojis}
                                 onSelect={(emoji) => {
                                     richEditorRef.current?.insertEmoji(emoji)
-                                    setPickerOpen(false)
+                                    // setPickerOpen(false)
                                 }}
                             />
                         )}
@@ -682,7 +682,6 @@ if (template) {
                         </div>
 
                     </div>
-                    {/* Сделать шаблоном */}
                     {/* Сделать шаблоном (показываем, только если ещё не шаблон) */}
                     {!template?.is_template && (
                         <div>
