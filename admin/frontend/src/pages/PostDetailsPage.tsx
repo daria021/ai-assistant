@@ -1,10 +1,9 @@
-// src/pages/PostDetailsPage.tsx
 import {useNavigate, useParams} from "react-router-dom";
-import {useEffect, useMemo, useState} from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import FileUploader from "../components/FileUploader";
 import DatePicker from "react-datepicker";
 // import "react-datepicker/dist/react-datepicker.css";
-import {RichEditor} from "../components/RichEditor";
+import {RichEditor, type RichEditorHandle} from "../components/RichEditor";
 import type { Emoji, MessageEntityDTO} from "../services/api";
 import { createPostToPublish } from "../services/api";
 import {
@@ -16,6 +15,7 @@ import {
 } from "../services/api";
 import {useAuth} from "../contexts/auth";
 import {on} from "@telegram-apps/sdk";
+import {EmojiPicker} from "../components/EmojiPicker";
 
 interface PostDetailsPageProps {
     emojis: Emoji[]
@@ -47,7 +47,8 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
     const [editorText, setEditorText] = useState<string>('');
     const [is_template, setIsTemplate] = useState<boolean>(false);
     const [editorEntities, setEditorEntities] = useState<MessageEntityDTO[]>([]);
-
+    const [pickerOpen, setPickerOpen] = useState(false)
+    const richEditorRef = useRef<RichEditorHandle>(null)
 
     // загрузить все чаты из API
     useEffect(() => {
@@ -217,7 +218,14 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
 
             {/* Текст */}
             <div className="mb-4">
-                <label className="block mb-1 font-medium">Текст</label>
+                <label className="block mb-1 font-medium">Текст поста</label>
+                <button
+                                    type="button"
+                                    onClick={() => setPickerOpen((o) => !o)}
+                                    className="ml-2 px-2 py-1 mb-2 rounded hover:bg-gray-200"
+                                >
+                                    😊
+                                </button>
                 <RichEditor
                     emojis={emojis}
                     initialContent={editorHtml}
@@ -227,6 +235,16 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
                         setEditorEntities(entities);
                     }}
                 />
+                {pickerOpen && (
+
+                            <EmojiPicker
+                                emojis={emojis}
+                                onSelect={(emoji) => {
+                                    richEditorRef.current?.insertEmoji(emoji)
+                                    setPickerOpen(false)
+                                }}
+                            />
+                        )}
 
             </div>
 
