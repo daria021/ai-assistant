@@ -1,18 +1,25 @@
-import {forwardRef, useEffect, useImperativeHandle, useRef, useState} from 'react';
+import {forwardRef, useEffect, useImperativeHandle, useRef, useState,} from 'react';
 import type {Emoji, MessageEntityDTO} from '../services/api';
 
 /* ───────── константы ───────── */
-const RHINO = '🦏';
-const RHINO_LEN = 2;
+const RHINO = '🦏';          // плейсхолдер
+const RHINO_LEN = 2;         // 1 юникод-символ = 2 UTF-16 code units
+// очередь ID для восстановления эмодзи
 const idsRef = {current: [] as string[]};
 
 /* ───────── наружу отдаём только insertEmoji ───────── */
-export type RichEditorHandle = { insertEmoji: (emoji: Emoji) => void };
+export type RichEditorHandle = {
+    insertEmoji: (emoji: Emoji) => void;
+};
 
 export interface RichEditorProps {
     emojis: Emoji[];
     initialContent?: string;
-    onChange: (payload: { html: string; text: string; entities: MessageEntityDTO[] }) => void;
+    onChange: (payload: {
+        html: string;
+        text: string;
+        entities: MessageEntityDTO[];
+    }) => void;
 }
 
 export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
@@ -23,13 +30,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
         const [pendingUrl, setPendingUrl] = useState('');
         const savedRangeRef = useRef<Range | null>(null);
 
-        /* ───────── plain-text вставка ───────── */
-        const htmlToPlain = (html: string): string => {
-            const tmp = document.createElement('div');
-            tmp.innerHTML = html;
-            return tmp.innerText.replace(/\u00A0/g, ' ');
-        };
-
+        // ЗАМЕНИ ЭТУ ФУНКЦИЮ ПОЛНОСТЬЮ
 const insertPlainTextAtSelection = (text: string) => {
   const sel = window.getSelection();
   if (!sel || sel.rangeCount === 0) return;
@@ -37,56 +38,58 @@ const insertPlainTextAtSelection = (text: string) => {
   const range = sel.getRangeAt(0);
   range.deleteContents();
 
-  // Вставляем сами: текстовые ноды + <br> по переводам строк.
-  const lines = text.split(/\r\n|\n|\r/);
+  // Вставляем чистый текст: разбиваем по переносам и кладём Text + <br>
+  const lines = text.replace(/\u00A0/g, ' ').split(/\r\n|\n|\r/);
   const frag = document.createDocumentFragment();
   lines.forEach((line, i) => {
     frag.appendChild(document.createTextNode(line));
     if (i < lines.length - 1) frag.appendChild(document.createElement('br'));
   });
-  range.insertNode(frag);
 
-  // курсор в конец вставленного
+  range.insertNode(frag); // MDN: Range.insertNode() вставляет узел/фрагмент в Range
+  // Курсор в конец редактора
   sel.removeAllRanges();
-  const r2 = document.createRange();
-  r2.selectNodeContents(editorRef.current as HTMLDivElement);
-  r2.collapse(false);
-  sel.addRange(r2);
+  const end = document.createRange();
+  end.selectNodeContents(editorRef.current as HTMLDivElement);
+  end.collapse(false);
+  sel.addRange(end);
 
   editorRef.current?.dispatchEvent(new Event('input'));
 };
 
 
-        // Жёсткая фильтрация вставки/дропа: только plain text
-// Жёсткая фильтрация вставки/дропа: только plain text (capture + doc fallback)
+// ЗАМЕНИ ВЕСЬ useEffect для «Жёсткой фильтрации вставки/дропа» на это
 useEffect(() => {
   const el = editorRef.current;
   if (!el) return;
+
+  const htmlToPlain = (html: string) => {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.innerText.replace(/\u00A0/g, ' ');
+  };
 
   const handlePlainInsert = (text?: string, html?: string) => {
     const t = text && text.length ? text : (html ? htmlToPlain(html) : '');
     if (t) insertPlainTextAtSelection(t);
   };
 
-  // 0) Дополнительно блокируем dragover, иначе drop может сработать до нас
   const onDragOver = (e: DragEvent) => { e.preventDefault(); };
 
-  // 1) beforeinput — самый ранний перехват (capture!)
+  // beforeinput (раньше нативной вставки, работает и для contenteditable)
   const onBeforeInput = (e: InputEvent & { dataTransfer?: DataTransfer | null }) => {
-    const t = e.inputType;
+    const t = e.inputType; // MDN: InputEvent.inputType
     if (t === 'insertFromPaste' || t === 'insertFromPasteAsQuotation' || t === 'insertFromDrop') {
-      // ВАЖНО: отменяем на capture, до того как браузер создаст <p>/<span style=...>
       if (e.cancelable) e.preventDefault();
-      const dt = e.dataTransfer ?? null;
+      e.stopPropagation();
+      const dt = e.dataTransfer ?? null; // MDN: InputEvent.dataTransfer
       const text = dt?.getData('text/plain') ?? '';
       const html = dt?.getData('text/html') ?? '';
       handlePlainInsert(text, html);
-      // и не даём событию всплыть дальше
-      e.stopPropagation();
     }
   };
 
-  // 2) Классический paste (capture!)
+  // Классический paste (ClipboardEvent.clipboardData)
   const onPaste = (e: ClipboardEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -96,12 +99,15 @@ useEffect(() => {
     handlePlainInsert(text, html);
   };
 
-  // 3) Drop (capture!) — вставляем только текст
+  // Drop: ставим каретку примерно в точку дропа (если возможно), вставляем текст
   const onDrop = (e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // ставим каретку под курсор
-    const rng = (document as any).caretRangeFromPoint?.(e.clientX, e.clientY);
+    // фича‑детект (оба не стандартизованы одинаково, но это безопасные no‑op)
+    const anyDoc = document;
+    const rng: Range | null =
+      (anyDoc.caretRangeFromPoint && anyDoc.caretRangeFromPoint(e.clientX, e.clientY)) ||
+      null;
     if (rng) {
       const sel = window.getSelection();
       sel?.removeAllRanges();
@@ -113,10 +119,10 @@ useEffect(() => {
     handlePlainInsert(text, html);
   };
 
-  // 4) Док‑уровень fallback (на случай если что-то гасит события на элементе)
+  // Документ‑уровневый запасной перехват (если кто-то мешает на элементе)
   const onDocPasteCapture = (e: ClipboardEvent) => {
     const active = document.activeElement;
-    if (!active || !el.contains(active)) return; // не наш редактор — пропускаем
+    if (!active || !el.contains(active)) return;
     e.preventDefault();
     e.stopPropagation();
     const cd = e.clipboardData;
@@ -125,50 +131,22 @@ useEffect(() => {
     handlePlainInsert(text, html);
   };
 
-  el.addEventListener('dragover', onDragOver as any, { capture: true });
-  el.addEventListener('beforeinput', onBeforeInput as any, { capture: true });
-  el.addEventListener('paste', onPaste as any, { capture: true });
-  el.addEventListener('drop', onDrop as any, { capture: true });
+  el.addEventListener('dragover', onDragOver, { capture: true });
+  el.addEventListener('beforeinput', onBeforeInput, { capture: true }); // MDN/W3C: beforeinput
+  el.addEventListener('paste', onPaste, { capture: true });             // MDN: ClipboardEvent.clipboardData
+  el.addEventListener('drop', onDrop, { capture: true });
 
-  document.addEventListener('paste', onDocPasteCapture as any, { capture: true });
+  document.addEventListener('paste', onDocPasteCapture, { capture: true });
 
   return () => {
-    el.removeEventListener('dragover', onDragOver as any, { capture: true } as any);
-    el.removeEventListener('beforeinput', onBeforeInput as any, { capture: true } as any);
-    el.removeEventListener('paste', onPaste as any, { capture: true } as any);
-    el.removeEventListener('drop', onDrop as any, { capture: true } as any);
-    document.removeEventListener('paste', onDocPasteCapture as any, { capture: true } as any);
+    el.removeEventListener('dragover', onDragOver, { capture: true });
+    el.removeEventListener('beforeinput', onBeforeInput, { capture: true });
+    el.removeEventListener('paste', onPaste, { capture: true });
+    el.removeEventListener('drop', onDrop, { capture: true });
+    document.removeEventListener('paste', onDocPasteCapture, { capture: true });
   };
 }, []);
 
-
-        /* ───────── ссылка-редактор ───────── */
-        useEffect(() => {
-            const el = editorRef.current;
-            if (!el) return;
-
-            const onClick = (e: MouseEvent) => {
-                const target = e.target as HTMLElement;
-                const a = target.closest('a');
-                if (a && el.contains(a)) {
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    const r = document.createRange();
-                    r.selectNodeContents(a);
-                    const sel = window.getSelection();
-                    sel?.removeAllRanges();
-                    sel?.addRange(r);
-
-                    savedRangeRef.current = r.cloneRange();
-                    setPendingUrl(a.getAttribute('href') || '');
-                    setIsUrlModalOpen(true);
-                }
-            };
-
-            el.addEventListener('click', onClick);
-            return () => el.removeEventListener('click', onClick);
-        }, []);
 
         const saveCurrentRange = () => {
             const sel = window.getSelection();
@@ -187,8 +165,9 @@ useEffect(() => {
             return true;
         };
 
+
         const openUrlModal = () => {
-            saveCurrentRange();
+            saveCurrentRange();         // <- сохраняем выделение
             setPendingUrl('');
             setIsUrlModalOpen(true);
         };
@@ -201,13 +180,16 @@ useEffect(() => {
             if (!restoreRange()) {
                 setIsUrlModalOpen(false);
                 return;
-            }
+            }  // <- возвращаем выделение в редактор
             let href = pendingUrl.trim();
-            if (!/^https?:\/\//i.test(href)) href = 'https://' + href;
+            if (!/^https?:\/\//i.test(href)) href = 'https://' + href;  // легкая нормализация
             wrapSelection('a', {href, target: '_blank', rel: 'noopener noreferrer'});
             setIsUrlModalOpen(false);
         };
 
+        const closeUrlModal = () => setIsUrlModalOpen(false);
+
+        // очередь ID для восстановления эмодзи
         function wrapSelection(tagName: string, attrs: Record<string, string> = {}) {
             const sel = window.getSelection();
             if (!sel || sel.rangeCount === 0) return;
@@ -216,12 +198,16 @@ useEffect(() => {
             const editor = editorRef.current;
             if (!editor) return;
 
+            // Если работаем с ссылкой — сначала проверим, внутри ли мы уже <a>
             if (tagName.toLowerCase() === 'a') {
                 const node = range.commonAncestorContainer;
-                const el = (node.nodeType === Node.ELEMENT_NODE ? (node as Element) : (node.parentElement as Element | null));
+                const el = (node.nodeType === Node.ELEMENT_NODE
+                    ? (node as Element)
+                    : (node.parentElement as Element | null));
                 const existingA = el?.closest('a');
 
                 if (existingA && editor.contains(existingA)) {
+                    // просто обновляем href/атрибуты у существующей ссылки
                     for (const [k, v] of Object.entries(attrs)) existingA.setAttribute(k, v);
                     editor.dispatchEvent(new Event('input'));
                     return;
@@ -232,10 +218,12 @@ useEffect(() => {
 
             editor.focus();
 
+            // создаём новый wrapper и переносим выделение внутрь
             const wrapper = document.createElement(tagName);
             for (const [k, v] of Object.entries(attrs)) wrapper.setAttribute(k, v);
             const fragment = range.extractContents();
 
+            // На всякий случай убираем вложенные <a> внутри фрагмента (если были)
             if (tagName.toLowerCase() === 'a') {
                 fragment.querySelectorAll?.('a')?.forEach(a => {
                     const parent = a.parentNode!;
@@ -247,6 +235,7 @@ useEffect(() => {
             wrapper.appendChild(fragment);
             range.insertNode(wrapper);
 
+            // ставим курсор после wrapper
             const newSel = window.getSelection();
             if (newSel) {
                 const r2 = document.createRange();
@@ -259,14 +248,18 @@ useEffect(() => {
             editor.dispatchEvent(new Event('input'));
         }
 
+
+        // возвращает URL эмодзи по его custom_emoji_id
         const getUrlById = (id: string): string => {
             const found = emojis.find(e => e.custom_emoji_id === id);
             return found ? found.img_url : '';
         };
 
-        /* начальный HTML один раз */
+
+        /* ставим начальный HTML один раз */
         useEffect(() => {
             if (editorRef.current) editorRef.current.innerHTML = initialContent;
+            // сразу пробрасываем initialContent наружу
             if (editorRef.current) handleInput();
             // eslint-disable-next-line react-hooks/exhaustive-deps
         }, []);
@@ -274,26 +267,34 @@ useEffect(() => {
         const serialize = (el: HTMLDivElement) => {
             const clone = el.cloneNode(true) as HTMLDivElement;
 
+            // 1) html как есть
             const html = el.innerHTML;
 
             const entities: MessageEntityDTO[] = [];
             let text = '';
             let offset = 0;
 
-            const USING_FORMDATA = true;
+            // считаем оффсеты как в payload (multipart -> CRLF)
+            const USING_FORMDATA = true;                 // если перейдёшь на JSON, поставь false
             const NL = USING_FORMDATA ? '\r\n' : '\n';
             const NL_LEN = NL.length;
 
+
+            // верхнеуровневый пустой блок: визуальная пустая строка
             function isBlankLineDiv(div: HTMLElement): boolean {
                 if (div.tagName !== 'DIV' || div.parentElement !== clone) return false;
+                // есть ли хоть какой-то видимый текст
                 const hasText = (div.textContent ?? '').replace(/\u00A0/g, ' ').trim().length > 0;
                 if (hasText) return false;
+                // пустой считаем только если есть <br> и НЕТ кастом-эмодзи
                 if (div.querySelector('img[data-custom-emoji-id],video[data-custom-emoji-id]')) return false;
                 return !!div.querySelector('br');
             }
 
+            // рекурсивная сериализация инлайнов + entities
             function emitInline(node: Node) {
                 node.childNodes.forEach((child) => {
+                    console.log("node: ", node);
                     if (child.nodeType === Node.TEXT_NODE) {
                         const s = (child as Text).data.replace(/\u00A0/g, ' ');
                         if (s) {
@@ -305,7 +306,9 @@ useEffect(() => {
 
                     if (child.nodeType === Node.ELEMENT_NODE) {
                         const eln = child as HTMLElement;
+                        console.log("eln: ", eln);
 
+                        // кастом-эмодзи
                         if (
                             (eln.tagName === 'IMG' || eln.tagName === 'VIDEO') &&
                             eln.hasAttribute('data-custom-emoji-id')
@@ -316,48 +319,54 @@ useEffect(() => {
                                 type: 'custom_emoji',
                                 offset,
                                 length: RHINO_LEN,
-                                custom_emoji_id: id
+                                custom_emoji_id: id,
                             } as MessageEntityDTO);
                             offset += RHINO_LEN;
                             return;
                         }
 
+                        // перенос строки
                         if (eln.tagName === 'BR') {
                             text += NL;
                             offset += NL_LEN;
                             return;
                         }
 
+                        // форматирование
                         let type: MessageEntityDTO['type'] | null = null;
                         if (eln.tagName === 'B') type = 'bold';
                         else if (eln.tagName === 'I') type = 'italic';
                         else if (eln.tagName === 'U') type = 'underline';
                         else if (eln.tagName === 'S') type = 'strikethrough';
                         else if (eln.tagName === 'A') type = 'text_link';
-                        else if (eln.tagName === 'BLOCKQUOTE') type = 'blockquote';
+                        else if (eln.tagName === 'BLOCKQUOTE') type = 'blockquote';  // ← добавили
 
                         const start = offset;
                         emitInline(eln);
                         const len = offset - start;
 
                         if (type && len > 0) {
-                            const slice = text.slice(start, start + len);
-                            const cleanLen = slice.replace(/\r?\n+$/g, '').length;
+                            // не захватываем переносы в конец сущности
+                            const slice = text.slice(start, start + len)
+                            const cleanLen = slice.replace(/\r?\n+$/g, '').length
                             if (cleanLen > 0) {
-                                const ent: MessageEntityDTO = {type, offset: start, length: cleanLen};
-                                if (type === 'text_link') ent.url = eln.getAttribute('href') || undefined;
-                                entities.push(ent);
+                                const ent: MessageEntityDTO = {type, offset: start, length: cleanLen}
+                                if (type === 'text_link') ent.url = eln.getAttribute('href') || undefined
+                                entities.push(ent)
                             }
                         }
                     }
                 });
             }
 
+
+            // 2) проходим верхнеуровневые блоки-строки
             const blocks = Array.from(clone.children) as HTMLElement[];
             for (let i = 0; i < blocks.length; i++) {
                 const div = blocks[i];
 
                 if (isBlankLineDiv(div)) {
+                    // пустая строка даёт один \n
                     if (i < blocks.length - 1) {
                         text += NL;
                         offset += NL_LEN;
@@ -367,22 +376,32 @@ useEffect(() => {
 
                 emitInline(div);
 
+                // \n после каждого непустого блока, кроме последнего
                 if (i < blocks.length - 1) {
                     text += NL;
                     offset += NL_LEN;
                 }
             }
 
-            entities.sort((a, b) => a.offset - b.offset);
+            entities.sort((a, b) => a.offset - b.offset)
             const cleanEntities: MessageEntityDTO[] = entities.map((e) => {
-                const base: MessageEntityDTO = {type: e.type, offset: e.offset, length: e.length};
-                if (e.type === 'text_link' && e.url) base.url = e.url;
-                if (e.type === 'custom_emoji' && e.custom_emoji_id) base.custom_emoji_id = e.custom_emoji_id;
+                const base: MessageEntityDTO = {
+                    type: e.type,
+                    offset: e.offset,
+                    length: e.length,
+                };
+                if (e.type === 'text_link' && e.url) {
+                    base.url = e.url;
+                }
+                if (e.type === 'custom_emoji' && e.custom_emoji_id) {
+                    base.custom_emoji_id = e.custom_emoji_id;
+                }
                 return base;
             });
 
-            return {html, text, entities: cleanEntities};
+            return {html, text, entities: cleanEntities}
         };
+
 
         function restoreRhinos(root: HTMLElement) {
             const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
@@ -403,7 +422,7 @@ useEffect(() => {
                         const emojiId = idsRef.current.shift()!;
                         const img = document.createElement('img');
                         img.setAttribute('data-custom-emoji-id', emojiId);
-                        img.src = getUrlById(emojiId);
+                        img.src = getUrlById(emojiId);  // ваша функция получения URL по id
                         img.width = img.height = 24;
                         frag.appendChild(img);
                     }
@@ -413,18 +432,27 @@ useEffect(() => {
             });
         }
 
+
         /* ---------- единый обработчик input ---------- */
         const handleInput = () => {
             const el = editorRef.current;
             if (!el) return;
 
+            // сначала сериализуем и сохраняем ids
             const result = serialize(el);
 
+            console.group('%cRichEditor Input Result', 'color: teal; font-weight: bold;');
+            console.log('HTML:', result.html);
+            console.log('Text:', result.text);
+            console.log('Entities:', result.entities);
+            console.groupEnd();
             // тут же восстанавливаем все 🦏 → <img>
             restoreRhinos(el);
 
+            // отдаём готовые html/text/entities
             onChange(result);
         };
+
 
         useEffect(() => {
             const el = editorRef.current;
@@ -457,7 +485,9 @@ useEffect(() => {
             const range = sel.getRangeAt(0);
             range.deleteContents();
 
-            const isVideo = emoji.format === 'video' || emoji.img_url.toLowerCase().endsWith('.webm');
+            const isVideo =
+                emoji.format === 'video' ||
+                emoji.img_url.toLowerCase().endsWith('.webm');
 
             const node: HTMLElement = isVideo
                 ? (() => {
@@ -487,23 +517,42 @@ useEffect(() => {
             sel.removeAllRanges();
             sel.addRange(range);
 
+            /* триггерим input, чтобы сериализовать новый контент */
             el.dispatchEvent(new Event('input'));
         };
 
+
+        /* отдаём наружу только insertEmoji */
         useImperativeHandle(ref, () => ({insertEmoji}), [insertEmoji]);
 
         return (
             <div className="relative">
                 {/* ——— Панель кнопок форматирования ——— */}
                 <div className="flex items-center mb-2 space-x-1">
-                    <button type="button" onClick={() => wrapSelection('b')} className="px-2 py-1 border rounded">
-                        <b>Ж</b></button>
-                    <button type="button" onClick={() => wrapSelection('i')} className="px-2 py-1 border rounded">
-                        <i>К</i></button>
-                    <button type="button" onClick={() => wrapSelection('u')} className="px-2 py-1 border rounded">
-                        <u>П</u></button>
-                    <button type="button" onClick={() => wrapSelection('s')} className="px-2 py-1 border rounded">
-                        <s>З</s></button>
+                    <button
+                        type="button"
+                        onClick={() => wrapSelection('b')}
+                        className="px-2 py-1 border rounded"
+                    ><b>Ж</b></button>
+
+                    <button
+                        type="button"
+                        onClick={() => wrapSelection('i')}
+                        className="px-2 py-1 border rounded"
+                    ><i>К</i></button>
+
+                    <button
+                        type="button"
+                        onClick={() => wrapSelection('u')}
+                        className="px-2 py-1 border rounded"
+                    ><u>П</u></button>
+
+                    <button
+                        type="button"
+                        onClick={() => wrapSelection('s')}
+                        className="px-2 py-1 border rounded"
+                    ><s>З</s></button>
+
                     <button
                         type="button"
                         onMouseDown={(e) => {
@@ -511,11 +560,21 @@ useEffect(() => {
                             openUrlModal();
                         }}
                         className="px-2 py-1 border rounded"
-                    >🔗
+                    >
+                        🔗
                     </button>
-                    <button type="button" onClick={() => wrapSelection('blockquote')}
-                            className="px-2 py-1 border rounded" title="Цитата">❝❞
+
+
+                    {/* ← новая кнопка для цитаты */}
+                    <button
+                        type="button"
+                        onClick={() => wrapSelection('blockquote')}
+                        className="px-2 py-1 border rounded"
+                        title="Цитата"
+                    >
+                        ❝❞
                     </button>
+
                 </div>
 
                 <div
@@ -523,14 +582,16 @@ useEffect(() => {
                     contentEditable
                     suppressContentEditableWarning
                     className="rich-editor border p-2 rounded min-h-[150px] focus:outline-none"
-                    style={{whiteSpace: 'pre-wrap'}} // сохраняем \n как переносы, без <p>
                 />
 
                 {isUrlModalOpen && (
                     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
                         <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
-                            <button onClick={() => setIsUrlModalOpen(false)}
-                                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">✕
+                            <button
+                                onClick={closeUrlModal}
+                                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                            >
+                                ✕
                             </button>
                             <h2 className="text-xl font-semibold mb-4">Вставить ссылку</h2>
                             <input
@@ -541,8 +602,10 @@ useEffect(() => {
                                 className="w-full mb-4 p-2 border rounded focus:ring-2 focus:ring-brand"
                                 autoFocus
                             />
-                            <button onClick={handleInsertUrl}
-                                    className="w-full py-2 bg-brand text-white rounded hover:bg-brand transition">
+                            <button
+                                onClick={handleInsertUrl}
+                                className="w-full py-2 bg-brand text-white rounded hover:bg-brand transition"
+                            >
                                 Вставить
                             </button>
                         </div>

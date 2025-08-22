@@ -24,12 +24,14 @@ class PostToPublishRepository(
         "chats": None,
         "post": None,
     })
+    _soft_delete: bool = field(default=True)
+
 
     async def get_posts_by_manager(self, responsible_manager_id: UUID) -> list[PostToPublishModel]:
         async with self.session_maker() as session:
             result = await session.execute(
                 select(self.entity)
-                .where(self.entity.responsible_manager_id == responsible_manager_id)
+                .where(self.entity.responsible_manager_id == responsible_manager_id, self.entity.deleted_at == None)
                 .options(*self.options)
             )
 
@@ -41,7 +43,7 @@ class PostToPublishRepository(
         async with self.session_maker() as session:
             result = await session.execute(
                 select(self.entity)
-                .where(self.entity.status == PublicationStatus.PENDING)
+                .where(self.entity.status == PublicationStatus.PENDING, self.entity.deleted_at == None)
                 .order_by(self.entity.created_at)
                 .options(*self.options)
                 .limit(1)

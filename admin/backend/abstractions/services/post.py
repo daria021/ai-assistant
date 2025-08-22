@@ -13,7 +13,7 @@ class PostServiceInterface(ABC):
         ...
 
     @abstractmethod
-    async def create_post(self, post: CreatePostDTO) -> UUID:
+    async def create_post(self, post: CreatePostDTO, author_id: UUID) -> UUID:
         ...
 
     @abstractmethod
@@ -21,7 +21,7 @@ class PostServiceInterface(ABC):
         ...
 
     @abstractmethod
-    async def update_post(self, post_id: UUID, post: UpdatePostDTO) -> Post:
+    async def update_post(self, post_id: UUID, post: UpdatePostDTO, author_id: UUID) -> Post:
         ...
 
     @abstractmethod

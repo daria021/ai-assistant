@@ -1,5 +1,5 @@
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from uuid import UUID
 
 from shared.abstractions.repositories import PostRepositoryInterface
@@ -16,16 +16,20 @@ class PostRepository(
     AbstractMainDBRepository[Post, PostModel, CreatePostDTO, UpdatePostDTO],
     PostRepositoryInterface,
 ):
+
+    _soft_delete: bool = field(default=True)
+
     async def update(self, obj_id: UUID, obj: UpdatePostDTO) -> PostModel:
         async with self.session_maker() as session:
             async with session.begin():
                 entity = await session.get(self.entity, obj_id, options=self.options)
-                logger.info(obj.entities)
-                for key, value in obj.model_dump(exclude_unset=True, exclude={'entiites'}).items():
-                    setattr(entity, key, value)
+                if entity.deleted_at is None:
+                    logger.info(obj.entities)
+                    for key, value in obj.model_dump(exclude_unset=True, exclude={'entiites'}).items():
+                        setattr(entity, key, value)
 
-                if obj.entities:
-                    entity.entities = [x.model_dump(mode='json') for x in obj.entities]
+                    if obj.entities:
+                        entity.entities = [x.model_dump(mode='json') for x in obj.entities]
 
             await session.refresh(entity)
 

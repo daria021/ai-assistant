@@ -117,6 +117,7 @@ class Post(AbstractBase):
 
     html: Mapped[Optional[str]]
     entities: Mapped[Optional[list[dict]]] = mapped_column(JSONB)
+    deleted_at: Mapped[Optional[datetime]]
 
 
 post_to_publish_chat_association = Table(
@@ -125,6 +126,13 @@ post_to_publish_chat_association = Table(
     Column("post_to_publish_id", ForeignKey("posts_to_publish.id", ondelete="CASCADE"), primary_key=True),
     Column("chat_id", ForeignKey("chats.id", ondelete="CASCADE"), primary_key=True),
 )
+
+class UpdatePost(AbstractBase):
+    __tablename__ = "update_post"
+
+    post_id: Mapped[UUID] = mapped_column(ForeignKey("posts.id"))
+    post_json: Mapped[dict] = mapped_column(JSONB)
+    author_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
 
 
 class PostToPublish(AbstractBase):
@@ -144,6 +152,7 @@ class PostToPublish(AbstractBase):
     creator: Mapped[User] = relationship("User", foreign_keys=[creator_id], passive_deletes="all")
     post: Mapped[Post] = relationship("Post")
     chats: Mapped[list[Chat]] = relationship("Chat", secondary=post_to_publish_chat_association)
+    deleted_at: Mapped[Optional[datetime]]
 
 
 class SendPostRequest(AbstractBase):
@@ -163,7 +172,7 @@ class SendPostRequest(AbstractBase):
     user: Mapped["User"] = relationship("User", passive_deletes="all")
     chat: Mapped["Chat"] = relationship("Chat")
     post: Mapped["Post"] = relationship("Post")
-
+    deleted_at: Mapped[Optional[datetime]]
 
 class Story(AbstractBase):
     __tablename__ = 'stories'

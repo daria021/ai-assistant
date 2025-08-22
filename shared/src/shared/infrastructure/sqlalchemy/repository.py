@@ -1,6 +1,7 @@
 import logging
 from abc import abstractmethod
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Type, Optional
 from asyncpg.pgproto.pgproto import UUID as asyncpgUUID
 
@@ -23,6 +24,8 @@ class AbstractSQLAlchemyRepository[Entity, Model, CreateDTO, UpdateDTO, PK_TYPE]
 
     joined_fields: dict[str, Optional[list[str]]] = field(default_factory=dict)
     options: list = field(default_factory=list)
+
+    _soft_delete: bool = field(default=False)
 
     def __post_init__(self):
         self.entity: Type[Entity] = self.__orig_bases__[0].__args__[0]  # noqa
@@ -91,33 +94,38 @@ class AbstractSQLAlchemyRepository[Entity, Model, CreateDTO, UpdateDTO, PK_TYPE]
         return entity_id
 
     async def get(self, obj_id: PK_TYPE) -> Model:
-        try:
-            async with self.session_maker() as session:
+        async with self.session_maker() as session:
+            try:
+                stmt = (
+                    select(self.entity)
+                    .where(self.entity.id == obj_id)
+                )
+                if self._soft_delete:
+                    stmt = stmt.where(self.entity.deleted_at.is_(None))
                 if self.options:
-                    res = await session.execute(
-                        select(self.entity)
-                        .where(self.entity.id == obj_id)
-                        .options(*self.options)
-                    )
-                    obj = res.unique().scalars().one()
-                else:
-                    res = await session.execute(
-                        select(self.entity)
-                        .where(self.entity.id == obj_id)
-                    )
-                    obj = res.scalars().one()
-                return self.entity_to_model(obj)
-        except NoResultFound:
-            raise NotFoundException
+                    stmt = stmt.options(*self.options)
+
+                res = await session.execute(stmt)
+
+                if self.options:
+                    res = res.unique()
+
+                obj = res.scalars().one()
+                return self.entity_to_model(obj) if obj else None
+            except NoResultFound:
+                raise NotFoundException
 
     async def update(self, obj_id: PK_TYPE, obj: UpdateDTO) -> Model:
         async with self.session_maker() as session:
             async with session.begin():
-                entity = await session.get(self.entity, obj_id, options=self.options)
+                entity = await session.get(self.entity, obj_id)
+                if self._soft_delete and entity.deleted_at:
+                    raise NotFoundException()
+
                 for key, value in obj.model_dump(exclude_unset=True).items():
                     setattr(entity, key, value)
 
-            await session.refresh(entity)
+            await session.refresh(entity, attribute_names=self.joined_fields.keys())
 
         return self.entity_to_model(entity)
 
@@ -125,53 +133,38 @@ class AbstractSQLAlchemyRepository[Entity, Model, CreateDTO, UpdateDTO, PK_TYPE]
         async with self.session_maker() as session:
             async with session.begin():
                 obj = await session.get(self.entity, obj_id)
-                await session.delete(obj)
+                if not obj:
+                    raise NotFoundException
+
+                if self._soft_delete:
+                    if obj.deleted_at:
+                        raise NotFoundException
+                    else:
+                        obj.deleted_at = datetime.now()
+                else:
+                    await session.delete(obj)
 
     async def get_all(self, limit: int = 100, offset: int = 0, joined: bool = True) -> list[Model]:
         async with self.session_maker() as session:
-            if joined:
-                if self.options:
-                    return [
-                        self.entity_to_model(entity)
-                        for entity in (await session.execute(
-                            select(self.entity)
-                            .limit(limit)
-                            .offset(offset)
-                            .options(*self.options)
-                        )).unique().scalars().all()
-                    ]
-            res = (await session.execute(
+            stmt = (
                 select(self.entity)
                 .limit(limit)
                 .offset(offset)
-            )).scalars().all()
-            return [
-                self.entity_to_model(entity)
-                for entity in res
-            ]
+            )
+            if joined and self.options:
+                stmt = stmt.options(*self.options)
 
-    async def get_many(self, obj_ids: list[PK_TYPE]) -> list[Model]:
-        if not obj_ids:
-            return []
+            if self._soft_delete:
+                stmt = stmt.where(self.entity.deleted_at.is_(None))
 
-        try:
-            async with self.session_maker() as session:
-                if self.options:
-                    res = await session.execute(
-                        select(self.entity)
-                        .where(self.entity.id.in_(obj_ids))
-                        .options(*self.options)
-                    )
-                    objects = res.unique().scalars().all()
-                else:
-                    res = await session.execute(
-                        select(self.entity)
-                        .where(self.entity.id.in_(obj_ids))
-                    )
-                    objects = res.scalars().all()
-                return [self.entity_to_model(x) for x in objects]
-        except NoResultFound:
-            raise NotFoundException
+            res = await session.execute(stmt)
+
+            if self.options:
+                res = res.unique()
+
+            objs = res.scalars().all()
+
+            return [self.entity_to_model(entity) for entity in objs]
 
     @abstractmethod
     def entity_to_model(self, entity: Entity) -> Model:

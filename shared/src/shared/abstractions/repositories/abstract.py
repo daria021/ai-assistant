@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 class CRUDRepositoryInterface[PK_TYPE, Model, CreateDTO, UpdateDTO](ABC):
     @abstractmethod
     async def create(self, obj: CreateDTO) -> PK_TYPE:
@@ -21,9 +22,6 @@ class CRUDRepositoryInterface[PK_TYPE, Model, CreateDTO, UpdateDTO](ABC):
     async def get_all(self, limit: int = 100, offset: int = 0) -> list[Model]:
         pass
 
-    @abstractmethod
-    async def get_many(self, obj_ids: list[PK_TYPE]) -> list[Model]:
-        ...
 
 class UOWInterface(ABC):
     @abstractmethod

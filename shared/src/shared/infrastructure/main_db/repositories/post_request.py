@@ -29,16 +29,19 @@ class SendPostRequestRepository(
         "post": None,
     })
 
+    _soft_delete: bool = field(default=True)
+
     async def get_requests_from_same_publication(self, request_id: UUID) -> list[SendPostRequestModel]:
         async with self.session_maker() as session:
             request = await session.get(self.entity, request_id)
-            requests_result = await session.execute(
-                select(self.entity)
-                .where(self.entity.publication_id == request.publication_id)
-                .order_by(self.entity.created_at)
-                .options(*self.options)
-            )
-            requests = requests_result.unique().scalars().all()
+            if request.deleted_at is None:
+                requests_result = await session.execute(
+                    select(self.entity)
+                    .where(self.entity.publication_id == request.publication_id)
+                    .order_by(self.entity.created_at)
+                    .options(*self.options)
+                )
+                requests = requests_result.unique().scalars().all()
 
         return [self.entity_to_model(request) for request in requests]
 
@@ -46,7 +49,7 @@ class SendPostRequestRepository(
         async with self.session_maker() as session:
             result = await session.execute(
                 select(self.entity)
-                .where(self.entity.status == SendPostRequestStatus.PLANNED)
+                .where(self.entity.status == SendPostRequestStatus.PLANNED, self.entity.deleted_at == None)
                 .order_by(self.entity.created_at)
                 .options(*self.options)
                 .limit(1)

@@ -9,6 +9,7 @@ from .story import StoryRepositoryInterface
 from .worker_message import WorkerMessageRepositoryInterface
 from .proxy import ProxyRepositoryInterface
 
+
 __all__ = [
     "UserRepositoryInterface",
     "ChatRepositoryInterface",

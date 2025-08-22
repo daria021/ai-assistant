@@ -3,7 +3,7 @@ import logging
 from typing import Optional, Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Form, UploadFile, File, Depends, HTTPException
+from fastapi import APIRouter, Form, UploadFile, File, Depends, HTTPException, Request, Response
 from shared.abstractions.services import UploadServiceInterface
 from shared.domain.dto import UpdatePostDTO, CreatePostDTO
 from shared.domain.dto.post_to_publish import MessageEntityDTO
@@ -12,6 +12,7 @@ from shared.domain.models import Post
 from dependencies.services.post import get_post_service
 from dependencies.services.upload import get_upload_service
 from forms.update_post_form import UpdatePostForm
+from routes.utils import get_user_id_from_request
 
 router = APIRouter(
     prefix="/post",
@@ -23,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 @router.post('')
 async def create_post(
+        request: Request,
         name: str = Form(...),
         text: str = Form(...),
         html: str = Form(...),
@@ -31,6 +33,7 @@ async def create_post(
         image: Optional[UploadFile] = File(None),
         upload_service: UploadServiceInterface = Depends(get_upload_service),
 ) -> UUID:
+    author_id = get_user_id_from_request(request)
     post_service = get_post_service()
     image_path = None
     if image is not None:
@@ -61,7 +64,7 @@ async def create_post(
         entities=entities,
     )
     logger.debug('BACK_IN_POST', repr(post.text)[:200], post.entities[:8])
-    return await post_service.create_post(post=post)
+    return await post_service.create_post(post=post, author_id=author_id)
 
 
 @router.get('/all')
@@ -78,10 +81,12 @@ async def get_post(post_id: UUID):
 
 @router.patch('/{post_id}')
 async def update_post(
+        request: Request,
         post_id: UUID,
         data: Annotated[UpdatePostForm, Form()],
         upload_service: UploadServiceInterface = Depends(get_upload_service),
 ) -> Post:
+    author_id = get_user_id_from_request(request)
     post_service = get_post_service()
 
     data_dump = data.model_dump(exclude_unset=True)
@@ -102,7 +107,7 @@ async def update_post(
 
     logger.info(post_dto.entities)
 
-    return await post_service.update_post(post_id=post_id, post=post_dto)
+    return await post_service.update_post(post_id=post_id, post=post_dto, author_id=author_id)
 
 
 @router.delete('/')
