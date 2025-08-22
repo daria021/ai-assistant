@@ -30,91 +30,117 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             return tmp.innerText.replace(/\u00A0/g, ' ');
         };
 
-        const insertPlainTextAtSelection = (text: string) => {
-            const sel = window.getSelection();
-            if (!sel || sel.rangeCount === 0) return;
+const insertPlainTextAtSelection = (text: string) => {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return;
 
-            const range = sel.getRangeAt(0);
-            range.deleteContents();
+  const range = sel.getRangeAt(0);
+  range.deleteContents();
 
-            // пробуем нативный вставщик чистого текста
-            if (document.queryCommandSupported?.('insertText')) {
-                document.execCommand('insertText', false, text);
-            } else {
-                // fallback: руками — текстовые ноды + <br> на переводах строк
-                const lines = text.split(/\r\n|\n|\r/);
-                const frag = document.createDocumentFragment();
-                lines.forEach((line, i) => {
-                    frag.appendChild(document.createTextNode(line));
-                    if (i < lines.length - 1) frag.appendChild(document.createElement('br'));
-                });
-                range.insertNode(frag);
-                // курсор в конец
-                sel.removeAllRanges();
-                const r2 = document.createRange();
-                r2.selectNodeContents(editorRef.current as HTMLDivElement);
-                r2.collapse(false);
-                sel.addRange(r2);
-            }
+  // Вставляем сами: текстовые ноды + <br> по переводам строк.
+  const lines = text.split(/\r\n|\n|\r/);
+  const frag = document.createDocumentFragment();
+  lines.forEach((line, i) => {
+    frag.appendChild(document.createTextNode(line));
+    if (i < lines.length - 1) frag.appendChild(document.createElement('br'));
+  });
+  range.insertNode(frag);
 
-            editorRef.current?.dispatchEvent(new Event('input'));
-        };
+  // курсор в конец вставленного
+  sel.removeAllRanges();
+  const r2 = document.createRange();
+  r2.selectNodeContents(editorRef.current as HTMLDivElement);
+  r2.collapse(false);
+  sel.addRange(r2);
+
+  editorRef.current?.dispatchEvent(new Event('input'));
+};
+
 
         // Жёсткая фильтрация вставки/дропа: только plain text
-        useEffect(() => {
-            const el = editorRef.current;
-            if (!el) return;
+// Жёсткая фильтрация вставки/дропа: только plain text (capture + doc fallback)
+useEffect(() => {
+  const el = editorRef.current;
+  if (!el) return;
 
-            const handlePlainInsert = (text?: string, html?: string) => {
-                const t = text && text.length ? text : (html ? htmlToPlain(html) : '');
-                if (t) insertPlainTextAtSelection(t);
-            };
+  const handlePlainInsert = (text?: string, html?: string) => {
+    const t = text && text.length ? text : (html ? htmlToPlain(html) : '');
+    if (t) insertPlainTextAtSelection(t);
+  };
 
-            // самый ранний хук
-            const onBeforeInput = (e: InputEvent) => {
-                const t: string = e?.inputType;
-                if (t === 'insertFromPaste' || t === 'insertFromPasteAsQuotation' || t === 'insertFromDrop') {
-                    e.preventDefault();
-                    const dt: DataTransfer | null = e.dataTransfer ?? null;
-                    const text = dt?.getData('text/plain') ?? '';
-                    const html = dt?.getData('text/html') ?? '';
-                    handlePlainInsert(text, html);
-                }
-            };
+  // 0) Дополнительно блокируем dragover, иначе drop может сработать до нас
+  const onDragOver = (e: DragEvent) => { e.preventDefault(); };
 
-            const onPaste = (e: ClipboardEvent) => {
-                e.preventDefault();
-                const cd = e.clipboardData;
-                const text = cd?.getData('text/plain') || '';
-                const html = cd?.getData('text/html') || '';
-                handlePlainInsert(text, html);
-            };
+  // 1) beforeinput — самый ранний перехват (capture!)
+  const onBeforeInput = (e: InputEvent & { dataTransfer?: DataTransfer | null }) => {
+    const t = e.inputType;
+    if (t === 'insertFromPaste' || t === 'insertFromPasteAsQuotation' || t === 'insertFromDrop') {
+      // ВАЖНО: отменяем на capture, до того как браузер создаст <p>/<span style=...>
+      if (e.cancelable) e.preventDefault();
+      const dt = e.dataTransfer ?? null;
+      const text = dt?.getData('text/plain') ?? '';
+      const html = dt?.getData('text/html') ?? '';
+      handlePlainInsert(text, html);
+      // и не даём событию всплыть дальше
+      e.stopPropagation();
+    }
+  };
 
-            const onDrop = (e: DragEvent) => {
-                e.preventDefault();
-                // ставим каретку под курсор
-                const rng = document.caretRangeFromPoint?.(e.clientX, e.clientY);
-                if (rng) {
-                    const sel = window.getSelection();
-                    sel?.removeAllRanges();
-                    sel?.addRange(rng);
-                }
-                const dt = e.dataTransfer;
-                const text = dt?.getData('text/plain') || '';
-                const html = dt?.getData('text/html') || '';
-                handlePlainInsert(text, html);
-            };
+  // 2) Классический paste (capture!)
+  const onPaste = (e: ClipboardEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const cd = e.clipboardData;
+    const text = cd?.getData('text/plain') || '';
+    const html = cd?.getData('text/html') || '';
+    handlePlainInsert(text, html);
+  };
 
-            el.addEventListener('beforeinput', onBeforeInput);
-            el.addEventListener('paste', onPaste);
-            el.addEventListener('drop', onDrop);
+  // 3) Drop (capture!) — вставляем только текст
+  const onDrop = (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // ставим каретку под курсор
+    const rng = (document as any).caretRangeFromPoint?.(e.clientX, e.clientY);
+    if (rng) {
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(rng);
+    }
+    const dt = e.dataTransfer;
+    const text = dt?.getData('text/plain') || '';
+    const html = dt?.getData('text/html') || '';
+    handlePlainInsert(text, html);
+  };
 
-            return () => {
-                el.removeEventListener('beforeinput', onBeforeInput);
-                el.removeEventListener('paste', onPaste);
-                el.removeEventListener('drop', onDrop);
-            };
-        }, []);
+  // 4) Док‑уровень fallback (на случай если что-то гасит события на элементе)
+  const onDocPasteCapture = (e: ClipboardEvent) => {
+    const active = document.activeElement;
+    if (!active || !el.contains(active)) return; // не наш редактор — пропускаем
+    e.preventDefault();
+    e.stopPropagation();
+    const cd = e.clipboardData;
+    const text = cd?.getData('text/plain') || '';
+    const html = cd?.getData('text/html') || '';
+    handlePlainInsert(text, html);
+  };
+
+  el.addEventListener('dragover', onDragOver as any, { capture: true });
+  el.addEventListener('beforeinput', onBeforeInput as any, { capture: true });
+  el.addEventListener('paste', onPaste as any, { capture: true });
+  el.addEventListener('drop', onDrop as any, { capture: true });
+
+  document.addEventListener('paste', onDocPasteCapture as any, { capture: true });
+
+  return () => {
+    el.removeEventListener('dragover', onDragOver as any, { capture: true } as any);
+    el.removeEventListener('beforeinput', onBeforeInput as any, { capture: true } as any);
+    el.removeEventListener('paste', onPaste as any, { capture: true } as any);
+    el.removeEventListener('drop', onDrop as any, { capture: true } as any);
+    document.removeEventListener('paste', onDocPasteCapture as any, { capture: true } as any);
+  };
+}, []);
+
 
         /* ───────── ссылка-редактор ───────── */
         useEffect(() => {
