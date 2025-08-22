@@ -125,7 +125,15 @@ class AbstractSQLAlchemyRepository[Entity, Model, CreateDTO, UpdateDTO, PK_TYPE]
                 for key, value in obj.model_dump(exclude_unset=True).items():
                     setattr(entity, key, value)
 
-            await session.refresh(entity, attribute_names=self.joined_fields.keys())
+            await session.refresh(
+                entity,
+                attribute_names=list(
+                    filter(
+                        lambda x: not x.startswith("_"),
+                        entity.__dict__.keys()
+                    )
+                )
+            )
 
         return self.entity_to_model(entity)
 
