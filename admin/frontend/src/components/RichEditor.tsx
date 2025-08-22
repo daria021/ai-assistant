@@ -30,6 +30,80 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
         const [pendingUrl, setPendingUrl] = useState('');
         const savedRangeRef = useRef<Range | null>(null);
 
+        const htmlToPlain = (html: string): string => {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            // innerText вытащит текстовое содержимое, убрав все теги
+            let text = tmp.innerText;
+            // нормализуем неразрывные пробелы и CRLF
+            text = text.replace(/\u00A0/g, ' ');
+            return text;
+        };
+
+        /** Вставить простой текст в текущий caret/selection */
+        const insertPlainTextAtSelection = (text: string) => {
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return;
+
+            const range = sel.getRangeAt(0);
+            range.deleteContents();
+
+            // Разбиваем по переводам строк и вставляем как текстовые ноды с <br/>
+            const lines = text.split(/\r\n|\n|\r/);
+            const frag = document.createDocumentFragment();
+
+            lines.forEach((line, idx) => {
+                frag.appendChild(document.createTextNode(line));
+                if (idx < lines.length - 1) {
+                    frag.appendChild(document.createElement('br'));
+                }
+            });
+
+            range.insertNode(frag);
+
+            // перемещаем каретку в конец вставленного
+            sel.removeAllRanges();
+            const r2 = document.createRange();
+            if (range.endContainer.nodeType === Node.TEXT_NODE) {
+                r2.setStart(range.endContainer, range.endOffset);
+            } else {
+                // запасной вариант: ставим после последнего child
+                const node = range.endContainer as HTMLElement;
+                r2.selectNodeContents(node);
+                r2.collapse(false);
+            }
+            sel.addRange(r2);
+
+            // триггерим input, чтобы сериализовать
+            editorRef.current?.dispatchEvent(new Event('input'));
+        };
+
+        useEffect(() => {
+            const el = editorRef.current;
+            if (!el) return;
+
+            const onPaste = (e: ClipboardEvent) => {
+                // Блокируем нативную вставку (которая тянет HTML/стили/картинки)
+                e.preventDefault();
+
+                const cd = e.clipboardData;
+                if (!cd) return;
+
+                // Пытаемся взять уже готовый text/plain, иначе конвертируем из text/html
+                let text = cd.getData('text/plain');
+                if (!text) {
+                    const html = cd.getData('text/html');
+                    if (html) text = htmlToPlain(html);
+                }
+                if (!text) return;
+
+                insertPlainTextAtSelection(text);
+            };
+
+            el.addEventListener('paste', onPaste);
+            return () => el.removeEventListener('paste', onPaste);
+        }, []);
+
         useEffect(() => {
             const el = editorRef.current;
             if (!el) return;

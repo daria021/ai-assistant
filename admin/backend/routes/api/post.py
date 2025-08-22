@@ -7,6 +7,7 @@ from fastapi import APIRouter, Form, UploadFile, File, Depends, HTTPException
 from shared.abstractions.services import UploadServiceInterface
 from shared.domain.dto import UpdatePostDTO, CreatePostDTO
 from shared.domain.dto.post_to_publish import MessageEntityDTO
+from shared.domain.models import Post
 
 from dependencies.services.post import get_post_service
 from dependencies.services.upload import get_upload_service
@@ -80,7 +81,7 @@ async def update_post(
         post_id: UUID,
         data: Annotated[UpdatePostForm, Form()],
         upload_service: UploadServiceInterface = Depends(get_upload_service),
-):
+) -> Post:
     post_service = get_post_service()
 
     data_dump = data.model_dump(exclude_unset=True)

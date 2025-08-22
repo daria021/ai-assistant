@@ -29,7 +29,7 @@ class PostService(PostServiceInterface):
         post.image_path = file_path
         return post
 
-    async def update_post(self, post_id: UUID, post: UpdatePostDTO) -> None:
+    async def update_post(self, post_id: UUID, post: UpdatePostDTO) -> Post:
         return await self.post_repository.update(post_id, post)
 
     async def delete_post(self, post_id: UUID) -> None:

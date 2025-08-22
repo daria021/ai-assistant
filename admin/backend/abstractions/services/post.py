@@ -3,7 +3,7 @@ from typing import List
 from uuid import UUID
 
 from shared.domain.dto import CreatePostDTO, UpdatePostDTO
-from shared.domain.models import post
+from shared.domain.models import post, Post
 
 
 class PostServiceInterface(ABC):
@@ -21,7 +21,7 @@ class PostServiceInterface(ABC):
         ...
 
     @abstractmethod
-    async def update_post(self, post_id: UUID, post: UpdatePostDTO) -> None:
+    async def update_post(self, post_id: UUID, post: UpdatePostDTO) -> Post:
         ...
 
     @abstractmethod
