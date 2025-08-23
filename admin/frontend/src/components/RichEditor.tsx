@@ -1,6 +1,5 @@
 import {forwardRef, useEffect, useImperativeHandle, useRef, useState,} from 'react';
 import type {Emoji, MessageEntityDTO} from '../services/api';
-import {ChildNode} from "postcss";
 
 /* ───────── константы ───────── */
 const RHINO = '🦏';          // плейсхолдер
@@ -58,6 +57,18 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             editorRef.current?.dispatchEvent(new Event('input'));
         };
 
+        // помощник: агрессивно нормализуем текст из буфера
+function normalizePastedText(raw: string): string {
+  return raw
+    .replace(/\u00A0/g, ' ')           // неразрывный пробел → обычный
+    .replace(/\r\n?/g, '\n')           // CRLF/CR → LF
+    .replace(/[ \t]+\n/g, '\n')        // срез хвостовых пробелов
+    .replace(/\n{3,}/g, '\n\n')        // 3+ переносов → двойной (параграф)
+    .replace(/([^\n])\n(?!\n)/g, '$1 ')// одиночный перенос между строками → пробел
+    .replace(/\uFFFD/g, '');           // replacement char (□ с вопросом) убираем
+}
+
+
 
         // ЗАМЕНИ ВЕСЬ useEffect для «Жёсткой фильтрации вставки/дропа» на это
         useEffect(() => {
@@ -71,9 +82,14 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             };
 
             const handlePlainInsert = (text?: string, html?: string) => {
-                const t = text && text.length ? text : (html ? htmlToPlain(html) : '');
-                if (t) insertPlainTextAtSelection(t);
-            };
+  // приоритет у text/plain; html нужен только как источник текста
+  const raw = text && text.length
+    ? text
+    : (html ? htmlToPlain(html) : '');
+
+  const t = normalizePastedText(raw);
+  if (t) insertPlainTextAtSelection(t);
+};
 
             const onDragOver = (e: DragEvent) => {
                 e.preventDefault();
@@ -377,7 +393,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             text += rootText;
             offset += rootText.length;
 
-            const blocks = Array.from(clone.childNodes) as ChildNode[];
+            const blocks = Array.from(clone.children) as HTMLElement[];
             for (let i = 0; i < blocks.length; i++) {
                 const div = blocks[i];
 
