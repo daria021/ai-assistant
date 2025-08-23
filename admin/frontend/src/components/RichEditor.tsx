@@ -1,4 +1,4 @@
-import {forwardRef, useEffect, useImperativeHandle, useRef, useState,} from 'react';
+import {forwardRef, useEffect, useImperativeHandle, useRef, useState} from 'react';
 import type {Emoji, MessageEntityDTO} from '../services/api';
 
 /* ───────── константы ───────── */
@@ -30,12 +30,12 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
         const [pendingUrl, setPendingUrl] = useState('');
         const savedRangeRef = useRef<Range | null>(null);
 
-// 1) HTML -> plain text без эмбедов/кастом-эмодзи (Unicode-эмодзи остаются)
+        // 1) HTML -> plain text без эмбедов/кастом-эмодзи (Unicode-эмодзи остаются)
         function htmlToPlainStrict(html: string): string {
             const tmp = document.createElement('div');
             tmp.innerHTML = html;
 
-            // 1) выбрасываем потенциальные кастом‑эмодзи/эмбеды
+            // 1) выбрасываем потенциальные кастом-эмодзи/эмбеды
             tmp.querySelectorAll(`
     img,
     video,
@@ -47,8 +47,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             return (tmp as HTMLElement).innerText.replace(/\u00A0/g, ' ');
         }
 
-
-// 2) Нормализация текста: сохраняем абзацы, вычищаем «квадраты»
+        // 2) Нормализация текста: сохраняем абзацы, вычищаем «квадраты»
         function normalizePastedText(raw: string): string {
             return raw
                 .replace(/\u00A0/g, ' ')
@@ -61,8 +60,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 .replace(/<([a-z][\w-]*)\b[^>]*>🦏<\/\1>/gi, ' ');
         }
 
-
-// 3) Вставка только текста (никаких execCommand; создаём Text + <br>)
+        // 3) Вставка только текста (никаких execCommand; создаём Text + <br>)
         const insertPlainTextAtSelection = (text: string) => {
             const sel = window.getSelection();
             if (!sel || sel.rangeCount === 0) return;
@@ -86,20 +84,16 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             editorRef.current?.dispatchEvent(new Event('input'));
         };
 
-
         useEffect(() => {
             const el = editorRef.current;
             if (!el) return;
 
-
             const handlePlainInsert = (text?: string, html?: string) => {
-                // ВСЕГДА предпочитаем HTML, потому что умеем вырезать кастом‑эмодзи из него
+                // ВСЕГДА предпочитаем HTML, потому что умеем вырезать кастом-эмодзи из него
                 const raw = html && html.length ? htmlToPlainStrict(html) : (text || '');
                 const clean = normalizePastedText(raw);
-                console.log(clean);
                 if (clean) insertPlainTextAtSelection(clean);
             };
-
 
             const onDragOver = (e: DragEvent) => {
                 e.preventDefault();
@@ -114,8 +108,6 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                     const dt = e.dataTransfer ?? null; // MDN: InputEvent.dataTransfer
                     const text = dt?.getData('text/plain') ?? '';
                     const html = dt?.getData('text/html') ?? '';
-                    console.log("passed text", text);
-                    console.log("passed html", html);
                     handlePlainInsert(text, html);
                 }
             };
@@ -132,8 +124,6 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 e.stopPropagation();
                 const text = cd?.getData('text/plain') || '';
                 const html = cd?.getData('text/html') || '';
-                console.log("pasged text", text);
-                console.log("pasged html", html);
                 handlePlainInsert(text, html);
             };
 
@@ -158,12 +148,10 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 const dt = e.dataTransfer;
                 const text = dt?.getData('text/plain') || '';
                 const html = dt?.getData('text/html') || '';
-                console.log("pased text", text);
-                console.log("pased html", html);
                 handlePlainInsert(text, html);
             };
 
-            // Документ‑уровневый запасной перехват (если кто-то мешает на элементе)
+            // Документ-уровневый запасной перехват (если кто-то мешает на элементе)
             const onDocPasteCapture = (e: ClipboardEvent) => {
                 const active = document.activeElement;
                 if (!active || !el.contains(active)) return;
@@ -172,8 +160,6 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 const cd = e.clipboardData;
                 const text = cd?.getData('text/plain') || '';
                 const html = cd?.getData('text/html') || '';
-                console.log("paged text", text);
-                console.log("paged html", html);
                 handlePlainInsert(text, html);
             };
 
@@ -193,7 +179,6 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             };
         }, []);
 
-
         const saveCurrentRange = () => {
             const sel = window.getSelection();
             if (!sel || sel.rangeCount === 0) return;
@@ -210,7 +195,6 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             sel.addRange(r);
             return true;
         };
-
 
         const openUrlModal = () => {
             saveCurrentRange();         // <- сохраняем выделение
@@ -294,13 +278,11 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             editor.dispatchEvent(new Event('input'));
         }
 
-
         // возвращает URL эмодзи по его custom_emoji_id
         const getUrlById = (id: string): string => {
             const found = emojis.find(e => e.custom_emoji_id === id);
             return found ? found.img_url : '';
         };
-
 
         /* ставим начальный HTML один раз */
         useEffect(() => {
@@ -312,6 +294,12 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
 
         const serialize = (el: HTMLDivElement) => {
             const clone = el.cloneNode(true) as HTMLDivElement;
+
+            // склеиваем соседние текстовые узлы, убираем «мусор» от инденции
+            clone.normalize();
+
+            // сбрасываем очередь id перед новой сериализацией
+            idsRef.current.length = 0;
 
             // 1) html как есть
             const html = el.innerHTML;
@@ -339,7 +327,6 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             // рекурсивная сериализация инлайнов + entities
             function emitInline(node: Node) {
                 node.childNodes.forEach((child) => {
-                    console.log("node: ", node);
                     if (child.nodeType === Node.TEXT_NODE) {
                         const s = (child as Text).data.replace(/\u00A0/g, ' ');
                         if (s) {
@@ -351,7 +338,6 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
 
                     if (child.nodeType === Node.ELEMENT_NODE) {
                         const eln = child as HTMLElement;
-                        console.log("eln: ", eln);
 
                         // кастом-эмодзи
                         if (
@@ -359,6 +345,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                             eln.hasAttribute('data-custom-emoji-id')
                         ) {
                             const id = eln.getAttribute('data-custom-emoji-id')!;
+                            idsRef.current.push(id); // важно для restoreRhinos
                             text += RHINO;
                             entities.push({
                                 type: 'custom_emoji',
@@ -392,12 +379,12 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
 
                         if (type && len > 0) {
                             // не захватываем переносы в конец сущности
-                            const slice = text.slice(start, start + len)
-                            const cleanLen = slice.replace(/\r?\n+$/g, '').length
+                            const slice = text.slice(start, start + len);
+                            const cleanLen = slice.replace(/\r?\n+$/g, '').length;
                             if (cleanLen > 0) {
-                                const ent: MessageEntityDTO = {type, offset: start, length: cleanLen}
-                                if (type === 'text_link') ent.url = eln.getAttribute('href') || undefined
-                                entities.push(ent)
+                                const ent: MessageEntityDTO = {type, offset: start, length: cleanLen};
+                                if (type === 'text_link') ent.url = (eln.getAttribute('href') || undefined) as any;
+                                entities.push(ent);
                             }
                         }
                     }
@@ -405,20 +392,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             }
 
             // 2) проходим верхнеуровневые блоки-строки
-
-            function getDirectText(el: HTMLElement): string {
-                let text = "";
-                for (const node of el.childNodes) {
-                    if (node.nodeType === Node.TEXT_NODE) {
-                        text += (node as Text).data;
-                    }
-                }
-                return text;
-            }
-
-            const rootText = getDirectText(clone);
-            text += rootText;
-            offset += rootText.length;
+            // ВАЖНО: не собираем «rootText» — он тянет мусорные переносы от инденции
 
             const blocks = Array.from(clone.children) as HTMLElement[];
             for (let i = 0; i < blocks.length; i++) {
@@ -433,34 +407,34 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                     continue;
                 }
 
+                const before = offset;
                 emitInline(div);
 
-                // \n после каждого непустого блока, кроме последнего
-                if (i < blocks.length - 1) {
+                // перенос между блоками — ТОЛЬКО если внутри блока явно не было завершающего <br>
+                if (i < blocks.length - 1 && offset > before && !text.endsWith(NL)) {
                     text += NL;
                     offset += NL_LEN;
                 }
             }
 
-            entities.sort((a, b) => a.offset - b.offset)
+            entities.sort((a, b) => a.offset - b.offset);
             const cleanEntities: MessageEntityDTO[] = entities.map((e) => {
                 const base: MessageEntityDTO = {
                     type: e.type,
                     offset: e.offset,
                     length: e.length,
                 };
-                if (e.type === 'text_link' && e.url) {
-                    base.url = e.url;
+                if (e.type === 'text_link' && (e as any).url) {
+                    (base as any).url = (e as any).url;
                 }
-                if (e.type === 'custom_emoji' && e.custom_emoji_id) {
-                    base.custom_emoji_id = e.custom_emoji_id;
+                if (e.type === 'custom_emoji' && (e as any).custom_emoji_id) {
+                    (base as any).custom_emoji_id = (e as any).custom_emoji_id;
                 }
                 return base;
             });
 
-            return {html, text, entities: cleanEntities}
+            return {html, text, entities: cleanEntities};
         };
-
 
         function restoreRhinos(root: HTMLElement) {
             const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
@@ -468,11 +442,11 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
 
             while (walker.nextNode()) {
                 const node = walker.currentNode as Text;
-                if (node.nodeValue?.includes('🦏')) textNodes.push(node);
+                if (node.nodeValue?.includes(RHINO)) textNodes.push(node);
             }
 
             textNodes.forEach(textNode => {
-                const parts = textNode.nodeValue!.split('🦏');
+                const parts = textNode.nodeValue!.split(RHINO);
                 const frag = document.createDocumentFragment();
 
                 parts.forEach((part, idx) => {
@@ -484,6 +458,8 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                             img.setAttribute('data-custom-emoji-id', emojiId);
                             img.src = getUrlById(emojiId);  // ваша функция получения URL по id
                             img.width = img.height = 24;
+                            img.style.display = 'inline-block';
+                            img.style.verticalAlign = 'middle';
                             frag.appendChild(img);
                         }
                     }
@@ -493,27 +469,20 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             });
         }
 
-
         /* ---------- единый обработчик input ---------- */
         const handleInput = () => {
             const el = editorRef.current;
             if (!el) return;
 
-            // сначала сериализуем и сохраняем ids
+            // сначала сериализуем (внутри сброс и наполнение idsRef)
             const result = serialize(el);
 
-            console.group('%cRichEditor Input Result', 'color: teal; font-weight: bold;');
-            console.log('HTML:', result.html);
-            console.log('Text:', result.text);
-            console.log('Entities:', result.entities);
-            console.groupEnd();
             // тут же восстанавливаем все 🦏 → <img>
             restoreRhinos(el);
 
             // отдаём готовые html/text/entities
             onChange(result);
         };
-
 
         useEffect(() => {
             const el = editorRef.current;
@@ -624,7 +593,6 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                         🔗
                     </button>
 
-
                     {/* ← новая кнопка для цитаты */}
                     <button
                         type="button"
@@ -634,7 +602,6 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                     >
                         ❝❞
                     </button>
-
                 </div>
 
                 <div
