@@ -30,6 +30,21 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
         const [pendingUrl, setPendingUrl] = useState('');
         const savedRangeRef = useRef<Range | null>(null);
 
+// HTML -> чистый текст без картинок/видео/кастом‑эмодзи
+function htmlToPlainStrict(html: string): string {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+
+  // убираем картинки, видео и кастомные эмодзи
+  tmp.querySelectorAll('img, video, svg, picture, source')
+    .forEach(n => n.remove());
+
+  // берем только текст (unicode-эмодзи при этом сохраняются)
+  return tmp.innerText.replace(/\u00A0/g, ' ');
+}
+
+
+
         // ЗАМЕНИ ЭТУ ФУНКЦИЮ ПОЛНОСТЬЮ
         const insertPlainTextAtSelection = (text: string) => {
             const sel = window.getSelection();
@@ -60,36 +75,27 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
         // помощник: агрессивно нормализуем текст из буфера
 function normalizePastedText(raw: string): string {
   return raw
-    .replace(/\u00A0/g, ' ')           // неразрывный пробел → обычный
-    .replace(/\r\n?/g, '\n')           // CRLF/CR → LF
-    .replace(/[ \t]+\n/g, '\n')        // срез хвостовых пробелов
-    .replace(/\n{3,}/g, '\n\n')        // 3+ переносов → двойной (параграф)
-    .replace(/([^\n])\n(?!\n)/g, '$1 ')// одиночный перенос между строками → пробел
-    .replace(/\uFFFD/g, '');           // replacement char (□ с вопросом) убираем
+    .replace(/\u00A0/g, ' ')   // nbsp → space
+    .replace(/\r\n?/g, '\n')   // CRLF/CR → LF
+    .replace(/[ \t]+\n/g, '\n') // срез хвостовых пробелов
+    .replace(/\uFFFD/g, '')   // убираем replacement char (□)
+    .replace(/^\n+|\n+$/g, '')
+    .replace(/\n{3,}/g, '\n\n');
 }
 
 
 
-        // ЗАМЕНИ ВЕСЬ useEffect для «Жёсткой фильтрации вставки/дропа» на это
-        useEffect(() => {
+ useEffect(() => {
             const el = editorRef.current;
             if (!el) return;
 
-            const htmlToPlain = (html: string) => {
-                const tmp = document.createElement('div');
-                tmp.innerHTML = html;
-                return tmp.innerText.replace(/\u00A0/g, ' ');
-            };
 
-            const handlePlainInsert = (text?: string, html?: string) => {
-  // приоритет у text/plain; html нужен только как источник текста
-  const raw = text && text.length
-    ? text
-    : (html ? htmlToPlain(html) : '');
-
+const handlePlainInsert = (text?: string, html?: string) => {
+  const raw = text && text.length ? text : (html ? htmlToPlainStrict(html) : '');
   const t = normalizePastedText(raw);
   if (t) insertPlainTextAtSelection(t);
 };
+
 
             const onDragOver = (e: DragEvent) => {
                 e.preventDefault();
