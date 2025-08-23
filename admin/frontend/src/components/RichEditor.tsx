@@ -1,5 +1,6 @@
 import {forwardRef, useEffect, useImperativeHandle, useRef, useState,} from 'react';
 import type {Emoji, MessageEntityDTO} from '../services/api';
+import {ChildNode} from "postcss";
 
 /* ───────── константы ───────── */
 const RHINO = '🦏';          // плейсхолдер
@@ -31,121 +32,123 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
         const savedRangeRef = useRef<Range | null>(null);
 
         // ЗАМЕНИ ЭТУ ФУНКЦИЮ ПОЛНОСТЬЮ
-const insertPlainTextAtSelection = (text: string) => {
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return;
+        const insertPlainTextAtSelection = (text: string) => {
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return;
 
-  const range = sel.getRangeAt(0);
-  range.deleteContents();
+            const range = sel.getRangeAt(0);
+            range.deleteContents();
 
-  // Вставляем чистый текст: разбиваем по переносам и кладём Text + <br>
-  const lines = text.replace(/\u00A0/g, ' ').split(/\r\n|\n|\r/);
-  const frag = document.createDocumentFragment();
-  lines.forEach((line, i) => {
-    frag.appendChild(document.createTextNode(line));
-    if (i < lines.length - 1) frag.appendChild(document.createElement('br'));
-  });
+            // Вставляем чистый текст: разбиваем по переносам и кладём Text + <br>
+            const lines = text.replace(/\u00A0/g, ' ').split(/\r\n|\n|\r/);
+            const frag = document.createDocumentFragment();
+            lines.forEach((line, i) => {
+                frag.appendChild(document.createTextNode(line));
+                if (i < lines.length - 1) frag.appendChild(document.createElement('br'));
+            });
 
-  range.insertNode(frag); // MDN: Range.insertNode() вставляет узел/фрагмент в Range
-  // Курсор в конец редактора
-  sel.removeAllRanges();
-  const end = document.createRange();
-  end.selectNodeContents(editorRef.current as HTMLDivElement);
-  end.collapse(false);
-  sel.addRange(end);
+            range.insertNode(frag); // MDN: Range.insertNode() вставляет узел/фрагмент в Range
+            // Курсор в конец редактора
+            sel.removeAllRanges();
+            const end = document.createRange();
+            end.selectNodeContents(editorRef.current as HTMLDivElement);
+            end.collapse(false);
+            sel.addRange(end);
 
-  editorRef.current?.dispatchEvent(new Event('input'));
-};
+            editorRef.current?.dispatchEvent(new Event('input'));
+        };
 
 
-// ЗАМЕНИ ВЕСЬ useEffect для «Жёсткой фильтрации вставки/дропа» на это
-useEffect(() => {
-  const el = editorRef.current;
-  if (!el) return;
+        // ЗАМЕНИ ВЕСЬ useEffect для «Жёсткой фильтрации вставки/дропа» на это
+        useEffect(() => {
+            const el = editorRef.current;
+            if (!el) return;
 
-  const htmlToPlain = (html: string) => {
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    return tmp.innerText.replace(/\u00A0/g, ' ');
-  };
+            const htmlToPlain = (html: string) => {
+                const tmp = document.createElement('div');
+                tmp.innerHTML = html;
+                return tmp.innerText.replace(/\u00A0/g, ' ');
+            };
 
-  const handlePlainInsert = (text?: string, html?: string) => {
-    const t = text && text.length ? text : (html ? htmlToPlain(html) : '');
-    if (t) insertPlainTextAtSelection(t);
-  };
+            const handlePlainInsert = (text?: string, html?: string) => {
+                const t = text && text.length ? text : (html ? htmlToPlain(html) : '');
+                if (t) insertPlainTextAtSelection(t);
+            };
 
-  const onDragOver = (e: DragEvent) => { e.preventDefault(); };
+            const onDragOver = (e: DragEvent) => {
+                e.preventDefault();
+            };
 
-  // beforeinput (раньше нативной вставки, работает и для contenteditable)
-  const onBeforeInput = (e: InputEvent & { dataTransfer?: DataTransfer | null }) => {
-    const t = e.inputType; // MDN: InputEvent.inputType
-    if (t === 'insertFromPaste' || t === 'insertFromPasteAsQuotation' || t === 'insertFromDrop') {
-      if (e.cancelable) e.preventDefault();
-      e.stopPropagation();
-      const dt = e.dataTransfer ?? null; // MDN: InputEvent.dataTransfer
-      const text = dt?.getData('text/plain') ?? '';
-      const html = dt?.getData('text/html') ?? '';
-      handlePlainInsert(text, html);
-    }
-  };
+            // beforeinput (раньше нативной вставки, работает и для contenteditable)
+            const onBeforeInput = (e: InputEvent & { dataTransfer?: DataTransfer | null }) => {
+                const t = e.inputType; // MDN: InputEvent.inputType
+                if (t === 'insertFromPaste' || t === 'insertFromPasteAsQuotation' || t === 'insertFromDrop') {
+                    if (e.cancelable) e.preventDefault();
+                    e.stopPropagation();
+                    const dt = e.dataTransfer ?? null; // MDN: InputEvent.dataTransfer
+                    const text = dt?.getData('text/plain') ?? '';
+                    const html = dt?.getData('text/html') ?? '';
+                    handlePlainInsert(text, html);
+                }
+            };
 
-  // Классический paste (ClipboardEvent.clipboardData)
-  const onPaste = (e: ClipboardEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const cd = e.clipboardData;
-    const text = cd?.getData('text/plain') || '';
-    const html = cd?.getData('text/html') || '';
-    handlePlainInsert(text, html);
-  };
+            // Классический paste (ClipboardEvent.clipboardData)
+            const onPaste = (e: ClipboardEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const cd = e.clipboardData;
+                const text = cd?.getData('text/plain') || '';
+                const html = cd?.getData('text/html') || '';
+                handlePlainInsert(text, html);
+            };
 
-  // Drop: ставим каретку примерно в точку дропа (если возможно), вставляем текст
-  const onDrop = (e: DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // фича‑детект (оба не стандартизованы одинаково, но это безопасные no‑op)
-    const anyDoc = document;
-    const rng: Range | null =
-      (anyDoc.caretRangeFromPoint && anyDoc.caretRangeFromPoint(e.clientX, e.clientY)) ||
-      null;
-    if (rng) {
-      const sel = window.getSelection();
-      sel?.removeAllRanges();
-      sel?.addRange(rng);
-    }
-    const dt = e.dataTransfer;
-    const text = dt?.getData('text/plain') || '';
-    const html = dt?.getData('text/html') || '';
-    handlePlainInsert(text, html);
-  };
+            // Drop: ставим каретку примерно в точку дропа (если возможно), вставляем текст
+            const onDrop = (e: DragEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // фича‑детект (оба не стандартизованы одинаково, но это безопасные no‑op)
+                const anyDoc = document;
+                const rng: Range | null =
+                    (anyDoc.caretRangeFromPoint && anyDoc.caretRangeFromPoint(e.clientX, e.clientY)) ||
+                    null;
+                if (rng) {
+                    const sel = window.getSelection();
+                    sel?.removeAllRanges();
+                    sel?.addRange(rng);
+                }
+                const dt = e.dataTransfer;
+                const text = dt?.getData('text/plain') || '';
+                const html = dt?.getData('text/html') || '';
+                handlePlainInsert(text, html);
+            };
 
-  // Документ‑уровневый запасной перехват (если кто-то мешает на элементе)
-  const onDocPasteCapture = (e: ClipboardEvent) => {
-    const active = document.activeElement;
-    if (!active || !el.contains(active)) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const cd = e.clipboardData;
-    const text = cd?.getData('text/plain') || '';
-    const html = cd?.getData('text/html') || '';
-    handlePlainInsert(text, html);
-  };
+            // Документ‑уровневый запасной перехват (если кто-то мешает на элементе)
+            const onDocPasteCapture = (e: ClipboardEvent) => {
+                const active = document.activeElement;
+                if (!active || !el.contains(active)) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const cd = e.clipboardData;
+                const text = cd?.getData('text/plain') || '';
+                const html = cd?.getData('text/html') || '';
+                handlePlainInsert(text, html);
+            };
 
-  el.addEventListener('dragover', onDragOver, { capture: true });
-  el.addEventListener('beforeinput', onBeforeInput, { capture: true }); // MDN/W3C: beforeinput
-  el.addEventListener('paste', onPaste, { capture: true });             // MDN: ClipboardEvent.clipboardData
-  el.addEventListener('drop', onDrop, { capture: true });
+            el.addEventListener('dragover', onDragOver, {capture: true});
+            el.addEventListener('beforeinput', onBeforeInput, {capture: true}); // MDN/W3C: beforeinput
+            el.addEventListener('paste', onPaste, {capture: true});             // MDN: ClipboardEvent.clipboardData
+            el.addEventListener('drop', onDrop, {capture: true});
 
-  document.addEventListener('paste', onDocPasteCapture, { capture: true });
+            document.addEventListener('paste', onDocPasteCapture, {capture: true});
 
-  return () => {
-    el.removeEventListener('dragover', onDragOver, { capture: true });
-    el.removeEventListener('beforeinput', onBeforeInput, { capture: true });
-    el.removeEventListener('paste', onPaste, { capture: true });
-    el.removeEventListener('drop', onDrop, { capture: true });
-    document.removeEventListener('paste', onDocPasteCapture, { capture: true });
-  };
-}, []);
+            return () => {
+                el.removeEventListener('dragover', onDragOver, {capture: true});
+                el.removeEventListener('beforeinput', onBeforeInput, {capture: true});
+                el.removeEventListener('paste', onPaste, {capture: true});
+                el.removeEventListener('drop', onDrop, {capture: true});
+                document.removeEventListener('paste', onDocPasteCapture, {capture: true});
+            };
+        }, []);
 
 
         const saveCurrentRange = () => {
@@ -369,11 +372,12 @@ useEffect(() => {
                 }
                 return text;
             }
+
             const rootText = getDirectText(clone);
             text += rootText;
             offset += rootText.length;
 
-            const blocks = Array.from(clone.children) as HTMLElement[];
+            const blocks = Array.from(clone.childNodes) as ChildNode[];
             for (let i = 0; i < blocks.length; i++) {
                 const div = blocks[i];
 

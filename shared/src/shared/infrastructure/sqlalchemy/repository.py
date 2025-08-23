@@ -12,6 +12,7 @@ from sqlalchemy.orm import joinedload, InstrumentedAttribute
 
 from shared.abstractions.repositories.abstract import CRUDRepositoryInterface
 from shared.infrastructure.sqlalchemy.exceptions import NotFoundException
+from sqlalchemy.inspection import inspect as sa_inspect
 
 logger = logging.getLogger(__name__)
 
@@ -125,15 +126,7 @@ class AbstractSQLAlchemyRepository[Entity, Model, CreateDTO, UpdateDTO, PK_TYPE]
                 for key, value in obj.model_dump(exclude_unset=True).items():
                     setattr(entity, key, value)
 
-            await session.refresh(
-                entity,
-                attribute_names=list(
-                    filter(
-                        lambda x: not x.startswith("_"),
-                        entity.__dict__.keys()
-                    )
-                )
-            )
+            await self._refresh_all(session, entity)
 
         return self.entity_to_model(entity)
 
@@ -181,3 +174,11 @@ class AbstractSQLAlchemyRepository[Entity, Model, CreateDTO, UpdateDTO, PK_TYPE]
     @abstractmethod
     def create_dto_to_entity(self, dto: CreateDTO) -> Entity:
         ...
+
+    # добавь в класс AbstractSQLAlchemyRepository
+    @staticmethod
+    async def _refresh_all(session, entity) -> None:
+        mapper = sa_inspect(entity.__class__)
+        column_names = [c.key for c in mapper.columns]
+        relationship_names = [r.key for r in mapper.relationships]
+        await session.refresh(entity, attribute_names=column_names + relationship_names)
