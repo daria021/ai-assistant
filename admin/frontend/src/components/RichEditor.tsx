@@ -295,114 +295,114 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
         const serialize = (el: HTMLDivElement) => {
             const clone = el.cloneNode(true) as HTMLDivElement;
 
-            // склеиваем соседние текстовые узлы, убираем «мусор» от инденции
+            // 0) склеиваем соседние текстовые узлы
             clone.normalize();
 
-            // сбрасываем очередь id перед новой сериализацией
+            // 0.1) ← ДОБАВЬ: все не-DIV корневые узлы группируем в DIV-блоки
+            (function ensureDivBlocks(root: HTMLElement) {
+                const nodes = Array.from(root.childNodes);
+                const frag = document.createDocumentFragment();
+                let cur: HTMLDivElement | null = null;
+
+                for (const n of nodes) {
+                    if (n.nodeType === Node.ELEMENT_NODE && (n as HTMLElement).tagName === 'DIV') {
+                        cur = null;
+                        frag.appendChild(n);             // готовый блок остаётся как есть
+                    } else {
+                        if (!cur) {                      // начинаем новый искусственный блок
+                            cur = document.createElement('div');
+                            frag.appendChild(cur);
+                        }
+                        cur.appendChild(n);              // переносим IMG/VIDEO/BR/текст внутрь блока
+                    }
+                }
+                root.innerHTML = '';
+                root.appendChild(frag);
+            })(clone);
+
             idsRef.current.length = 0;
 
-            // 1) html как есть
             const html = el.innerHTML;
-
             const entities: MessageEntityDTO[] = [];
             let text = '';
             let offset = 0;
 
-            // считаем оффсеты как в payload (multipart -> CRLF)
-            const USING_FORMDATA = true;                 // если перейдёшь на JSON, поставь false
+            const USING_FORMDATA = true;
             const NL = USING_FORMDATA ? '\r\n' : '\n';
             const NL_LEN = NL.length;
 
-            // верхнеуровневый пустой блок: визуальная пустая строка
             function isBlankLineDiv(div: HTMLElement): boolean {
                 if (div.tagName !== 'DIV' || div.parentElement !== clone) return false;
-                // есть ли хоть какой-то видимый текст
                 const hasText = (div.textContent ?? '').replace(/\u00A0/g, ' ').trim().length > 0;
                 if (hasText) return false;
-                // пустой считаем только если есть <br> и НЕТ кастом-эмодзи
                 if (div.querySelector('img[data-custom-emoji-id],video[data-custom-emoji-id]')) return false;
                 return !!div.querySelector('br');
             }
 
-            // рекурсивная сериализация инлайнов + entities
-// рекурсивная сериализация: сперва узел, потом дети
-function emitInline(node: Node) {
-  // 1) Текстовый узел
-  if (node.nodeType === Node.TEXT_NODE) {
-    const s = (node as Text).data.replace(/\u00A0/g, ' ');
-    if (s) {
-      text += s;
-      offset += s.length;
-    }
-    return;
-  }
+            // ← ТВОЙ emitInline, но с одним нюансом: игнорим whitespace-only
+            function emitInline(node: Node) {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const raw = (node as Text).data.replace(/\u00A0/g, ' ');
+                    if (/\S/.test(raw)) {             // ← добавили фильтр: только если есть непробельные символы
+                        text += raw;
+                        offset += raw.length;
+                    }
+                    return;
+                }
 
-  // 2) Элемент
-  if (node.nodeType === Node.ELEMENT_NODE) {
-    const eln = node as HTMLElement;
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    const eln = node as HTMLElement;
 
-    // 2.1) Кастом-эмодзи прямо этим узлом (IMG/VIDEO в корне или внутри)
-    if ((eln.tagName === 'IMG' || eln.tagName === 'VIDEO') && eln.hasAttribute('data-custom-emoji-id')) {
-      const id = eln.getAttribute('data-custom-emoji-id')!;
-      idsRef.current.push(id);                 // важно для restoreRhinos
-      text += RHINO;
-      entities.push({
-        type: 'custom_emoji',
-        offset,
-        length: RHINO_LEN,
-        custom_emoji_id: id,
-      } as MessageEntityDTO);
-      offset += RHINO_LEN;
-      return;                                  // у IMG/VIDEO нет детей — можно выйти
-    }
+                    if ((eln.tagName === 'IMG' || eln.tagName === 'VIDEO') && eln.hasAttribute('data-custom-emoji-id')) {
+                        const id = eln.getAttribute('data-custom-emoji-id')!;
+                        idsRef.current.push(id);
+                        text += RHINO;
+                        entities.push({
+                            type: 'custom_emoji',
+                            offset,
+                            length: RHINO_LEN,
+                            custom_emoji_id: id,
+                        } as MessageEntityDTO);
+                        offset += RHINO_LEN;
+                        return;
+                    }
 
-    // 2.2) Перенос строки
-    if (eln.tagName === 'BR') {
-      text += NL;
-      offset += NL_LEN;
-      return;
-    }
+                    if (eln.tagName === 'BR') {
+                        text += NL;
+                        offset += NL_LEN;
+                        return;
+                    }
 
-    // 2.3) Форматирующие обёртки
-    let type: MessageEntityDTO['type'] | null = null;
-    if (eln.tagName === 'B') type = 'bold';
-    else if (eln.tagName === 'I') type = 'italic';
-    else if (eln.tagName === 'U') type = 'underline';
-    else if (eln.tagName === 'S') type = 'strikethrough';
-    else if (eln.tagName === 'A') type = 'text_link';
-    else if (eln.tagName === 'BLOCKQUOTE') type = 'blockquote';
+                    let type: MessageEntityDTO['type'] | null = null;
+                    if (eln.tagName === 'B') type = 'bold';
+                    else if (eln.tagName === 'I') type = 'italic';
+                    else if (eln.tagName === 'U') type = 'underline';
+                    else if (eln.tagName === 'S') type = 'strikethrough';
+                    else if (eln.tagName === 'A') type = 'text_link';
+                    else if (eln.tagName === 'BLOCKQUOTE') type = 'blockquote';
 
-    const start = offset;
+                    const start = offset;
+                    eln.childNodes.forEach((child) => emitInline(child));
+                    const len = offset - start;
 
-    // 2.4) Обрабатываем детей текущего узла
-    // (если это DIV — поведение ровно как раньше; если это, скажем, SPAN — тоже ок)
-    eln.childNodes.forEach((child) => emitInline(child));
+                    if (type && len > 0) {
+                        const slice = text.slice(start, start + len);
+                        const cleanLen = slice.replace(/\r?\n+$/g, '').length;
+                        if (cleanLen > 0) {
+                            const ent: MessageEntityDTO = {type, offset: start, length: cleanLen};
+                            if (type === 'text_link') ent.url = eln.getAttribute('href') || undefined;
+                            entities.push(ent);
+                        }
+                    }
+                }
+            }
 
-    const len = offset - start;
-
-    if (type && len > 0) {
-      // не захватываем хвостовые переносы
-      const slice = text.slice(start, start + len);
-      const cleanLen = slice.replace(/\r?\n+$/g, '').length;
-      if (cleanLen > 0) {
-        const ent: MessageEntityDTO = { type, offset: start, length: cleanLen };
-        if (type === 'text_link') ent.url = eln.getAttribute('href') || undefined;
-        entities.push(ent);
-      }
-    }
-  }
-}
-
-
-            // 2) проходим верхнеуровневые блоки-строки
-            // ВАЖНО: не собираем «rootText» — он тянет мусорные переносы от инденции
-
+            // 2) теперь корень гарантированно состоит из DIV-блоков → твоя логика переносов не меняется
             const blocks = Array.from(clone.children) as HTMLElement[];
             for (let i = 0; i < blocks.length; i++) {
                 const div = blocks[i];
 
                 if (isBlankLineDiv(div)) {
-                    // пустая строка даёт один \n
                     if (i < blocks.length - 1) {
                         text += NL;
                         offset += NL_LEN;
@@ -413,7 +413,7 @@ function emitInline(node: Node) {
                 const before = offset;
                 emitInline(div);
 
-                // перенос между блоками — ТОЛЬКО если внутри блока явно не было завершающего <br>
+                // Перенос между блоками — только если блок не закончился на <br>
                 if (i < blocks.length - 1 && offset > before && !text.endsWith(NL)) {
                     text += NL;
                     offset += NL_LEN;
@@ -421,23 +421,16 @@ function emitInline(node: Node) {
             }
 
             entities.sort((a, b) => a.offset - b.offset);
-            const cleanEntities: MessageEntityDTO[] = entities.map((e) => {
-                const base: MessageEntityDTO = {
-                    type: e.type,
-                    offset: e.offset,
-                    length: e.length,
-                };
-                if (e.type === 'text_link' && (e as any).url) {
-                    (base as any).url = (e as any).url;
-                }
-                if (e.type === 'custom_emoji' && (e as any).custom_emoji_id) {
-                    (base as any).custom_emoji_id = (e as any).custom_emoji_id;
-                }
+            const cleanEntities = entities.map((e) => {
+                const base: MessageEntityDTO = {type: e.type, offset: e.offset, length: e.length};
+                if (e.type === 'text_link' && (e as any).url) (base as any).url = (e as any).url;
+                if (e.type === 'custom_emoji' && (e as any).custom_emoji_id) (base as any).custom_emoji_id = (e as any).custom_emoji_id;
                 return base;
             });
 
             return {html, text, entities: cleanEntities};
         };
+
 
         function restoreRhinos(root: HTMLElement) {
             const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
