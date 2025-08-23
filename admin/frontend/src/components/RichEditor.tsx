@@ -30,32 +30,37 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
         const [pendingUrl, setPendingUrl] = useState('');
         const savedRangeRef = useRef<Range | null>(null);
 
-// HTML -> чистый текст без картинок/видео/кастом‑эмодзи
 // 1) HTML -> plain text без эмбедов/кастом-эмодзи (Unicode-эмодзи остаются)
         function htmlToPlainStrict(html: string): string {
             const tmp = document.createElement('div');
             tmp.innerHTML = html;
 
-            // выпиливаем всё, что может превратиться в «квадрат»/объект
-            tmp.querySelectorAll('img,video,svg,picture,source,canvas,iframe,object,embed,[data-custom-emoji-id]')
-                .forEach(n => n.remove());
+            // 1) выбрасываем потенциальные кастом‑эмодзи/эмбеды
+            tmp.querySelectorAll(`
+    img,
+    video,
+    tg-emoji,
+    picture, source, canvas, iframe, object, embed, svg
+  `).forEach(n => n.remove());
 
-            // берём видимый текст; innerText сохраняет визуальные переносы строк
-            // (см. MDN: HTMLElement.innerText)
+            // 2) берём видимый текст
             return (tmp as HTMLElement).innerText.replace(/\u00A0/g, ' ');
         }
+
 
 // 2) Нормализация текста: сохраняем абзацы, вычищаем «квадраты»
         function normalizePastedText(raw: string): string {
             return raw
-                .replace(/\u00A0/g, ' ')        // NBSP → пробел
-                .replace(/\r\n?/g, '\n')        // CRLF/CR → LF
-                .replace(/[ \t]+\n/g, '\n')     // хвостовые пробелы перед переносом
-                .replace(/\uFFFC/g, '')         // ← Object Replacement Character (квадрат)
-                .replace(/\uFFFD/g, '')         // Replacement Character (на всякий случай)
-                .replace(/^\n+|\n+$/g, '')      // обрезаем пустые строки по краям
-                .replace(/\n{3,}/g, '\n\n');    // >2 пустых → ровно 1 пустая строка (межабзац)
+                .replace(/\u00A0/g, ' ')
+                .replace(/\r\n?/g, '\n')
+                .replace(/[ \t]+\n/g, '\n')
+                .replace(/[\uFFFC\uFFFD\uFE0E\uFE0F]/g, '') // Object/Replacement + variation selectors
+                .replace(/[\uE000-\uF8FF]/g, '')
+                .replace(/^\n+|\n+$/g, '')
+                .replace(/\n{3,}/g, '\n\n')
+                .replace(/<([a-z][\w-]*)\b[^>]*>🦏<\/\1>/gi, ' ');
         }
+
 
 // 3) Вставка только текста (никаких execCommand; создаём Text + <br>)
         const insertPlainTextAtSelection = (text: string) => {
@@ -82,16 +87,17 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
         };
 
 
-
         useEffect(() => {
             const el = editorRef.current;
             if (!el) return;
 
 
             const handlePlainInsert = (text?: string, html?: string) => {
-                const raw = text && text.length ? text : (html ? htmlToPlainStrict(html) : '');
-                const t = normalizePastedText(raw);
-                if (t) insertPlainTextAtSelection(t);
+                // ВСЕГДА предпочитаем HTML, потому что умеем вырезать кастом‑эмодзи из него
+                const raw = html && html.length ? htmlToPlainStrict(html) : (text || '');
+                const clean = normalizePastedText(raw);
+                console.log(clean);
+                if (clean) insertPlainTextAtSelection(clean);
             };
 
 
@@ -108,29 +114,42 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                     const dt = e.dataTransfer ?? null; // MDN: InputEvent.dataTransfer
                     const text = dt?.getData('text/plain') ?? '';
                     const html = dt?.getData('text/html') ?? '';
+                    console.log("passed text", text);
+                    console.log("passed html", html);
                     handlePlainInsert(text, html);
                 }
             };
 
             // Классический paste (ClipboardEvent.clipboardData)
             const onPaste = (e: ClipboardEvent) => {
+                const cd = e.clipboardData;
+                if (cd && (cd.files?.length ?? 0) > 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return; // не вставляем файлы/картинки
+                }
                 e.preventDefault();
                 e.stopPropagation();
-                const cd = e.clipboardData;
                 const text = cd?.getData('text/plain') || '';
                 const html = cd?.getData('text/html') || '';
+                console.log("pasged text", text);
+                console.log("pasged html", html);
                 handlePlainInsert(text, html);
             };
 
-            // Drop: ставим каретку примерно в точку дропа (если возможно), вставляем текст
             const onDrop = (e: DragEvent) => {
+                // если тянут файл/картинку — блокируем
+                if (e.dataTransfer && [...(e.dataTransfer.items || [])].some(i => i.kind === 'file')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
                 e.preventDefault();
                 e.stopPropagation();
-                // фича‑детект (оба не стандартизованы одинаково, но это безопасные no‑op)
-                const anyDoc = document;
+                // ставим каретку и вставляем только текст:
+                const anyDoc = document as any;
                 const rng: Range | null =
-                    (anyDoc.caretRangeFromPoint && anyDoc.caretRangeFromPoint(e.clientX, e.clientY)) ||
-                    null;
+                    (anyDoc.caretRangeFromPoint && anyDoc.caretRangeFromPoint(e.clientX, e.clientY)) || null;
                 if (rng) {
                     const sel = window.getSelection();
                     sel?.removeAllRanges();
@@ -139,6 +158,8 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 const dt = e.dataTransfer;
                 const text = dt?.getData('text/plain') || '';
                 const html = dt?.getData('text/html') || '';
+                console.log("pased text", text);
+                console.log("pased html", html);
                 handlePlainInsert(text, html);
             };
 
@@ -151,6 +172,8 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 const cd = e.clipboardData;
                 const text = cd?.getData('text/plain') || '';
                 const html = cd?.getData('text/html') || '';
+                console.log("paged text", text);
+                console.log("paged html", html);
                 handlePlainInsert(text, html);
             };
 
@@ -456,11 +479,13 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                     frag.appendChild(document.createTextNode(part));
                     if (idx < parts.length - 1) {
                         const emojiId = idsRef.current.shift()!;
-                        const img = document.createElement('img');
-                        img.setAttribute('data-custom-emoji-id', emojiId);
-                        img.src = getUrlById(emojiId);  // ваша функция получения URL по id
-                        img.width = img.height = 24;
-                        frag.appendChild(img);
+                        if (emojiId) {
+                            const img = document.createElement('img');
+                            img.setAttribute('data-custom-emoji-id', emojiId);
+                            img.src = getUrlById(emojiId);  // ваша функция получения URL по id
+                            img.width = img.height = 24;
+                            frag.appendChild(img);
+                        }
                     }
                 });
 
