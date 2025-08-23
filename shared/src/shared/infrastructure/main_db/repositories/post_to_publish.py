@@ -31,7 +31,10 @@ class PostToPublishRepository(
         async with self.session_maker() as session:
             result = await session.execute(
                 select(self.entity)
-                .where(self.entity.responsible_manager_id == responsible_manager_id, self.entity.deleted_at == None)
+                .where(
+                    self.entity.responsible_manager_id == responsible_manager_id,
+                    self.entity.deleted_at is None,
+                )
                 .options(*self.options)
             )
 
@@ -43,7 +46,10 @@ class PostToPublishRepository(
         async with self.session_maker() as session:
             result = await session.execute(
                 select(self.entity)
-                .where(self.entity.status == PublicationStatus.PENDING, self.entity.deleted_at == None)
+                .where(
+                    self.entity.status == PublicationStatus.PENDING,
+                    self.entity.deleted_at is None,
+                )
                 .order_by(self.entity.created_at)
                 .options(*self.options)
                 .limit(1)
