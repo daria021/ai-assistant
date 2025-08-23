@@ -53,6 +53,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 .replace(/\u00A0/g, ' ')
                 .replace(/\r\n?/g, '\n')
                 .replace(/[ \t]+\n/g, '\n')
+                // eslint-disable-next-line no-misleading-character-class
                 .replace(/[\uFFFC\uFFFD\uFE0E\uFE0F]/g, '') // Object/Replacement + variation selectors
                 .replace(/[\uE000-\uF8FF]/g, '')
                 .replace(/^\n+|\n+$/g, '')
@@ -137,7 +138,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 e.preventDefault();
                 e.stopPropagation();
                 // ставим каретку и вставляем только текст:
-                const anyDoc = document as any;
+                const anyDoc = document;
                 const rng: Range | null =
                     (anyDoc.caretRangeFromPoint && anyDoc.caretRangeFromPoint(e.clientX, e.clientY)) || null;
                 if (rng) {
@@ -298,6 +299,8 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             // 0) склеиваем соседние текстовые узлы
             clone.normalize();
 
+            console.log("old clone:", clone);
+
             // 0.1) ← ДОБАВЬ: все не-DIV корневые узлы группируем в DIV-блоки
             (function ensureDivBlocks(root: HTMLElement) {
                 const nodes = Array.from(root.childNodes);
@@ -319,6 +322,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 root.innerHTML = '';
                 root.appendChild(frag);
             })(clone);
+            console.log("new clone:", clone);
 
             idsRef.current.length = 0;
 
@@ -423,8 +427,8 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             entities.sort((a, b) => a.offset - b.offset);
             const cleanEntities = entities.map((e) => {
                 const base: MessageEntityDTO = {type: e.type, offset: e.offset, length: e.length};
-                if (e.type === 'text_link' && (e as any).url) (base as any).url = (e as any).url;
-                if (e.type === 'custom_emoji' && (e as any).custom_emoji_id) (base as any).custom_emoji_id = (e as any).custom_emoji_id;
+                if (e.type === 'text_link' && e.url) base.url = e.url;
+                if (e.type === 'custom_emoji' && e.custom_emoji_id) base.custom_emoji_id = e.custom_emoji_id;
                 return base;
             });
 
