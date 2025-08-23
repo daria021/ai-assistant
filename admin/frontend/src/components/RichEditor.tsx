@@ -325,71 +325,74 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             }
 
             // рекурсивная сериализация инлайнов + entities
-            function emitInline(node: Node) {
-                node.childNodes.forEach((child) => {
-                    if (child.nodeType === Node.TEXT_NODE) {
-                        const s = (child as Text).data.replace(/\u00A0/g, ' ');
-                        if (s) {
-                            text += s;
-                            offset += s.length;
-                        }
-                        return;
-                    }
+// рекурсивная сериализация: сперва узел, потом дети
+function emitInline(node: Node) {
+  // 1) Текстовый узел
+  if (node.nodeType === Node.TEXT_NODE) {
+    const s = (node as Text).data.replace(/\u00A0/g, ' ');
+    if (s) {
+      text += s;
+      offset += s.length;
+    }
+    return;
+  }
 
-                    if (child.nodeType === Node.ELEMENT_NODE) {
-                        const eln = child as HTMLElement;
+  // 2) Элемент
+  if (node.nodeType === Node.ELEMENT_NODE) {
+    const eln = node as HTMLElement;
 
-                        // кастом-эмодзи
-                        if (
-                            (eln.tagName === 'IMG' || eln.tagName === 'VIDEO') &&
-                            eln.hasAttribute('data-custom-emoji-id')
-                        ) {
-                            const id = eln.getAttribute('data-custom-emoji-id')!;
-                            idsRef.current.push(id); // важно для restoreRhinos
-                            text += RHINO;
-                            entities.push({
-                                type: 'custom_emoji',
-                                offset,
-                                length: RHINO_LEN,
-                                custom_emoji_id: id,
-                            } as MessageEntityDTO);
-                            offset += RHINO_LEN;
-                            return;
-                        }
+    // 2.1) Кастом-эмодзи прямо этим узлом (IMG/VIDEO в корне или внутри)
+    if ((eln.tagName === 'IMG' || eln.tagName === 'VIDEO') && eln.hasAttribute('data-custom-emoji-id')) {
+      const id = eln.getAttribute('data-custom-emoji-id')!;
+      idsRef.current.push(id);                 // важно для restoreRhinos
+      text += RHINO;
+      entities.push({
+        type: 'custom_emoji',
+        offset,
+        length: RHINO_LEN,
+        custom_emoji_id: id,
+      } as MessageEntityDTO);
+      offset += RHINO_LEN;
+      return;                                  // у IMG/VIDEO нет детей — можно выйти
+    }
 
-                        // перенос строки
-                        if (eln.tagName === 'BR') {
-                            text += NL;
-                            offset += NL_LEN;
-                            return;
-                        }
+    // 2.2) Перенос строки
+    if (eln.tagName === 'BR') {
+      text += NL;
+      offset += NL_LEN;
+      return;
+    }
 
-                        // форматирование
-                        let type: MessageEntityDTO['type'] | null = null;
-                        if (eln.tagName === 'B') type = 'bold';
-                        else if (eln.tagName === 'I') type = 'italic';
-                        else if (eln.tagName === 'U') type = 'underline';
-                        else if (eln.tagName === 'S') type = 'strikethrough';
-                        else if (eln.tagName === 'A') type = 'text_link';
-                        else if (eln.tagName === 'BLOCKQUOTE') type = 'blockquote';  // ← добавили
+    // 2.3) Форматирующие обёртки
+    let type: MessageEntityDTO['type'] | null = null;
+    if (eln.tagName === 'B') type = 'bold';
+    else if (eln.tagName === 'I') type = 'italic';
+    else if (eln.tagName === 'U') type = 'underline';
+    else if (eln.tagName === 'S') type = 'strikethrough';
+    else if (eln.tagName === 'A') type = 'text_link';
+    else if (eln.tagName === 'BLOCKQUOTE') type = 'blockquote';
 
-                        const start = offset;
-                        emitInline(eln);
-                        const len = offset - start;
+    const start = offset;
 
-                        if (type && len > 0) {
-                            // не захватываем переносы в конец сущности
-                            const slice = text.slice(start, start + len);
-                            const cleanLen = slice.replace(/\r?\n+$/g, '').length;
-                            if (cleanLen > 0) {
-                                const ent: MessageEntityDTO = {type, offset: start, length: cleanLen};
-                                if (type === 'text_link') ent.url = (eln.getAttribute('href') || undefined) as any;
-                                entities.push(ent);
-                            }
-                        }
-                    }
-                });
-            }
+    // 2.4) Обрабатываем детей текущего узла
+    // (если это DIV — поведение ровно как раньше; если это, скажем, SPAN — тоже ок)
+    eln.childNodes.forEach((child) => emitInline(child));
+
+    const len = offset - start;
+
+    if (type && len > 0) {
+      // не захватываем хвостовые переносы
+      const slice = text.slice(start, start + len);
+      const cleanLen = slice.replace(/\r?\n+$/g, '').length;
+      if (cleanLen > 0) {
+        const ent: MessageEntityDTO = { type, offset: start, length: cleanLen };
+        if (type === 'text_link') ent.url = eln.getAttribute('href') || undefined;
+        entities.push(ent);
+      }
+    }
+  }
+}
+
 
             // 2) проходим верхнеуровневые блоки-строки
             // ВАЖНО: не собираем «rootText» — он тянет мусорные переносы от инденции
