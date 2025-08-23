@@ -31,21 +31,33 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
         const savedRangeRef = useRef<Range | null>(null);
 
 // HTML -> чистый текст без картинок/видео/кастом‑эмодзи
-function htmlToPlainStrict(html: string): string {
-  const tmp = document.createElement('div');
-  tmp.innerHTML = html;
+// 1) HTML -> plain text без эмбедов/кастом-эмодзи (Unicode-эмодзи остаются)
+        function htmlToPlainStrict(html: string): string {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
 
-  // убираем картинки, видео и кастомные эмодзи
-  tmp.querySelectorAll('img, video, svg, picture, source')
-    .forEach(n => n.remove());
+            // выпиливаем всё, что может превратиться в «квадрат»/объект
+            tmp.querySelectorAll('img,video,svg,picture,source,canvas,iframe,object,embed,[data-custom-emoji-id]')
+                .forEach(n => n.remove());
 
-  // берем только текст (unicode-эмодзи при этом сохраняются)
-  return tmp.innerText.replace(/\u00A0/g, ' ');
-}
+            // берём видимый текст; innerText сохраняет визуальные переносы строк
+            // (см. MDN: HTMLElement.innerText)
+            return (tmp as HTMLElement).innerText.replace(/\u00A0/g, ' ');
+        }
 
+// 2) Нормализация текста: сохраняем абзацы, вычищаем «квадраты»
+        function normalizePastedText(raw: string): string {
+            return raw
+                .replace(/\u00A0/g, ' ')        // NBSP → пробел
+                .replace(/\r\n?/g, '\n')        // CRLF/CR → LF
+                .replace(/[ \t]+\n/g, '\n')     // хвостовые пробелы перед переносом
+                .replace(/\uFFFC/g, '')         // ← Object Replacement Character (квадрат)
+                .replace(/\uFFFD/g, '')         // Replacement Character (на всякий случай)
+                .replace(/^\n+|\n+$/g, '')      // обрезаем пустые строки по краям
+                .replace(/\n{3,}/g, '\n\n');    // >2 пустых → ровно 1 пустая строка (межабзац)
+        }
 
-
-        // ЗАМЕНИ ЭТУ ФУНКЦИЮ ПОЛНОСТЬЮ
+// 3) Вставка только текста (никаких execCommand; создаём Text + <br>)
         const insertPlainTextAtSelection = (text: string) => {
             const sel = window.getSelection();
             if (!sel || sel.rangeCount === 0) return;
@@ -53,48 +65,34 @@ function htmlToPlainStrict(html: string): string {
             const range = sel.getRangeAt(0);
             range.deleteContents();
 
-            // Вставляем чистый текст: разбиваем по переносам и кладём Text + <br>
-            const lines = text.replace(/\u00A0/g, ' ').split(/\r\n|\n|\r/);
             const frag = document.createDocumentFragment();
+            const lines = text.split('\n'); // уже нормализовано
             lines.forEach((line, i) => {
                 frag.appendChild(document.createTextNode(line));
                 if (i < lines.length - 1) frag.appendChild(document.createElement('br'));
             });
 
-            range.insertNode(frag); // MDN: Range.insertNode() вставляет узел/фрагмент в Range
-            // Курсор в конец редактора
+            range.insertNode(frag);                               // MDN: Range.insertNode
             sel.removeAllRanges();
             const end = document.createRange();
             end.selectNodeContents(editorRef.current as HTMLDivElement);
             end.collapse(false);
             sel.addRange(end);
-
             editorRef.current?.dispatchEvent(new Event('input'));
         };
 
-        // помощник: агрессивно нормализуем текст из буфера
-function normalizePastedText(raw: string): string {
-  return raw
-    .replace(/\u00A0/g, ' ')   // nbsp → space
-    .replace(/\r\n?/g, '\n')   // CRLF/CR → LF
-    .replace(/[ \t]+\n/g, '\n') // срез хвостовых пробелов
-    .replace(/\uFFFD/g, '')   // убираем replacement char (□)
-    .replace(/^\n+|\n+$/g, '')
-    .replace(/\n{3,}/g, '\n\n');
-}
 
 
-
- useEffect(() => {
+        useEffect(() => {
             const el = editorRef.current;
             if (!el) return;
 
 
-const handlePlainInsert = (text?: string, html?: string) => {
-  const raw = text && text.length ? text : (html ? htmlToPlainStrict(html) : '');
-  const t = normalizePastedText(raw);
-  if (t) insertPlainTextAtSelection(t);
-};
+            const handlePlainInsert = (text?: string, html?: string) => {
+                const raw = text && text.length ? text : (html ? htmlToPlainStrict(html) : '');
+                const t = normalizePastedText(raw);
+                if (t) insertPlainTextAtSelection(t);
+            };
 
 
             const onDragOver = (e: DragEvent) => {

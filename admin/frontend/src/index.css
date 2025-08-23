@@ -107,6 +107,11 @@
     border-left: 1px solid var(--color-brand2) !important;
   }
 
+  .rich-editor {
+  white-space: pre-wrap;   /* сохраняем \n как переносы */
+  word-break: break-word;  /* переносим длинные слова */
+}
+
   .rich-editor a {
   color: #2563eb;             /* синий */
   text-decoration: underline; /* подчёркивание */
