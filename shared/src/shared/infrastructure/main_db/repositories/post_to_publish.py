@@ -8,7 +8,12 @@ from shared.abstractions.repositories import PostToPublishRepositoryInterface
 from shared.domain.dto import CreatePostToPublishDTO, UpdatePostToPublishDTO
 from shared.domain.dto.post_to_publish import MessageEntityDTO
 from shared.domain.enums import PublicationStatus
-from shared.domain.models import PostToPublish as PostToPublishModel, User as UserModel, Chat as ChatModel, Post as PostModel
+from shared.domain.models import (
+    PostToPublish as PostToPublishModel,
+    User as UserModel,
+    Chat as ChatModel,
+    Post as PostModel
+)
 from shared.infrastructure.main_db.entities import PostToPublish, User, Chat, Post
 from .abstract import AbstractMainDBRepository
 
@@ -26,14 +31,13 @@ class PostToPublishRepository(
     })
     _soft_delete: bool = field(default=True)
 
-
     async def get_posts_by_manager(self, responsible_manager_id: UUID) -> list[PostToPublishModel]:
         async with self.session_maker() as session:
             result = await session.execute(
                 select(self.entity)
                 .where(
                     self.entity.responsible_manager_id == responsible_manager_id,
-                    self.entity.deleted_at is None,
+                    self.entity.deleted_at.is_(None),
                 )
                 .options(*self.options)
             )
@@ -48,7 +52,7 @@ class PostToPublishRepository(
                 select(self.entity)
                 .where(
                     self.entity.status == PublicationStatus.PENDING,
-                    self.entity.deleted_at is None,
+                    self.entity.deleted_at.is_(None),
                 )
                 .order_by(self.entity.created_at)
                 .options(*self.options)
@@ -64,7 +68,6 @@ class PostToPublishRepository(
             async with session.begin():
                 post = await session.get(self.entity, post_id)
                 post.status = status
-
 
     async def create(self, obj: CreatePostToPublishDTO) -> UUID:
         async with self.session_maker() as session:
