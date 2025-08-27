@@ -8,7 +8,7 @@ from shared.domain.dto.post_to_publish import MessageEntityDTO
 from shared.domain.models import Post as PostModel
 from shared.infrastructure.main_db.entities import Post
 from .abstract import AbstractMainDBRepository
-
+from sqlalchemy import select
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -34,6 +34,30 @@ class PostRepository(
             await session.refresh(entity)
 
         return self.entity_to_model(entity)
+
+    async def get_all(self, limit: int = 100, offset: int = 0, joined: bool = True) -> list[Post]:
+        async with self.session_maker() as session:
+            stmt = (
+                select(self.entity)
+                .where(self.entity.deleted_at.is_(None))
+                .limit(limit)
+                .offset(offset)
+            )
+            if joined and self.options:
+                stmt = stmt.options(*self.options)
+
+            if self._soft_delete:
+                stmt = stmt.where(self.entity.deleted_at.is_(None))
+
+            res = await session.execute(stmt)
+
+            if self.options:
+                res = res.unique()
+
+            objs = res.scalars().all()
+
+            return [self.entity_to_model(entity) for entity in objs]
+
 
     def create_dto_to_entity(self, dto: CreatePostDTO) -> Post:
         return Post(

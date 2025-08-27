@@ -1,4 +1,4 @@
-import {forwardRef, useEffect, useImperativeHandle, useRef, useState} from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState} from 'react';
 import type {Emoji, MessageEntityDTO} from '../services/api';
 
 /* ───────── константы ───────── */
@@ -323,6 +323,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 root.appendChild(frag);
             })(clone);
             console.log("new clone:", clone);
+            el.innerHTML = clone.innerHTML;
 
             idsRef.current.length = 0;
 

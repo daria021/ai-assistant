@@ -20,7 +20,7 @@ class PostService(PostServiceInterface):
     update_post_service: UpdatePostServiceInterface
 
     async def get_all_posts(self) -> List[Post]:
-        return await self.post_repository.get_all()
+        return await self.post_repository.get_all_posts()
 
     async def create_post(self, post: CreatePostDTO, author_id: UUID) -> UUID:
         update_post = CreateUpdatePostDTO(

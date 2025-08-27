@@ -23,6 +23,7 @@ class PostToPublishService(PostToPublishServiceInterface):
         user = await self.user_service.get_user(user_id)
         if user.role == UserRole.MANAGER:
             return await self.post_to_publish_repository.get_posts_by_manager(user_id)
+
         return await self.post_to_publish_repository.get_all()
 
     async def create_post_to_publish(self, post_to_publish: CreatePostToPublishDTO) -> UUID:

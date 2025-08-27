@@ -37,7 +37,8 @@ class SendPostRequestRepository(
             if request.deleted_at is None:
                 requests_result = await session.execute(
                     select(self.entity)
-                    .where(self.entity.publication_id == request.publication_id)
+                    .where(self.entity.publication_id == request.publication_id,                     self.entity.deleted_at.is_(None),
+                           self.entity.deleted_at.is_(None),)
                     .order_by(self.entity.created_at)
                     .options(*self.options)
                 )

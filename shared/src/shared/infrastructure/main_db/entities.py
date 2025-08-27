@@ -159,7 +159,7 @@ class SendPostRequest(AbstractBase):
     __tablename__ = "send_post_requests"
 
     post_id: Mapped[pyUUID] = mapped_column(ForeignKey("posts.id"), )
-    chat_id: Mapped[pyUUID] = mapped_column(ForeignKey("chats.id"))
+    chat_id: Mapped[pyUUID] = mapped_column(ForeignKey("chats.id", ondelete="CASCADE"))
     user_id: Mapped[pyUUID] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"),
                                             nullable=True)
     scheduled_at: Mapped[Optional[datetime]]

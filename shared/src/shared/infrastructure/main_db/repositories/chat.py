@@ -23,6 +23,31 @@ class ChatRepository(
             "chat_type": None,
         },
     )
+
+
+    async def get_all(self, limit: int = 100, offset: int = 0, joined: bool = True) -> list[Chat]:
+        async with self.session_maker() as session:
+            stmt = (
+                select(self.entity)
+                .where(self.entity.deleted_at.is_(None))
+                .limit(limit)
+                .offset(offset)
+            )
+            if joined and self.options:
+                stmt = stmt.options(*self.options)
+
+            if self._soft_delete:
+                stmt = stmt.where(self.entity.deleted_at.is_(None))
+
+            res = await session.execute(stmt)
+
+            if self.options:
+                res = res.unique()
+
+            objs = res.scalars().all()
+
+            return [self.entity_to_model(entity) for entity in objs]
+
     async def get_by_telegram_id(self, telegram_id: int) -> Optional[Chat]:
         try:
             async with self.session_maker() as session:

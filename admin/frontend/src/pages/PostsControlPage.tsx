@@ -2,7 +2,7 @@ import FileUploader from "../components/FileUploader";
 
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {useLocation, useNavigate} from "react-router-dom";
-import {FiChevronDown, FiChevronUp} from "react-icons/fi";
+import {FiChevronDown, FiChevronUp, FiFilter, FiLayers, FiMessageSquare, FiUser, FiX} from "react-icons/fi";
 import {on} from "@telegram-apps/sdk";
 import {
     createPost,
@@ -128,7 +128,27 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
     const {userId, role} = useAuth();
 
     const [managers, setManagers] = useState<User[]>([]);
-    // прямо под const { template, openCreate } = ...
+
+
+// рядом с остальными useState
+    const [filtersOpen, setFiltersOpen] = useState(false);
+
+// удобные подписи для чипов
+    const managerName = useMemo(
+        () => managers.find(m => m.id === managerFilter)?.telegram_username ?? "",
+        [managers, managerFilter]
+    );
+    const chatTypeName = useMemo(
+        () => chatTypes.find(ct => ct.id === chatTypeFilter)?.name ?? "",
+        [chatTypes, chatTypeFilter]
+    );
+    const chatName = useMemo(
+        () => chats.find(c => c.id === chatFilter)?.name ?? "",
+        [chats, chatFilter]
+    );
+
+// сколько фильтров включено — для бейджа
+    const activeFiltersCount = (managerFilter ? 1 : 0) + (chatTypeFilter ? 1 : 0) + (chatFilter ? 1 : 0);
 
 
     /* ───────── Initial fetch ───────── */
@@ -499,7 +519,7 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                         }}
                         className={`transition pb-1 ${
                             activeTab === tab
-                                ? "text-2xl font-semibold text-brand border-b-2 border-brand"
+                                ? "text-xl font-semibold text-brand border-b-2 border-brand"
                                 : "text-xl text-gray-600"
                         }`}
                     >
@@ -707,78 +727,151 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                 </div>
             )}
 
-
             {/* ───────── Schedule tab ───────── */}
             {activeTab === "schedule" && (
 
                 <div className="space-y-4 text-brand">
-                    <div className="flex flex-wrap gap-4 mb-6">
-
-                        <select
-                            value={viewMode}
-                            onChange={e => setViewMode(e.target.value as "scheduled" | "sent")}
-                            className="border border-brand rounded p-2"
-                        >
-                            <option value="scheduled">— Запланированные —</option>
-                            <option value="sent">— Отправленные —</option>
-                        </select>
-
-                        {/* manager */}
-                        {role !== "manager" && (
+                    {/* ───── Compact Filters Bar ───── */}
+                    <div
+  className="sticky top-0 z-[60] -mx-4 -mt-4 px-4 py-3 mb-3 bg-white rounded-xl shadow-md"
+                    >
+                        <div className="flex items-center gap-3 flex-wrap">
+                            {/* режим просмотра */}
                             <select
-                                value={managerFilter}
-                                onChange={(e) => setManagerFilter(e.target.value)}
-                                className="border border-brand rounded p-2"
+                                value={viewMode}
+                                onChange={e => setViewMode(e.target.value as "scheduled" | "sent")}
+                                className="h-9 text-sm border border-brand rounded-lg px-2 bg-white"
                             >
-                                <option value="">— все менеджеры —</option>
-                                {managers.map((m) => (
-                                    <option key={m.id} value={m.id}>
-                                        {m.telegram_username}
-                                    </option>
-                                ))}
+                                <option value="scheduled">— Запланированные —</option>
+                                <option value="sent">— Отправленные —</option>
                             </select>
-                        )}
-                        {/* chat-type */}
-                        <select
-                            value={chatTypeFilter}
-                            onChange={(e) => setChatTypeFilter(e.target.value)}
-                            className="border border-brand rounded p-2"
-                        >
-                            <option value="">— все группы чатов —</option>
-                            {chatTypes.map((ct) => (
-                                <option key={ct.id} value={ct.id}>
-                                    {ct.name}
-                                </option>
-                            ))}
-                        </select>
 
-                        {/* chat */}
-                        <select
-                            value={chatFilter}
-                            onChange={(e) => setChatFilter(e.target.value)}
-                            className="border border-brand rounded p-2"
-                        >
-                            <option value="">— все чаты —</option>
-                            {chats.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.name}
-                                </option>
-                            ))}
-                        </select>
-
-                        {(managerFilter || chatTypeFilter || chatFilter) && (
+                            {/* Кнопка «Фильтры» с бейджем */}
                             <button
-                                onClick={() => {
-                                    setManagerFilter("");
-                                    setChatTypeFilter("");
-                                    setChatFilter("");
-                                }}
-                                className="px-4 py-2 bg-brand text-white rounded"
+                                type="button"
+                                onClick={() => setFiltersOpen(o => !o)}
+                                className="h-9 inline-flex items-center gap-2 rounded-lg border border-brand px-3 text-sm bg-white hover:bg-brand/10"
                             >
-                                Сбросить
+                                <FiFilter className="w-4 h-4"/>
+                                Фильтры
+                                {activeFiltersCount > 0 && (
+                                    <span
+                                        className="ml-1 inline-flex items-center justify-center text-xs rounded-full min-w-[20px] h-5 px-2 bg-brand text-white">
+          {activeFiltersCount}
+        </span>
+                                )}
                             </button>
-                        )}
+
+                            {/* Активные фильтры — чипы со сбросом по одному */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                                {managerFilter && (
+                                    <button
+                                        className="group inline-flex items-center gap-1 h-8 px-2 rounded-full border border-brand bg-white text-xs"
+                                        onClick={() => setManagerFilter("")}
+                                        title="Сбросить фильтр менеджера"
+                                    >
+                                        <FiUser className="w-3.5 h-3.5 opacity-70"/>
+                                        <span className="max-w-[140px] truncate">@{managerName}</span>
+                                        <FiX className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100"/>
+                                    </button>
+                                )}
+                                {chatTypeFilter && (
+                                    <button
+                                        className="group inline-flex items-center gap-1 h-8 px-2 rounded-full border border-brand bg-white text-xs"
+                                        onClick={() => setChatTypeFilter("")}
+                                        title="Сбросить группу чатов"
+                                    >
+                                        <FiLayers className="w-3.5 h-3.5 opacity-70"/>
+                                        <span className="max-w-[140px] truncate">{chatTypeName}</span>
+                                        <FiX className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100"/>
+                                    </button>
+                                )}
+                                {chatFilter && (
+                                    <button
+                                        className="group inline-flex items-center gap-1 h-8 px-2 rounded-full border border-brand bg-white text-xs"
+                                        onClick={() => setChatFilter("")}
+                                        title="Сбросить чат"
+                                    >
+                                        <FiMessageSquare className="w-3.5 h-3.5 opacity-70"/>
+                                        <span className="max-w-[160px] truncate">{chatName}</span>
+                                        <FiX className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100"/>
+                                    </button>
+                                )}
+                                {(managerFilter || chatTypeFilter || chatFilter) && (
+                                    <button
+                                        onClick={() => {
+                                            setManagerFilter("");
+                                            setChatTypeFilter("");
+                                            setChatFilter("");
+                                        }}
+                                        className="h-8 px-3 rounded-full bg-brand text-white text-xs"
+                                    >
+                                        Сбросить всё
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Секция выбора (на мобиле сворачиваемая, на md+ всегда видна) */}
+                        <div
+  className={`${filtersOpen ? "mt-3" : "hidden"} grid grid-cols-1 gap-2 md:grid md:grid-cols-3 bg-white p-2 rounded-xl border border-gray-200`}
+                        >
+                            {/* manager */}
+                            {role !== "manager" && (
+                                <div className="col-span-1">
+                                    <label className="sr-only">Менеджер</label>
+                                    <select
+                                        value={managerFilter}
+                                        onChange={(e) => setManagerFilter(e.target.value)}
+                                        className="h-9 w-full text-sm border border-brand rounded-lg px-2 bg-white"
+                                    >
+                                        <option value="">— все менеджеры —</option>
+                                        {managers.map((m) => (
+                                            <option key={m.id} value={m.id}>
+                                                {m.telegram_username}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            {/* chat-type */}
+                            <div className="col-span-1">
+                                <label className="sr-only">Группа чатов</label>
+                                <select
+                                    value={chatTypeFilter}
+                                    onChange={(e) => setChatTypeFilter(e.target.value)}
+                                    className="h-9 w-full text-sm border border-brand rounded-lg px-2 bg-white"
+                                >
+                                    <option value="">— все группы чатов —</option>
+                                    {chatTypes.map((ct) => (
+                                        <option key={ct.id} value={ct.id}>
+                                            {ct.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* chat */}
+                            <div className="col-span-1">
+                                <label className="sr-only">Чат</label>
+                                <select
+                                    value={chatFilter}
+                                    onChange={(e) => setChatFilter(e.target.value)}
+                                    className="h-9 w-full text-sm border border-brand rounded-lg px-2 bg-white"
+                                >
+                                    <option value="">— все чаты —</option>
+                                    {chats.map((c) => (
+                                        <option key={c.id} value={c.id}>
+                                            {c.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
                     </div>
+
+
                     {Object.keys(schedule)
                         .sort()
                         .map((iso) => {
