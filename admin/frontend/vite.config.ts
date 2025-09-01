@@ -12,6 +12,6 @@ export default defineConfig({
     server: {
         host: '0.0.0.0',
         port: 3000,
-        allowedHosts: ['a36564ef5569.ngrok-free.app'],
+        allowedHosts: ['2110e4f87996.ngrok-free.app'],
     },
 })

@@ -293,13 +293,12 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             // eslint-disable-next-line react-hooks/exhaustive-deps
         }, []);
 
-        const serialize = (el: HTMLDivElement) => {
+        const serialize = (el: HTMLDivElement, options: { mutateDom?: boolean } = {}) => {
+            const { mutateDom = false } = options;
             const clone = el.cloneNode(true) as HTMLDivElement;
 
             // 0) склеиваем соседние текстовые узлы
             clone.normalize();
-
-            console.log("old clone:", clone);
 
             // 0.1) ← ДОБАВЬ: все не-DIV корневые узлы группируем в DIV-блоки
             (function ensureDivBlocks(root: HTMLElement) {
@@ -322,12 +321,15 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 root.innerHTML = '';
                 root.appendChild(frag);
             })(clone);
-            console.log("new clone:", clone);
-            el.innerHTML = clone.innerHTML;
+
+            // Перерисовка DOM может сбивать каретку — делаем её опциональной
+            if (mutateDom) {
+                el.innerHTML = clone.innerHTML;
+            }
 
             idsRef.current.length = 0;
 
-            const html = el.innerHTML;
+            const html = mutateDom ? el.innerHTML : clone.innerHTML;
             const entities: MessageEntityDTO[] = [];
             let text = '';
             let offset = 0;
@@ -475,8 +477,8 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             const el = editorRef.current;
             if (!el) return;
 
-            // сначала сериализуем (внутри сброс и наполнение idsRef)
-            const result = serialize(el);
+            // сериализуем без мутации DOM, чтобы не терять каретку
+            const result = serialize(el, { mutateDom: false });
 
             // тут же восстанавливаем все 🦏 → <img>
             restoreRhinos(el);

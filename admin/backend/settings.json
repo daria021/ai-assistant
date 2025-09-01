@@ -12,12 +12,14 @@
       "https://517e-45-150-33-208.ngrok-free.app",
       "https://a19c-45-91-236-218.ngrok-free.app",
       "https://0cbbcc9ccfb0.ngrok-free.app",
-      "https://a36564ef5569.ngrok-free.app"
+      "https://a36564ef5569.ngrok-free.app",
+      "https://a36564ef5569.ngrok-free.app",
+      "https://2110e4f87996.ngrok-free.app"
     ]
   },
   "environment": {
     "env_name": "local",
-    "host": "https://a8c835b45eca.ngrok-free.app/api"
+    "host": "https://8279534f96b6.ngrok-free.app/api"
   },
   "bot": {
     "token": "7782070677:AAHtu78aPEQSf15dYsXJbBhcbfMoz7bDXQg"

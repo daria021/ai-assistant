@@ -29,15 +29,12 @@ class ChatRepository(
         async with self.session_maker() as session:
             stmt = (
                 select(self.entity)
-                .where(self.entity.deleted_at.is_(None))
                 .limit(limit)
                 .offset(offset)
             )
             if joined and self.options:
                 stmt = stmt.options(*self.options)
 
-            if self._soft_delete:
-                stmt = stmt.where(self.entity.deleted_at.is_(None))
 
             res = await session.execute(stmt)
 
