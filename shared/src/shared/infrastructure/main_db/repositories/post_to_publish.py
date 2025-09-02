@@ -32,7 +32,7 @@ class PostToPublishRepository(
     _soft_delete: bool = field(default=True)
 
 
-    async def get_all(self, limit: int = 100, offset: int = 0, joined: bool = True) -> list[PostToPublishModel]:
+    async def get_all(self, limit: int = 1000, offset: int = 0, joined: bool = True) -> list[PostToPublishModel]:
         async with self.session_maker() as session:
             stmt = (
                 select(self.entity)
