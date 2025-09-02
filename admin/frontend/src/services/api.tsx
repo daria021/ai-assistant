@@ -50,10 +50,17 @@ export interface PostToPublish {
 
 export interface CreatePostToPublishDTO {
     post_id: string;
+    // бэкенд ожидает ScheduledType ("everyday" | "single")
     scheduled_type: "everyday" | "single";
+    // формат YYYY-MM-DD, для daily — null/не указывать
     scheduled_date?: string | null;
+    // формат HH:mm:ss
     scheduled_time: string;
-    chats?: string[];
+    // бэкенд ожидает chat_ids: UUID[]
+    chat_ids?: string[];
+    // бэкенд также использует status/responsible_manager_id/creator_id внутри сервиса
+    responsible_manager_id?: string;
+    status?: string;
 }
 
 export interface UpdateUserDTO {
@@ -76,7 +83,7 @@ export interface UpdatePostToPublishDTO {
     scheduled_type?: "single" | "everyday";
     /** формат YYYY-MM-DD */
     scheduled_date?: string | null;
-    /** формат HH:mm */
+    /** формат HH:mm:ss */
     scheduled_time?: string;
     chat_ids?: string[];
     status?: string;

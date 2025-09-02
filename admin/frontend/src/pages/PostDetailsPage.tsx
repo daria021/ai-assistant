@@ -130,7 +130,7 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
     function formatLocalTime(d: Date): string {
         const h = String(d.getHours()).padStart(2, "0");
         const m = String(d.getMinutes()).padStart(2, "0");
-        return `${h}:${m}`;             // "HH:mm"
+        return `${h}:${m}:00`;          // "HH:mm:ss"
     }
 
     const handleSave = async () => {

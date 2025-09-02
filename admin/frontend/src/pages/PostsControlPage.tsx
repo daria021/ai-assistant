@@ -184,6 +184,18 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
 
 
     /* ───────── Helpers ───────── */
+    function formatLocalDate(d: Date): string {
+        const Y = d.getFullYear();
+        const M = String(d.getMonth() + 1).padStart(2, "0");
+        const D = String(d.getDate()).padStart(2, "0");
+        return `${Y}-${M}-${D}`;        // YYYY-MM-DD (локальная дата)
+    }
+
+    function formatLocalTimeWithSeconds(d: Date): string {
+        const h = String(d.getHours()).padStart(2, "0");
+        const m = String(d.getMinutes()).padStart(2, "0");
+        return `${h}:${m}:00`;          // HH:mm:ss
+    }
     const filteredChats = useMemo(
         () =>
             chats.filter((c) =>
@@ -238,21 +250,19 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
 
                 if (p.scheduled_type === "single") {
                     if (!p.scheduled_date) continue;
-                    const [h, m] = p.scheduled_time.split(':').map(Number);
-                    const dt = new Date(p.scheduled_date);
-                    dt.setHours(h, m, 0, 0);
+                    const dt = new Date(`${p.scheduled_date}T${p.scheduled_time}`);
                     if (dt < now) continue;            // <-- отрезаем прошлые
-                    const iso = dt.toISOString().slice(0, 10);
-                    map[iso] = (map[iso] || []).concat(base);
+                    const isoLocal = dt.toLocaleDateString("sv-SE");
+                    map[isoLocal] = (map[isoLocal] || []).concat(base);
                 } else {
-                    const [h, m] = p.scheduled_time.split(':').map(Number);
                     for (let i = 0; i < 7; i++) {
-                        const dt = new Date();
-                        dt.setDate(dt.getDate() + i);
-                        dt.setHours(h, m, 0, 0);
+                        const baseDay = new Date();
+                        baseDay.setHours(0, 0, 0, 0);
+                        baseDay.setDate(baseDay.getDate() + i);
+                        const isoLocal = baseDay.toLocaleDateString("sv-SE");
+                        const dt = new Date(`${isoLocal}T${p.scheduled_time}`);
                         if (dt < now) continue;          // <-- отрезаем прошлые
-                        const iso = dt.toISOString().slice(0, 10);
-                        map[iso] = (map[iso] || []).concat(base);
+                        map[isoLocal] = (map[isoLocal] || []).concat(base);
                     }
                 }
 
@@ -298,15 +308,13 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
             const now = new Date();
 
 
-            // 3) одиночные до вчера
+            // 3) одиночные до текущего момента (прошедшие)
             pre
                 .filter(p => p.scheduled_type === "single" && p.scheduled_date)
                 .forEach(p => {
-                    const [h, m] = p.scheduled_time.split(':').map(Number);
-                    const dt = new Date(p.scheduled_date!);
-                    dt.setHours(h, m, 0, 0);
+                    const dt = new Date(`${p.scheduled_date!}T${p.scheduled_time}`);
                     if (dt >= now) return;           // <-- остаются только прошлые
-                    const iso = dt.toISOString().slice(0, 10);
+                    const iso = dt.toLocaleDateString("sv-SE");
                     map[iso] = (map[iso] || []).concat({
                         id: p.id,
                         postId: p.post_id,
@@ -320,13 +328,13 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
             pre
                 .filter(p => p.scheduled_type === "everyday")
                 .forEach(p => {
-                    const [h, m] = p.scheduled_time.split(':').map(Number);
                     for (let i = 1; i <= 7; i++) {
-                        const dt = new Date();
-                        dt.setDate(dt.getDate() - i);
-                        dt.setHours(h, m, 0, 0);
+                        const baseDay = new Date();
+                        baseDay.setHours(0, 0, 0, 0);
+                        baseDay.setDate(baseDay.getDate() - i);
+                        const iso = baseDay.toLocaleDateString("sv-SE");
+                        const dt = new Date(`${iso}T${p.scheduled_time}`);
                         if (dt >= now) continue;       // <-- оставляем только прошлые
-                        const iso = dt.toISOString().slice(0, 10);
                         map[iso] = (map[iso] || []).concat({
                             id: p.id,
                             postId: p.post_id,
@@ -400,6 +408,10 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
             alert("Не удалось определить менеджера");
             return;
         }
+        if (!responsibleManagerId) {
+            alert("Выберите ответственного менеджера");
+            return;
+        }
 
         try {
             let postId: string;
@@ -437,16 +449,10 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
             let scheduled_time: string;
 
             if (scheduleType === "once") {
-                scheduled_date = scheduledAt!.toLocaleDateString("sv-SE");
-                scheduled_time = scheduledAt!.toLocaleTimeString("ru-RU", {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                });
+                scheduled_date = formatLocalDate(scheduledAt!);
+                scheduled_time = formatLocalTimeWithSeconds(scheduledAt!);
             } else {
-                scheduled_time = timeOnly!.toLocaleTimeString("ru-RU", {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                });
+                scheduled_time = formatLocalTimeWithSeconds(timeOnly!);
             }
 
             const dto: CreatePostToPublishDTO = {
