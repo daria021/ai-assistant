@@ -46,6 +46,8 @@ export interface PostToPublish {
     status: string;
     chats: { id: string; chat_id: string; name: string, chat_type_id: string, responsible_manager_id: string }[];  // если сервер отдаёт объекты
     post: Post;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface CreatePostToPublishDTO {

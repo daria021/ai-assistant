@@ -324,14 +324,18 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                     });
                 });
 
-            // 4) ежедневные: последние 7 дней
+            // 4) ежедневные: последние 7 дней, но не раньше created_at записи
             pre
                 .filter(p => p.scheduled_type === "everyday")
                 .forEach(p => {
+                    // дата создания записи — ограничиваем историю не старше неё
+                    const created = new Date(p.created_at);
+                    created.setHours(0, 0, 0, 0);
                     for (let i = 1; i <= 7; i++) {
                         const baseDay = new Date();
                         baseDay.setHours(0, 0, 0, 0);
                         baseDay.setDate(baseDay.getDate() - i);
+                        if (baseDay < created) break;   // не показываем дни ранее создания записи
                         const iso = baseDay.toLocaleDateString("sv-SE");
                         const dt = new Date(`${iso}T${p.scheduled_time}`);
                         if (dt >= now) continue;       // <-- оставляем только прошлые
@@ -345,7 +349,13 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                     }
                 });
 
-            // 5) сортировка
+            // 5) удаляем любые будущие даты (для вкладки «Отправленные» должны быть только прошедшие)
+            const todayIso = new Date().toLocaleDateString("sv-SE");
+            Object.keys(map).forEach((iso) => {
+                if (iso > todayIso) delete map[iso];
+            });
+
+            // 6) сортировка
             Object.values(map).forEach(arr =>
                 arr.sort((a, b) => a.time.localeCompare(b.time))
             );
