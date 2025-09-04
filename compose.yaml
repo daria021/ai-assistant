@@ -118,6 +118,47 @@ services:
       - migrator
       - worker-manager
 
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: loki
+    command: -config.file=/etc/loki/config.yaml
+    restart: unless-stopped
+    volumes:
+      - ./observability/loki/config.yaml:/etc/loki/config.yaml:ro
+      - ./data/loki:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - assistant_bridge
+
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: promtail
+    command: -config.file=/etc/promtail/promtail.yaml
+    restart: unless-stopped
+    volumes:
+      - ./observability/promtail/promtail.yaml:/etc/promtail/promtail.yaml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./data/promtail:/run/promtail
+    depends_on:
+      - loki
+    networks:
+      - assistant_bridge
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - assistant_bridge
+
 volumes:
   postgres_data:
 

@@ -29,6 +29,9 @@ class AsyncDockerAPIRepository(
     network_name: str = "assistant_bridge"
     config_file_destination: Path = Path("/app/settings.json")
     # fluentd_address: str = "localhost:24224"   # todo: logging
+    # loki_labels: dict[str, str] = field(default_factory=lambda: {
+    #     "service": "worker",
+    # })
 
     max_restarts: int = 3
 
@@ -98,12 +101,13 @@ class AsyncDockerAPIRepository(
                     f"{self.host_root_config_path / config_path.name}:{self.config_file_destination}:ro",
                     f"{self.host_upload_dir}:{self.app_upload_dir}"
                 ],
-                # "LogConfig": {  # todo: logging
-                #     "Type": "fluentd",
+                # Пример включения docker logging driver (если решим вернуться к fluentd/loki)
+                # "LogConfig": {
+                #     "Type": "loki",
                 #     "Config": {
-                #         "fluentd-address": self.fluentd_address,
-                #         "tag": "{0}.{1}".format(image, worker_id)
-                #     },
+                #         "loki-url": "http://loki:3100/loki/api/v1/push",
+                #         "loki-external-labels": "service=worker,container={{.Name}}"
+                #     }
                 # },
                 "NetworkMode": self.network_name,
             },

@@ -7,3 +7,7 @@ dasha.session
 dasha.txt
 collected_py_files.json
 login_script.py
+data/
+data/**
+posts.csv
+posts_to_publish.csv

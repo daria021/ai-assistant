@@ -274,7 +274,8 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
             );
 
             setSchedule(map);
-            setOpenDays(Object.fromEntries(Object.keys(map).map(d => [d, true])));
+            const todayIsoSent = new Date().toLocaleDateString("sv-SE");
+            setOpenDays(Object.fromEntries(Object.keys(map).map(d => [d, d === todayIsoSent])));
         } catch (err) {
             console.error(err);
             alert("Не удалось загрузить запланированные посты");
@@ -350,9 +351,9 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                 });
 
             // 5) удаляем любые будущие даты (для вкладки «Отправленные» должны быть только прошедшие)
-            const todayIso = new Date().toLocaleDateString("sv-SE");
+            const todayIsoFilter = new Date().toLocaleDateString("sv-SE");
             Object.keys(map).forEach((iso) => {
-                if (iso > todayIso) delete map[iso];
+                if (iso > todayIsoFilter) delete map[iso];
             });
 
             // 6) сортировка
@@ -361,7 +362,8 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
             );
 
             setSchedule(map);
-            setOpenDays(Object.fromEntries(Object.keys(map).map(d => [d, true])));
+            const todayIsoOpen = new Date().toLocaleDateString("sv-SE");
+            setOpenDays(Object.fromEntries(Object.keys(map).map(d => [d, d === todayIsoOpen])));
         } catch (err) {
             console.error(err);
             alert("Не удалось загрузить отправленные посты");

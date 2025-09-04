@@ -26,6 +26,9 @@ jobs:
           touch .env
           touch ./posts-service/jobs.sqlite
 
+          # persistent dirs for logs/state (survive docker system prune -af)
+          mkdir -p ./data/loki ./data/grafana ./data/promtail
+
           make bw
           make mn
 
