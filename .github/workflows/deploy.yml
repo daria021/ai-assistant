@@ -27,7 +27,8 @@ jobs:
           touch ./posts-service/jobs.sqlite
 
           # persistent dirs for logs/state (survive docker system prune -af)
-          mkdir -p ./data/loki ./data/grafana ./data/promtail
+          sudo mkdir -p ./data/loki ./data/grafana ./data/promtail
+          sudo chmod -R 0777 ./data
 
           make bw
           make mn
