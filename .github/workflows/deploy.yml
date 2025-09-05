@@ -55,7 +55,7 @@ jobs:
 
       - name: Compose up
         run: |
-          sudo docker compose up --build -d --force-recreate
+          sudo docker compose up --build -d
 
       - name: Cleanup
         run: |
