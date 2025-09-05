@@ -160,6 +160,7 @@ services:
 
 volumes:
   postgres_data:
+    external: true
     name: ai-assistant_postgres_data
 
 networks:

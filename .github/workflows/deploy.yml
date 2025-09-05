@@ -15,6 +15,9 @@ jobs:
       "self-hosted",
       "prod"
     ]
+    defaults:
+      run:
+        working-directory: repo
     env:
       DEPLOY_ENV: prod
       COMPOSE_PROJECT_NAME: ai-assistant
@@ -24,6 +27,7 @@ jobs:
         with:
           clean: false   # avoid deleting workspace with root-owned data/
           fetch-depth: 0
+          path: repo
 
       - name: Prepare environment
         run: |
