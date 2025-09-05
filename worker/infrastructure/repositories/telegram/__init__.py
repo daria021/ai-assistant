@@ -4,7 +4,6 @@ from asyncio import IncompleteReadError
 from dataclasses import dataclass
 from typing import Optional, Any
 
-from shared.dependencies.services import get_upload_service
 from shared.domain.dto.post_to_publish import MessageEntityDTO
 from telethon import TelegramClient as Client
 from telethon.sessions import StringSession
@@ -23,6 +22,7 @@ from telethon.tl.types import (
 from abstractions.repositories import TelegramMessagesRepositoryInterface
 from shared.domain.models import UserWithSessionString
 
+from dependencies.services.upload import get_upload_service
 from settings import settings
 from .exceptions import ChatJoinError, UnhandlableError
 
@@ -97,7 +97,7 @@ class TelethonTelegramMessagesRepository(
                 sending_args['reply_to'] = reply_to
 
             if media_path:
-                upload_service = get_upload_service(settings.upload.app_upload_dir)
+                upload_service = get_upload_service()
                 logger.info(f"Uploading file {media_path}")
                 sending_args['file'] = upload_service.get_file_url(media_path)
                 logger.info(f"File path: {sending_args['file']}")
