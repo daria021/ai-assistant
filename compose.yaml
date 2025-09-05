@@ -160,6 +160,7 @@ services:
 
 volumes:
   postgres_data:
+    name: ai-assistant_postgres_data
 
 networks:
   assistant_bridge:

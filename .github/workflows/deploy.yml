@@ -15,18 +15,15 @@ jobs:
       "self-hosted",
       "prod"
     ]
-    defaults:
-      run:
-        working-directory: repo
     env:
       DEPLOY_ENV: prod
+      COMPOSE_PROJECT_NAME: ai-assistant
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           clean: false   # avoid deleting workspace with root-owned data/
           fetch-depth: 0
-          path: repo     # checkout into subdir to avoid cleaning workspace root
 
       - name: Prepare environment
         run: |
