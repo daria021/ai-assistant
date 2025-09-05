@@ -31,6 +31,7 @@ jobs:
       - name: Prepare environment
         run: |
           touch .env
+          touch grafana.env
           touch ./posts-service/jobs.sqlite
 
           # persistent dirs for logs/state (survive docker system prune -af)
@@ -51,6 +52,10 @@ jobs:
             echo "HOST_UPLOAD_DIR=/root/upload" >> .env
 
             echo "VITE_API_BASE=${DOMAIN}/api" > admin/frontend/.env
+
+            echo "GF_SERVER_DOMAIN=ai.avocado.ceo" >> grafana.env
+            echo "GF_SERVER_ROOT_URL=https://ai.avocado.ceo/grafana/" >> grafana.env
+            echo "GF_SERVER_SERVE_FROM_SUB_PATH=true" >> grafana.env
           fi
 
       - name: Compose up
