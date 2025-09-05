@@ -99,7 +99,7 @@ class TelethonTelegramMessagesRepository(
             if media_path:
                 upload_service = get_upload_service(settings.upload.app_upload_dir)
                 logger.info(f"Uploading file {media_path}")
-                sending_args['file'] = upload_service.get_file_path(media_path)
+                sending_args['file'] = upload_service.get_file_url(media_path)
                 logger.info(f"File path: {sending_args['file']}")
 
             if entities:
