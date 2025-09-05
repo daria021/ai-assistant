@@ -54,10 +54,6 @@ jobs:
 
             echo "VITE_API_BASE=${DOMAIN}/api" > admin/frontend/.env
 
-            # override host paths to match current checkout location
-            echo "HOST_ROOT_CONFIG_PATH=$(pwd)/worker-manager/infrastructure/docker/worker-settings/" >> .env
-            echo "HOST_UPLOAD_DIR=$(pwd)/upload/" >> .env
-
             echo "GF_SERVER_DOMAIN=ai.avocado.ceo" >> grafana.env
             echo "GF_SERVER_ROOT_URL=https://ai.avocado.ceo/grafana/" >> grafana.env
             echo "GF_SERVER_SERVE_FROM_SUB_PATH=true" >> grafana.env
