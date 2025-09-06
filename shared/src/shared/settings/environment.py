@@ -1,8 +1,10 @@
+import logging
 from urllib.parse import urljoin
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+logger = logging.getLogger(__name__)
 
 class EnvironmentSettings(BaseSettings):
     env_name: str = Field('local', alias='ENVIRONMENT')
@@ -14,7 +16,11 @@ class EnvironmentSettings(BaseSettings):
         if not host.endswith('/'):
             host += '/'
 
-        return urljoin(host, 'api/')
+        logger.info('making api host')
+        logger.info(f'host: {host}')
+        result = urljoin(host, 'api/')
+        logger.info(f'result: {result}')
+        return result
 
     @property
     def is_debug(self) -> bool:
