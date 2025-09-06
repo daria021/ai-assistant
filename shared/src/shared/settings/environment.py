@@ -18,7 +18,7 @@ class EnvironmentSettings(BaseSettings):
 
         logger.info('making api host')
         logger.info(f'host: {host}')
-        result = urljoin(host, 'api/')
+        result = urljoin(host, 'api')
         logger.info(f'result: {result}')
         return result
 
