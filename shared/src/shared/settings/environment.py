@@ -1,3 +1,5 @@
+from urllib.parse import urljoin
+
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
@@ -5,6 +7,14 @@ from pydantic_settings import BaseSettings
 class EnvironmentSettings(BaseSettings):
     env_name: str = Field('local', alias='ENVIRONMENT')
     host: str = Field('localhost:9090', alias='APP_HOST')
+
+    @property
+    def api_host(self) -> str:
+        host = self.host
+        if not host.endswith('/'):
+            host += '/'
+
+        return urljoin(host, 'api/')
 
     @property
     def is_debug(self) -> bool:

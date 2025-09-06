@@ -6,6 +6,5 @@ from settings import settings
 
 def get_upload_service() -> UploadServiceInterface:
     return get_base_upload_service(
-        public_backend_base_url=settings.environment.host,
-        app_upload_dir=settings.upload.app_upload_dir,
+        public_backend_base_url=settings.environment.api_host,
     )
