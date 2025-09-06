@@ -325,14 +325,15 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                     });
                 });
 
-            // 4) ежедневные: последние 7 дней, но не раньше created_at записи
+            // 4) ежедневные: сегодняшний день и предыдущие 6 (всего 7), но не раньше created_at записи
             pre
                 .filter(p => p.scheduled_type === "everyday")
                 .forEach(p => {
                     // дата создания записи — ограничиваем историю не старше неё
                     const created = new Date(p.created_at);
                     created.setHours(0, 0, 0, 0);
-                    for (let i = 1; i <= 7; i++) {
+                    // включаем сегодняшний день (i = 0), если время уже прошло
+                    for (let i = 0; i < 7; i++) {
                         const baseDay = new Date();
                         baseDay.setHours(0, 0, 0, 0);
                         baseDay.setDate(baseDay.getDate() - i);
