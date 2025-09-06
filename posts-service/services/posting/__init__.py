@@ -36,19 +36,15 @@ class PostingService(
                     ),
                 )
             case ScheduledType.EVERYDAY:
-                logger.info("Found daily scheduled post, scheduling it")
-                next_run_date = date.today() \
-                    if post.scheduled_time > datetime.now().time() \
-                    else date.today() + timedelta(days=1)
-
-                logger.info("jobs")
-                logger.info("Next run date: %s", next_run_date)
-                self._schedule_post(
-                    post_id=post.id,
-                    schedule_at=datetime.combine(
-                        next_run_date,
-                        post.scheduled_time,
-                    ),
+                logger.info("Found daily scheduled post, scheduling it (cron)")
+                run_hour = post.scheduled_time.hour
+                run_minute = post.scheduled_time.minute
+                self.scheduler.schedule_daily(
+                    callback=publish,
+                    hour=run_hour,
+                    minute=run_minute,
+                    args=(post.id, ),
+                    job_id=f"post_daily_{post.id}",
                 )
 
     def _schedule_post(self, post_id: UUID, schedule_at: datetime) -> None:

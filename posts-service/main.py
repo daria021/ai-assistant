@@ -4,6 +4,8 @@ import logging
 from shared.infrastructure.main_db import init_db
 
 from dependencies.services.consumer import get_posts_consumer
+from shared.dependencies.repositories.post_to_publish import get_post_to_publish_repository
+from dependencies.services.posting import get_posting_service
 from settings import settings
 
 logger = logging.getLogger(__name__)
@@ -16,6 +18,20 @@ async def main():
     logger.info("Starting posting service")
 
     init_db(settings.db.url)
+
+    # bootstrap: re-schedule all posts into APScheduler on clean scheduler DB
+    try:
+        repo = get_post_to_publish_repository()
+        posting_service = get_posting_service()
+        posts = await repo.get_all(limit=10000, offset=0)
+        logger.info(f"Bootstrap scheduling: restoring {len(posts)} posts into scheduler")
+        for p in posts:
+            try:
+                await posting_service.schedule_post(p)
+            except Exception as e:
+                logger.error(f"Failed to restore scheduling for post {getattr(p, 'id', '?')}: {e}")
+    except Exception:
+        logger.error("Bootstrap scheduling failed", exc_info=True)
 
     consumer = get_posts_consumer()
 

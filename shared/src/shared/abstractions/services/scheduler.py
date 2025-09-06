@@ -19,3 +19,15 @@ class SchedulerInterface(ABC):
     @abstractmethod
     def initialize(self) -> None:
         ...
+
+    @abstractmethod
+    def schedule_daily(
+            self,
+            callback: Callable[[Any], Coroutine[Any, Any, None]],
+            hour: int,
+            minute: int,
+            args: tuple[Any, ...] = (),
+            job_id: str | None = None,
+            misfire_grace_time: int = 3600,
+    ) -> None:
+        ...

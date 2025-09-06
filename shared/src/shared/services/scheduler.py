@@ -5,6 +5,7 @@ from typing import Callable, Coroutine, Any
 
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 from shared.abstractions.services.scheduler import SchedulerInterface
 from shared.abstractions.singleton import Singleton
@@ -33,7 +34,7 @@ class Scheduler(
             jobstores=jobstores,
             executors=executors,
             job_defaults=job_defaults,
-
+            timezone="Europe/Moscow",
         )
         self.scheduler.start()
 
@@ -51,6 +52,25 @@ class Scheduler(
         self.scheduler.add_job(
             callback,
             next_run_time=runs_on,
+            args=args,
+            id=job_id,
+            replace_existing=True if job_id else False,
+            misfire_grace_time=misfire_grace_time,
+        )
+
+    def schedule_daily(
+            self,
+            callback: Callable[[Any], Coroutine[Any, Any, None]],
+            hour: int,
+            minute: int,
+            args: tuple[Any, ...] = (),
+            job_id: str | None = None,
+            misfire_grace_time: int = 3600,
+    ) -> None:
+        trigger = CronTrigger(hour=hour, minute=minute, timezone=self.scheduler.timezone)
+        self.scheduler.add_job(
+            callback,
+            trigger=trigger,
             args=args,
             id=job_id,
             replace_existing=True if job_id else False,
