@@ -54,6 +54,9 @@ jobs:
 
             echo "VITE_API_BASE=${DOMAIN}/api" > admin/frontend/.env
 
+            # point worker-manager host paths to this checkout (repo/) so bind mounts resolve
+            echo "HOST_ROOT_CONFIG_PATH=$(pwd)/worker-manager/infrastructure/docker/worker-settings/" >> .env
+
             echo "GF_SERVER_DOMAIN=ai.avocado.ceo" >> grafana.env
             echo "GF_SERVER_ROOT_URL=https://ai.avocado.ceo/grafana/" >> grafana.env
             echo "GF_SERVER_SERVE_FROM_SUB_PATH=true" >> grafana.env
