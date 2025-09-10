@@ -1,7 +1,7 @@
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Response
 from shared.domain.dto import UpdateChatDTO
 from shared.domain.models import Chat
 from shared.domain.requests.chat import CreateChatRequest
@@ -56,7 +56,20 @@ async def create_chat(request: CreateChatRequest) -> Chat:
         )
         return new_chat_id
     except ChatAlreadyExistsError:
-        # если чат с таким invite_link уже есть
+        # если чат с таким invite_link уже есть — попробуем вернуть id существующего
+        chat_service = get_chat_service()
+        try:
+            # Собираем канонизированную ссылку ровно как в сервисе (strip)
+            link = request.invite_link.strip()
+            existing = await chat_service.chats_repository.get_by_invite_link(link)  # type: ignore[attr-defined]
+            if existing:
+                return Response(
+                    status_code=status.HTTP_409_CONFLICT,
+                    content=f'{{"id":"{existing.id}","chat_type_id":"{existing.chat_type_id}"}}',
+                    media_type="application/json",
+                )
+        except Exception:
+            pass
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Chat with this invite_link already exists"

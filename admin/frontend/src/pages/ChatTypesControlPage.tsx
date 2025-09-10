@@ -150,15 +150,31 @@ export default function ChatTypesControlPage() {
       setShowChatModal(false);
     } catch (err: any) {
       const status = err?.response?.status ?? err?.status;
-      const key = normalizeInvite(newChatLink);
-      const highlighted = await findAndHighlightByInviteKey(key);
-      if (highlighted || status === 409) {
+      // 1) Если бэкенд вернул id и chat_type_id — подсветим по ним сразу
+      const byId = err?.response?.data;
+      if (status === 409 && byId?.id && byId?.chat_type_id) {
+        setExpanded(prev => ({ ...prev, [byId.chat_type_id]: true }));
+        setShowChatModal(false);
+        setTimeout(() => {
+          setHighlightChatId(byId.id);
+          requestAnimationFrame(() => {
+            const el = document.querySelector(`[data-chat-id="${byId.id}"]`);
+            if (el && 'scrollIntoView' in el) (el as any).scrollIntoView({ behavior: 'smooth', block: 'center' });
+          });
+          setTimeout(() => setHighlightChatId(null), 2000);
+        }, 100);
         alert("Такой чат уже существует. Вот он в списке.");
       } else {
-        alert("Не удалось добавить чат.");
+        // 2) Фолбэк: ищем по нормализованной ссылке
+        const key = normalizeInvite(newChatLink);
+        const highlighted = await findAndHighlightByInviteKey(key);
+        if (highlighted || status === 409) {
+          alert("Такой чат уже существует. Вот он в списке.");
+        } else {
+          alert("Не удалось добавить чат.");
+        }
+        setShowChatModal(false);
       }
-      // Закрываем попап в любом случае, чтобы не зависал после алерта
-      setShowChatModal(false);
     }
   }
 
@@ -421,12 +437,22 @@ export default function ChatTypesControlPage() {
               >
                 Отмена
               </button>
-              <button
-                onClick={handleAddChat}
-                className="px-4 py-2 bg-brand-pink text-white rounded-lg"
-              >
-                Добавить
-              </button>
+              {(() => {
+                const canAdd = !!newChatLink.trim();
+                const className = canAdd
+                  ? "px-4 py-2 rounded-lg bg-brand text-white hover:bg-brand2 transition"
+                  : "px-4 py-2 rounded-lg bg-gray-300 text-gray-600 cursor-not-allowed";
+                return (
+                  <button
+                    onClick={handleAddChat}
+                    className={className}
+                    disabled={!canAdd}
+                    title={canAdd ? "Добавить чат" : "Введите ссылку"}
+                  >
+                    Добавить
+                  </button>
+                );
+              })()}
             </div>
           </div>
         </div>
