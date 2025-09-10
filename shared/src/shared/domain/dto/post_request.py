@@ -14,6 +14,7 @@ class CreateSendPostRequestDTO(CreateDTO):
     publication_id: UUID
     status: SendPostRequestStatus
     sent_at: Optional[datetime] = None
+    stale_at: Optional[datetime] = None
 
 
 class UpdateSendPostRequestDTO(UpdateDTO):
@@ -24,3 +25,4 @@ class UpdateSendPostRequestDTO(UpdateDTO):
     scheduled_at: Optional[datetime] = None
     status: Optional[SendPostRequestStatus] = None
     sent_at: Optional[datetime] = None
+    stale_at: Optional[datetime] = None

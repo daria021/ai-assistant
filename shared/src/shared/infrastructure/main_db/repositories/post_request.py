@@ -70,6 +70,7 @@ class SendPostRequestRepository(
             publication_id=dto.publication_id,
             status=dto.status,
             sent_at=dto.sent_at,
+            stale_at=dto.stale_at,
             created_at=dto.created_at,
             updated_at=dto.updated_at,
         )
@@ -122,6 +123,7 @@ class SendPostRequestRepository(
             scheduled_at=entity.scheduled_at,
             status=entity.status,
             sent_at=entity.sent_at,
+             stale_at=entity.stale_at,
             publication_id=entity.publication_id,
             created_at=entity.created_at,
             updated_at=entity.updated_at,

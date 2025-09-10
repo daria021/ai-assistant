@@ -1,5 +1,5 @@
 from shared.domain.requests.enums import PublicationType
-from .base import PublicationStartedRequest, RequestProcessingStartedRequest, MessageSentRequest
+from .base import PublicationStartedRequest, RequestProcessingStartedRequest, MessageSentRequest, RequestStatusChangedRequest
 
 
 class PostPublicationStartedRequest(PublicationStartedRequest):
@@ -11,4 +11,8 @@ class PostRequestProcessingStartedRequest(RequestProcessingStartedRequest):
 
 
 class PostMessageSentRequest(MessageSentRequest):
+    type: PublicationType = PublicationType.POST
+
+
+class PostRequestStatusChangedRequest(RequestStatusChangedRequest):
     type: PublicationType = PublicationType.POST

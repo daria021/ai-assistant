@@ -31,3 +31,8 @@ class SchedulerInterface(ABC):
             misfire_grace_time: int = 3600,
     ) -> None:
         ...
+
+    @abstractmethod
+    def add_listener(self, callback: Callable[[Any], None], mask: int) -> None:
+        """Attach a scheduler event listener (e.g., for EVENT_JOB_MISSED)."""
+        ...

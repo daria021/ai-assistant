@@ -9,3 +9,4 @@ class PublicationStatus(StrEnum):
     POSTED = "posted"
     FAILED = "failed"
     CANCELED = "canceled"
+    STALE = "stale"

@@ -7,3 +7,4 @@ class SendPostRequestStatus(StrEnum):
     SENT = "sent"
     FAILED = "failed"
     CANCELLED = "cancelled"
+    STALE = "stale"

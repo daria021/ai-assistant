@@ -22,8 +22,9 @@ def parse_args():
     )
     parser.add_argument(
         "-o", "--output",
-        default="collected_py_files.json",
-        help="Output file to write the collected data (default: collected_py_files.json)."
+        default="collected_project_files.json",
+        help="Output file to write the c"
+             "ollected data (default: collected_py_files.json)."
     )
     parser.add_argument(
         "--exclude-files",

@@ -22,6 +22,7 @@ src/shared/abstractions/repositories/proxy.py
 src/shared/abstractions/repositories/story.py
 src/shared/abstractions/repositories/story_request.py
 src/shared/abstractions/repositories/story_to_publish.py
+src/shared/abstractions/repositories/update_post.py
 src/shared/abstractions/repositories/user.py
 src/shared/abstractions/repositories/uuid_pk_abstract.py
 src/shared/abstractions/repositories/worker_message.py
@@ -44,6 +45,7 @@ src/shared/dependencies/repositories/sessionmaker.py
 src/shared/dependencies/repositories/story.py
 src/shared/dependencies/repositories/story_request.py
 src/shared/dependencies/repositories/story_to_publish.py
+src/shared/dependencies/repositories/update_post.py
 src/shared/dependencies/repositories/user.py
 src/shared/dependencies/repositories/worker_message.py
 src/shared/dependencies/services/__init__.py
@@ -65,6 +67,7 @@ src/shared/domain/dto/service.py
 src/shared/domain/dto/story.py
 src/shared/domain/dto/story_request.py
 src/shared/domain/dto/story_to_publish.py
+src/shared/domain/dto/update_post.py
 src/shared/domain/dto/user.py
 src/shared/domain/dto/worker_message.py
 src/shared/domain/enums/__init__.py
@@ -88,6 +91,7 @@ src/shared/domain/models/proxy.py
 src/shared/domain/models/story.py
 src/shared/domain/models/story_request.py
 src/shared/domain/models/story_to_publish.py
+src/shared/domain/models/update_post.py
 src/shared/domain/models/user.py
 src/shared/domain/models/worker_message.py
 src/shared/domain/requests/__init__.py
@@ -116,6 +120,7 @@ src/shared/infrastructure/main_db/repositories/proxy.py
 src/shared/infrastructure/main_db/repositories/story.py
 src/shared/infrastructure/main_db/repositories/story_request.py
 src/shared/infrastructure/main_db/repositories/story_to_publish.py
+src/shared/infrastructure/main_db/repositories/update_post.py
 src/shared/infrastructure/main_db/repositories/user.py
 src/shared/infrastructure/main_db/repositories/worker_message.py
 src/shared/infrastructure/sqlalchemy/__init__.py

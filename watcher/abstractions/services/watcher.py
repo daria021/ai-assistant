@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from shared.domain.requests import PublicationStartedRequest, RequestProcessingStartedRequest, MessageSentRequest
+from shared.domain.requests import PublicationStartedRequest, RequestProcessingStartedRequest, MessageSentRequest, RequestStatusChangedRequest
 
 
 class WatcherInterface(
@@ -8,4 +8,8 @@ class WatcherInterface(
 ):
     @abstractmethod
     async def register_message(self, request: MessageSentRequest) -> None:
+        ...
+
+    @abstractmethod
+    async def register_request_status_change(self, request: RequestStatusChangedRequest) -> None:
         ...

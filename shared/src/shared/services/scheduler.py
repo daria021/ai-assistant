@@ -76,3 +76,6 @@ class Scheduler(
             replace_existing=True if job_id else False,
             misfire_grace_time=misfire_grace_time,
         )
+
+    def add_listener(self, callback: Callable[[Any], None], mask: int) -> None:
+        self.scheduler.add_listener(callback, mask=mask)

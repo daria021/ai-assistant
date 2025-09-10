@@ -12,11 +12,18 @@ class SenderSettings(AbstractSettings):
     id: UUID = Field(..., alias="SENDER_MANAGER_ID")
 
 
+class BootstrapSettings(AbstractSettings):
+    # How many minutes past the scheduled time a SINGLE post is allowed to be
+    # before being considered stale during bootstrap restore.
+    single_miss_grace_minutes: int = Field(default=60)
+
+
 class Settings(AbstractSettings):
     db: MainDBSettings = Field(default_factory=MainDBSettings)
     scheduler: SchedulerSettings = Field(default_factory=SchedulerSettings)
     watcher: WatcherSettings = Field(default_factory=WatcherSettings)
     sender: SenderSettings
+    bootstrap: BootstrapSettings = Field(default_factory=BootstrapSettings)
 
     model_config = SettingsConfigDict(
         extra="ignore",

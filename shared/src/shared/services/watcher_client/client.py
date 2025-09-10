@@ -6,7 +6,7 @@ from httpx import AsyncClient
 from pydantic import BaseModel
 
 from shared.abstractions.services.watcher_client import WatcherClientInterface
-from shared.domain.requests import MessageSentRequest, RequestProcessingStartedRequest, PublicationStartedRequest
+from shared.domain.requests import MessageSentRequest, RequestProcessingStartedRequest, PublicationStartedRequest, RequestStatusChangedRequest
 
 
 @dataclass
@@ -16,6 +16,7 @@ class WatcherClient(WatcherClientInterface):
     publication_started_endpoint: str = "/watch/publication"
     request_processing_started_endpoint: str = "/watch/request"
     message_sent_endpoint: str = "/watch/message"
+    request_status_endpoint: str = "/watch/request-status"
 
     async def report_publication_started(self, request: PublicationStartedRequest) -> None:
         await self._send_post_request(
@@ -33,6 +34,12 @@ class WatcherClient(WatcherClientInterface):
         await self._send_post_request(
             request=request,
             endpoint=self.message_sent_endpoint,
+        )
+
+    async def report_request_status_changed(self, request: RequestStatusChangedRequest) -> None:
+        await self._send_post_request(
+            request=request,
+            endpoint=self.request_status_endpoint,
         )
 
     async def _send_post_request(self, request: BaseModel, endpoint: str) -> None:

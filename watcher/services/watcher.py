@@ -4,7 +4,7 @@ from enum import StrEnum
 
 from shared.abstractions.singleton import Singleton
 from shared.domain.enums import WorkerMessageStatus
-from shared.domain.requests import MessageSentRequest, RequestProcessingStartedRequest, PublicationStartedRequest
+from shared.domain.requests import MessageSentRequest, RequestProcessingStartedRequest, PublicationStartedRequest, RequestStatusChangedRequest
 
 from abstractions.services.messages import MessageServiceInterface
 from abstractions.services.publication import PublicationServiceInterface
@@ -37,3 +37,13 @@ class Watcher(
 
         await self.message_service.register_message(request)
         logger.info(f'Message {request.message_id} registered')
+
+    async def register_request_status_change(self, request: RequestStatusChangedRequest) -> None:
+        # Re-evaluate the publication status when a child request transitions to a terminal status
+        sending_request = await self.requests_service.get_request(request.request_id, self._map_publication_type(request))
+        if sending_request:
+            await self.publication_service.register_finished_request(sending_request)
+
+    def _map_publication_type(self, request: RequestStatusChangedRequest):
+        # Request carries its type already but helper to keep signature explicit
+        return request.type

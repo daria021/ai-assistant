@@ -168,6 +168,7 @@ class SendPostRequest(AbstractBase):
 
     status: Mapped[SendPostRequestStatus] = mapped_column(Enum(SendPostRequestStatus))
     sent_at: Mapped[Optional[datetime]]
+    stale_at: Mapped[Optional[datetime]]
 
     user: Mapped["User"] = relationship("User", passive_deletes="all")
     chat: Mapped["Chat"] = relationship("Chat")

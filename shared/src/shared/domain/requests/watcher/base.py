@@ -20,3 +20,8 @@ class RequestProcessingStartedRequest(BaseModel):
 class MessageSentRequest(BaseModel):
     type: PublicationType
     message_id: UUID
+
+
+class RequestStatusChangedRequest(BaseModel):
+    type: PublicationType
+    request_id: UUID

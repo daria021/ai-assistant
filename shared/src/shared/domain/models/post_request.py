@@ -17,6 +17,7 @@ class SendPostRequest(Model):
 
     status: SendPostRequestStatus
     sent_at: Optional[datetime] = None
+    stale_at: Optional[datetime] = None
 
     user: Optional["User"] = None
     chat: Optional["Chat"] = None
