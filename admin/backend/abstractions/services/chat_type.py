@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from uuid import UUID
 
-from shared.domain.dto.chat_type import CreateChatTypeDTO
+from shared.domain.dto.chat_type import CreateChatTypeDTO, UpdateChatTypeDTO
 from shared.domain.models.chat_type import ChatType
 
 
@@ -21,6 +21,10 @@ class ChatTypeServiceInterface(ABC):
 
     @abstractmethod
     async def delete_chat_type(self, chat_type_id: UUID) -> None:
+        ...
+
+    @abstractmethod
+    async def update_chat_type(self, chat_type_id: UUID, chat_type: UpdateChatTypeDTO) -> ChatType:
         ...
 
 

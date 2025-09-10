@@ -10,6 +10,8 @@ from dependencies.services.post_to_publish import get_post_to_publish_service
 from shared.domain.models import PostToPublish
 
 from routes.utils import get_user_id_from_request
+from shared.dependencies.repositories.post import get_post_repository
+from shared.domain.dto import CreatePostDTO
 
 logger = logging.getLogger(__name__)
 router = APIRouter(
@@ -20,19 +22,34 @@ router = APIRouter(
 
 @router.post('')
 async def create_post_to_publish(request: Request, post_to_publish: CreatePostToPublishDTO) -> UUID:
-    post_service = get_post_service()
-    post = await post_service.get_post(post_to_publish.post_id)
-    logger.debug("BACK_GET_POST text=%r ENT=%s\", post.text[:200], post.entities[:8]")
+    """
+    Создаёт запись для публикации, предварительно клонируя текущий пост.
+    Это фиксирует контент на момент нажатия кнопки, чтобы последующие правки
+    исходного шаблона не затрагивали уже запланированные отправки.
+    """
+    user_id = get_user_id_from_request(request)
 
-    logger.debug(
-        'BACK_IN_POST',
-        repr(post.text)[:200],
-        (post.entities or [])[:8]
+    # 1) Получаем исходный пост без преобразования image_path в URL
+    post_repository = get_post_repository()
+    original_post = await post_repository.get(post_to_publish.post_id)
+
+    # 2) Клонируем пост (image_path оставляем как есть — путь в сторе)
+    post_service = get_post_service()
+    clone_dto = CreatePostDTO(
+        name=original_post.name,
+        text=original_post.text,
+        is_template=False,              # клон — не шаблон
+        image_path=original_post.image_path,
+        html=original_post.html,
+        entities=original_post.entities,
     )
+    cloned_post_id = await post_service.create_post(post=clone_dto, author_id=user_id)
+
+    # 3) Подменяем post_id на клон и сохраняем запись публикации
+    post_to_publish.creator_id = user_id
+    post_to_publish.post_id = cloned_post_id
 
     post_to_publish_service = get_post_to_publish_service()
-    user_id = get_user_id_from_request(request)
-    post_to_publish.creator_id = user_id
     return await post_to_publish_service.create_post_to_publish(post_to_publish=post_to_publish)
 
 

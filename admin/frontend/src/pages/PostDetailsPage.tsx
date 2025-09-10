@@ -11,7 +11,8 @@ import {
     getPostToPublish,
     type PostToPublish,
     updatePost,
-    updatePostToPublish
+    updatePostToPublish,
+    getChatTypes,
 } from "../services/api";
 import {useAuth} from "../contexts/auth";
 import {on} from "@telegram-apps/sdk";
@@ -39,9 +40,10 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
     const [timeOnly, setTimeOnly] = useState<Date | null>(null);
 
     // чаты
-    const [chats, setChats] = useState<{ id: string; name: string }[]>([]);
+    const [chats, setChats] = useState<{ id: string; name: string; chat_type_id?: string | null }[]>([]);
     const [selectedChats, setSelectedChats] = useState<string[]>([]);
     const [chatSearch, setChatSearch] = useState<string>("");
+    const [chatTypes, setChatTypes] = useState<{ id: string; name: string }[]>([]);
 
     const [editorHtml, setEditorHtml] = useState<string>('');
     const [editorText, setEditorText] = useState<string>('');
@@ -63,6 +65,7 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
     // загрузить все чаты из API
     useEffect(() => {
         getChats().then(setChats).catch(() => alert("Не удалось загрузить чаты"));
+        getChatTypes().then(setChatTypes).catch(() => {});
     }, []);
 
     const filteredChats = useMemo(
@@ -72,6 +75,28 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
             ),
         [chatSearch, chats]
     );
+
+    const groupedFilteredChats = useMemo(() => {
+        const byType = new Map<string, { id: string; name: string; chat_type_id?: string | null }[]>();
+        for (const chat of filteredChats) {
+            const typeId = chat.chat_type_id ?? "__none__";
+            if (!byType.has(typeId)) byType.set(typeId, []);
+            byType.get(typeId)!.push(chat);
+        }
+        const typeNameById = new Map<string, string>(chatTypes.map(ct => [ct.id, ct.name]));
+        const result = Array.from(byType.entries()).map(([typeId, list]) => ({
+            typeId,
+            typeName: typeId === "__none__" ? "Без группы" : (typeNameById.get(typeId) ?? "Другая группа"),
+            chats: list.sort((a, b) => a.name.localeCompare(b.name)),
+        }));
+        result.sort((a, b) => {
+            if (a.typeId === "__none__" && b.typeId !== "__none__") return 1;
+            if (a.typeId !== "__none__" && b.typeId === "__none__") return -1;
+            return a.typeName.localeCompare(b.typeName);
+        });
+        return result;
+    }, [filteredChats, chatTypes]);
+
     const toggleChat = (id: string) =>
         setSelectedChats((prev) =>
             prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -202,7 +227,6 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
 
 
 
-
     if (!entry) {
         return <div>Загрузка…</div>;
     }
@@ -321,20 +345,29 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
                     onChange={(e) => setChatSearch(e.target.value)}
                     className="w-full border p-2 mb-2"
                 />
-                <div className="max-h-40 overflow-y-auto border p-2 rounded">
-                    {filteredChats.map((c) => (
-                        <label
-                            key={c.id}
-                            className="flex items-center space-x-2 mb-1"
-                        >
-                            <input
-                                type="checkbox"
-                                checked={selectedChats.includes(c.id)}
-                                onChange={() => toggleChat(c.id)}
-                                className="form-checkbox"
-                            />
-                            <span>{c.name}</span>
-                        </label>
+                <div className="max-h-40 overflow-y-auto border p-2 rounded space-y-3">
+                    {groupedFilteredChats.map((group) => (
+                        <div key={group.typeId}>
+                            <div className="px-2 py-1 mb-2 text-xs font-semibold text-gray-700 bg-gray-100 rounded">
+                                {group.typeName}
+                            </div>
+                            <div className="space-y-2">
+                                {group.chats.map((c) => (
+                                    <label
+                                        key={c.id}
+                                        className="flex items-center space-x-2 mb-1"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedChats.includes(c.id)}
+                                            onChange={() => toggleChat(c.id)}
+                                            className="form-checkbox"
+                                        />
+                                        <span>{c.name}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
                     ))}
                 </div>
             </div>

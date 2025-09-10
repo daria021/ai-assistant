@@ -14,7 +14,7 @@ import {
     getManagers,
     getPost,
     getPostsToPublish,
-    updatePost
+    updatePost,
 } from "../services/api";
 import {useAuth} from "../contexts/auth";
 import DatePicker from "react-datepicker";
@@ -46,6 +46,7 @@ export interface Post {
 interface ChatItem {
     id: string;
     name: string;
+    chat_type_id?: string | null;
 }
 
 export interface CreatePostToPublishDTO {
@@ -98,6 +99,7 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
     const [title, setTitle] = useState("");
     const [scheduleType, setScheduleType] = useState<"once" | "daily">("once");
     const [isTemplate, setIsTemplate] = useState(false);
+    const [updateTemplate, setUpdateTemplate] = useState(false);
 
     /* ───────── Chats ───────── */
     const [chats, setChats] = useState<ChatItem[]>([]);
@@ -203,6 +205,28 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
             ),
         [chatSearch, chats]
     );
+
+    const groupedFilteredChats = useMemo(() => {
+        const byType = new Map<string, ChatItem[]>();
+        for (const chat of filteredChats) {
+            const typeId = chat.chat_type_id ?? "__none__";
+            if (!byType.has(typeId)) byType.set(typeId, []);
+            byType.get(typeId)!.push(chat);
+        }
+        const typeNameById = new Map<string, string>(chatTypes.map(ct => [ct.id, ct.name]));
+        const result = Array.from(byType.entries()).map(([typeId, list]) => ({
+            typeId,
+            typeName: typeId === "__none__" ? "Без группы" : (typeNameById.get(typeId) ?? "Другая группа"),
+            chats: list.sort((a, b) => a.name.localeCompare(b.name)),
+        }));
+        // сортируем группы: сначала именованные по алфавиту, затем "Без группы"
+        result.sort((a, b) => {
+            if (a.typeId === "__none__" && b.typeId !== "__none__") return 1;
+            if (a.typeId !== "__none__" && b.typeId === "__none__") return -1;
+            return a.typeName.localeCompare(b.typeName);
+        });
+        return result;
+    }, [filteredChats, chatTypes]);
 
     const handleChatToggle = (chatId: string) => {
         setSelectedChats((prev) =>
@@ -430,23 +454,31 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
             let postId: string;
 
             if (template) {
-                // вычисляем, что реально изменилось
-                const entitiesChanged =
-                    JSON.stringify(editorEntities ?? []) !== JSON.stringify(template.entities ?? []);
-                const htmlBaseline = template.html ?? template.text;
+                // По желанию — обновляем сам шаблон
+                if (updateTemplate) {
+                    const entitiesChanged =
+                        JSON.stringify(editorEntities ?? []) !== JSON.stringify(template.entities ?? []);
+                    const htmlBaseline = template.html ?? template.text;
+                    await updatePost(
+                        template.id,
+                        title !== template.name ? title : undefined,
+                        isTemplate !== template.is_template ? isTemplate : undefined,
+                        editorText !== template.text ? editorText : undefined,
+                        editorHtml !== htmlBaseline ? editorHtml : undefined,
+                        entitiesChanged ? editorEntities : undefined,
+                        photoFile ?? undefined
+                    );
+                }
 
-                // PATCH /post/:id — обновляем сам шаблон
-                await updatePost(
-                    template.id,
-                    title !== template.name ? title : undefined,
-                    isTemplate !== template.is_template ? isTemplate : undefined,
-                    editorText !== template.text ? editorText : undefined,
-                    editorHtml !== htmlBaseline ? editorHtml : undefined,
-                    entitiesChanged ? editorEntities : undefined,
+                // Создаём копию под отправку (заморозка контента)
+                postId = await createPost(
+                    title,
+                    editorText,
+                    false, // клон для отправки не является шаблоном
+                    editorHtml,
+                    editorEntities,
                     photoFile ?? undefined
                 );
-
-                postId = template.id;
             } else {
                 // создаём обычный пост (как было)
                 postId = await createPost(
@@ -703,17 +735,26 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                             onChange={(e) => setChatSearch(e.target.value)}
                             className="w-full mb-2 border border-brand rounded p-2 focus:outline-none focus:ring-2 focus:ring-brand"
                         />
-                        <div className="max-h-60 overflow-y-auto space-y-2 border border-brand rounded p-2">
-                            {filteredChats.map(({id, name}) => (
-                                <label key={id} className="flex items-center space-x-2">
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedChats.includes(id)}
-                                        onChange={() => handleChatToggle(id)}
-                                        className="form-checkbox h-5 w-5 text-brand focus:ring-brand"
-                                    />
-                                    <span>{name}</span>
-                                </label>
+                        <div className="max-h-60 overflow-y-auto space-y-3 border border-brand rounded p-2">
+                            {groupedFilteredChats.map(group => (
+                                <div key={group.typeId}>
+                                    <div className="px-2 py-1 mb-2 text-xs font-semibold text-gray-700 bg-gray-100 rounded">
+                                        {group.typeName}
+                                    </div>
+                                    <div className="space-y-2">
+                                        {group.chats.map(({id, name}) => (
+                                            <label key={id} className="flex items-center space-x-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedChats.includes(id)}
+                                                    onChange={() => handleChatToggle(id)}
+                                                    className="form-checkbox h-5 w-5 text-brand focus:ring-brand"
+                                                />
+                                                <span>{name}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
                             ))}
                             {filteredChats.length === 0 && (
                                 <div className="text-gray-500 italic">Чаты не найдены</div>
@@ -721,7 +762,7 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                         </div>
 
                     </div>
-                    {/* Сделать шаблоном (показываем, только если ещё не шаблон) */}
+                    {/* Сделать шаблоном (если не из шаблона) */}
                     {!template?.is_template && (
                         <div>
                             <label className="flex items-center space-x-2 mt-2">
@@ -732,6 +773,21 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                                     className="form-checkbox h-5 w-5 text-brand focus:ring-brand"
                                 />
                                 <span>Сделать шаблоном</span>
+                            </label>
+                        </div>
+                    )}
+
+                    {/* Если создаём из шаблона — опция обновить исходный шаблон */}
+                    {template && (
+                        <div>
+                            <label className="flex items-center space-x-2 mt-2">
+                                <input
+                                    type="checkbox"
+                                    checked={updateTemplate}
+                                    onChange={() => setUpdateTemplate(!updateTemplate)}
+                                    className="form-checkbox h-5 w-5 text-brand focus:ring-brand"
+                                />
+                                <span>Обновить исходный шаблон текущим содержимым</span>
                             </label>
                         </div>
                     )}

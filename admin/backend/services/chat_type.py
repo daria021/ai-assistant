@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from shared.abstractions.repositories.chat_type import ChatTypeRepositoryInterface
-from shared.domain.dto.chat_type import CreateChatTypeDTO
+from shared.domain.dto.chat_type import CreateChatTypeDTO, UpdateChatTypeDTO
 from shared.domain.models.chat_type import ChatType
 
 from abstractions.services.chat_type import ChatTypeServiceInterface
@@ -26,4 +26,7 @@ class ChatTypeService(ChatTypeServiceInterface):
 
     async def delete_chat_type(self, chat_type_id: UUID) -> None:
         return await self.chats_type_repository.delete(chat_type_id)
+
+    async def update_chat_type(self, chat_type_id: UUID, chat_type: UpdateChatTypeDTO) -> ChatType:
+        return await self.chats_type_repository.update(chat_type_id, chat_type)
 

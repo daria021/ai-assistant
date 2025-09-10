@@ -2,7 +2,7 @@ import logging
 from uuid import UUID
 
 from fastapi import APIRouter
-from shared.domain.dto.chat_type import CreateChatTypeDTO
+from shared.domain.dto.chat_type import CreateChatTypeDTO, UpdateChatTypeDTO
 from shared.domain.models.chat_type import ChatType
 
 from dependencies.services.chat_type import get_chat_type_service
@@ -37,4 +37,10 @@ async def get_chat_type(chat_type_id: UUID) -> ChatType:
 async def delete_chat_type(chat_type_id: UUID) -> None:
     chat_type_service = get_chat_type_service()
     return await chat_type_service.delete_chat_type(chat_type_id=chat_type_id)
+
+
+@router.patch("/{chat_type_id}")
+async def update_chat_type(chat_type_id: UUID, request: UpdateChatTypeDTO) -> ChatType:
+    chat_type_service = get_chat_type_service()
+    return await chat_type_service.update_chat_type(chat_type_id=chat_type_id, chat_type=request)
 
