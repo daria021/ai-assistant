@@ -74,7 +74,16 @@ class AuthService(AuthServiceInterface):
         # Extract Telegram User ID
         user_data = json.loads(data_dict.get("user", "{}"))
         telegram_user_id = int(user_data.get("id", 0))
-        username = user_data.get("username", None)
+
+        # Normalize username to a proper string
+        raw_username = user_data.get("username", None)
+        username: Optional[str]
+        if isinstance(raw_username, str):
+            username = raw_username.lstrip("@") or None
+        else:
+            # If a bound method or non-string leaked here, drop it
+            username = None
+
         first_name = user_data.get("first_name", None)
         last_name = user_data.get("last_name", None)
         language_code = user_data.get("language_code", None)

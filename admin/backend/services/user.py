@@ -43,6 +43,11 @@ class UserService(UserServiceInterface):
 
     async def ensure_user(self, dto: CreateUserDTO) -> User:
         logger.info(f"Ensuring user {dto.telegram_id}")
+        # Нормализуем username на всякий случай (иногда прилетает нестроковое значение)
+        if dto.telegram_username is not None and not isinstance(dto.telegram_username, str):
+            dto.telegram_username = None
+        if isinstance(dto.telegram_username, str):
+            dto.telegram_username = dto.telegram_username.lstrip('@') or None
         user = await self.user_repository.get_by_telegram_id(dto.telegram_id)
         logger.info(f"User {dto.telegram_id} is {user}")
         if not user:

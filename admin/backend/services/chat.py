@@ -49,13 +49,18 @@ class ChatService(ChatServiceInterface):
         if not re.match(pattern, link):
             raise InvalidInviteLinkError(f"Неверный формат invite_link: {link}")
 
-        # 2. Проверяем, что такого чата ещё нет
+        # 2. Проверяем, что такого чата ещё нет (по ссылке; дальше проверим по chat_id)
         existing = await self.chats_repository.get_by_invite_link(link)
         if existing:
             raise ChatAlreadyExistsError(f"Чат уже зарегистрирован: {link}")
 
         # 3. Получаем информацию о чате из тг
         chat_info = await self.telegram_service.get_chat_info(invite_link)
+
+        # 3.1 Проверяем дубликат по telegram chat_id (уникальный индекс chats.chat_id)
+        exists_by_id = await self.chats_repository.get_by_telegram_id(int(chat_info.id))
+        if exists_by_id:
+            raise ChatAlreadyExistsError(f"Чат уже зарегистрирован: chat_id={chat_info.id}")
 
         # 4. Собираем доменную модель и сохраняем
         new_chat = CreateChatDTO(
