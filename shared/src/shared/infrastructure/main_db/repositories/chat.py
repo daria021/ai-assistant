@@ -51,14 +51,14 @@ class ChatRepository(
                 if self.options:
                     res = await session.execute(
                         select(self.entity)
-                        .where(self.entity.telegram_id == telegram_id)
+                        .where(self.entity.chat_id == telegram_id)
                         .options(*self.options)
                     )
                     chat = res.unique().scalars().one()
                 else:
                     res = await session.execute(
                         select(self.entity)
-                        .where(self.entity.telegram_id == telegram_id)
+                        .where(self.entity.chat_id == telegram_id)
                     )
                     chat = res.scalars().one()
 
