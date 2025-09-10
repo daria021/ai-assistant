@@ -30,6 +30,7 @@ export default function ChatTypesControlPage() {
   const [showChatModal, setShowChatModal] = useState(false);
   const [newChatLink, setNewChatLink] = useState("");
   const [currentTypeForChat, setCurrentTypeForChat] = useState<string | null>(null);
+  const [highlightChatId, setHighlightChatId] = useState<string | null>(null);
 
   // inline-редактирование названия группы
   const [editingTypeId, setEditingTypeId] = useState<string | null>(null);
@@ -85,11 +86,60 @@ export default function ChatTypesControlPage() {
     setShowChatModal(true);
   }
 
+  // Нормализация инвайта: убираем @, http/https, префикс t.me/, завершающий слэш, lower-case
+  function normalizeInvite(s?: string): string {
+    if (!s) return "";
+    let v = s.trim();
+    if (v.startsWith("@")) v = v.slice(1);
+    v = v.replace(/^https?:\/\//i, "");
+    v = v.replace(/^t\.me\//i, "");
+    if (v.endsWith("/")) v = v.slice(0, -1);
+    return v.toLowerCase();
+  }
+
+  // Поиск и подсветка существующего чата по нормализованному ключу
+  async function findAndHighlightByInviteKey(targetKey: string): Promise<boolean> {
+    // 1) Пытаемся найти в уже загруженных списках
+    let found: { typeId: string; chat: Chat } | null = null;
+    for (const [typeId, list] of Object.entries(chatsMap)) {
+      const hit = (list || []).find(c => normalizeInvite(c.invite_link) === targetKey);
+      if (hit) { found = { typeId, chat: hit }; break; }
+    }
+
+    const expandAndHighlight = (typeId: string, chatId: string) => {
+      setExpanded(prev => ({ ...prev, [typeId]: true }));
+      setShowChatModal(false);
+      setTimeout(() => {
+        setHighlightChatId(chatId);
+        requestAnimationFrame(() => {
+          const el = document.querySelector(`[data-chat-id="${chatId}"]`);
+          if (el && 'scrollIntoView' in el) (el as any).scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        setTimeout(() => setHighlightChatId(null), 2000);
+      }, 100);
+    };
+
+    if (found) { expandAndHighlight(found.typeId, found.chat.id); return true; }
+
+    // 2) Обновляем данные и пробуем ещё раз
+    const typesData = await getChatTypes();
+    setTypes(typesData);
+    for (const t of typesData) {
+      const data = await getChatsByType(t.id);
+      setChatsMap(prev => ({ ...prev, [t.id]: data }));
+      const hit = data.find(c => normalizeInvite(c.invite_link) === targetKey);
+      if (hit) { expandAndHighlight(t.id, hit.id); return true; }
+    }
+    return false;
+  }
+
   async function handleAddChat() {
     if (!newChatLink.trim() || !currentTypeForChat) return;
     try {
+      const raw = newChatLink.trim();
+      const normalizedForRequest = raw.startsWith("@") ? raw.slice(1) : raw;
       const chat = await createChatByLink({
-        invite_link: newChatLink.trim(),
+        invite_link: normalizedForRequest,
         chat_type_id: currentTypeForChat,
         manager_id: userId!,
       });
@@ -98,8 +148,17 @@ export default function ChatTypesControlPage() {
         [currentTypeForChat]: [...(prev[currentTypeForChat] || []), chat],
       }));
       setShowChatModal(false);
-    } catch {
-      alert("Не удалось добавить чат.");
+    } catch (err: any) {
+      const status = err?.response?.status ?? err?.status;
+      const key = normalizeInvite(newChatLink);
+      const highlighted = await findAndHighlightByInviteKey(key);
+      if (highlighted || status === 409) {
+        alert("Такой чат уже существует. Вот он в списке.");
+      } else {
+        alert("Не удалось добавить чат.");
+      }
+      // Закрываем попап в любом случае, чтобы не зависал после алерта
+      setShowChatModal(false);
     }
   }
 
@@ -259,9 +318,10 @@ export default function ChatTypesControlPage() {
                 chatsMap[type.id].map((chat) => (
                   <li
                     key={chat.id}
-                    className="flex justify-between items-center bg-white rounded-xl p-3 shadow"
+                    className={`flex justify-between items-center rounded-xl p-3 shadow ${highlightChatId === chat.id ? 'bg-blue-100 ring-2 ring-blue-300' : 'bg-white'}`}
                     draggable
                     onDragStart={(e) => onChatDragStart(e, chat.id, type.id)}
+                    data-chat-id={chat.id}
                   >
                     <span className="truncate mr-3">{chat.name}</span>
                     <div className="flex items-center gap-2">
