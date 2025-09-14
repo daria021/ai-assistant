@@ -48,11 +48,7 @@ async def create_post(
     else:
         logger.error("ATTENTION!!! IMAGE IS NONE")
 
-    logger.info(entities)
     dsrslzd_entities = json.loads(entities)
-    logger.debug("BACK_IN_POST text=%r ENT=%s\", text[:200], dsrslzd_entities[:8]")
-
-    logger.info(dsrslzd_entities)
     entities = [MessageEntityDTO.model_validate(e) for e in dsrslzd_entities]
 
     post = CreatePostDTO(
@@ -63,7 +59,6 @@ async def create_post(
         html=html,
         entities=entities,
     )
-    logger.debug('BACK_IN_POST', repr(post.text)[:200], post.entities[:8])
     return await post_service.create_post(post=post, author_id=author_id)
 
 
@@ -100,12 +95,7 @@ async def update_post(
         entities = [MessageEntityDTO.model_validate(e) for e in json.loads(data.entities)]
         data_dump["entities"] = entities
 
-    logger.info(data.entities)
-    # logger.info(data_dump["entities"])
-
     post_dto = UpdatePostDTO.model_validate(data_dump)
-
-    logger.info(post_dto.entities)
 
     return await post_service.update_post(post_id=post_id, post=post_dto, author_id=author_id)
 

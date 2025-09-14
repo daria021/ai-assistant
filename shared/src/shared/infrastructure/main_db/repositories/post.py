@@ -24,7 +24,6 @@ class PostRepository(
             async with session.begin():
                 entity = await session.get(self.entity, obj_id, options=self.options)
                 if entity.deleted_at is None:
-                    logger.info(obj.entities)
                     for key, value in obj.model_dump(exclude_unset=True, exclude={'entiites'}).items():
                         setattr(entity, key, value)
 

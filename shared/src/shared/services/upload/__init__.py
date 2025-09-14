@@ -24,7 +24,6 @@ class UploadService(UploadServiceInterface):
         return filename.split('.')[-1]
 
     def get_file_url(self, name: str) -> str:
-        logger.info(f"getting file url for {name} ({self.files_endpoint} {self.public_backend_base_url})")
         return f'{self.public_backend_base_url}/{self.files_endpoint}/{name}'
 
     async def upload(self, file: bytes, extension: str) -> str:

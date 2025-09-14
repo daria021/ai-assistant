@@ -16,10 +16,7 @@ class EnvironmentSettings(BaseSettings):
         if not host.endswith('/'):
             host += '/'
 
-        logger.info('making api host')
-        logger.info(f'host: {host}')
         result = urljoin(host, 'api')
-        logger.info(f'result: {result}')
         return result
 
     @property

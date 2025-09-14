@@ -63,3 +63,60 @@ apiClient.interceptors.request.use(
     },
     (error) => Promise.reject(error)
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Простые ретраи для GET с экспоненциальной паузой
+// ─────────────────────────────────────────────────────────────────────────────
+
+function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+type RetryOptions = {
+    retries?: number;
+    baseDelayMs?: number;
+    factor?: number;
+    jitterMs?: number;
+    retryOnStatus?: number[];
+};
+
+async function getWithRetry<T>(
+    url: string,
+    config?: Parameters<AxiosInstance["get"]>[1],
+    opts: RetryOptions = {}
+): Promise<T> {
+    const {
+        retries = 3,
+        baseDelayMs = 300,
+        factor = 2,
+        jitterMs = 120,
+        retryOnStatus = [408, 429, 500, 502, 503, 504],
+    } = opts;
+
+    let attempt = 0;
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+        try {
+            const res = await apiClient.get<T>(url, config);
+            return res.data;
+        } catch (e) {
+            attempt += 1;
+            // если исчерпали попытки — пробрасываем ошибку
+            if (attempt > retries) throw e;
+
+            // определяем, стоит ли ретраить
+            if (axios.isAxiosError(e)) {
+                const status = e.response?.status;
+                const networkLike = !e.response; // таймаут/сеть/прерывание
+                const shouldRetry = networkLike || (status ? retryOnStatus.includes(status) : false);
+                if (!shouldRetry) throw e;
+            }
+
+            // backoff с небольшим джиттером
+            const delay = baseDelayMs * Math.pow(factor, attempt - 1) + Math.random() * jitterMs;
+            await sleep(delay);
+        }
+    }
+}
+
+export { getWithRetry };

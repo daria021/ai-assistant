@@ -12,7 +12,6 @@ import {
     getChats,
     getChatTypes,
     getManagers,
-    getPost,
     getPostsToPublish,
     updatePost,
 } from "../services/api";
@@ -118,6 +117,7 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
     const [openDays, setOpenDays] = useState<Record<string, boolean>>({});
     const [scheduledAt, setScheduledAt] = useState<Date | null>(null);
     const [timeOnly, setTimeOnly] = useState<Date | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     /* ───────── Rich-editor ───────── */
     const [editorHtml, setEditorHtml] = useState("");
@@ -237,6 +237,7 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
     /* ───────── Schedule fetch ───────── */
     const fetchSchedule = useCallback(async () => {
         try {
+            setIsLoading(true);
             const raw = await getPostsToPublish();
 
             // 1) общий фильтр по менеджеру/чат-типу/чату
@@ -248,16 +249,13 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                     return true;
                 });
 
-            // 2) подгружаем все заголовки
+            // 2) собираем заголовки из уже вложенного p.post (избегаем N+1)
             const titles = new Map<string, string>();
-            await Promise.all(
-                pre.map(async p => {
-                    if (!titles.has(p.post_id)) {
-                        const post = await getPost(p.post_id);
-                        titles.set(p.post_id, post.name);
-                    }
-                })
-            );
+            for (const p of pre) {
+                if (!titles.has(p.post_id) && p.post?.name) {
+                    titles.set(p.post_id, p.post.name);
+                }
+            }
 
             const map: Record<string, EventItem[]> = {};
 
@@ -303,11 +301,14 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
         } catch (err) {
             console.error(err);
             alert("Не удалось загрузить запланированные посты");
+        } finally {
+            setIsLoading(false);
         }
     }, [managerFilter, chatTypeFilter, chatFilter]);
 
     const fetchSent = useCallback(async () => {
         try {
+            setIsLoading(true);
             const raw = await getPostsToPublish();
 
             // 1) общий фильтр по менеджеру/чат-типу/чату
@@ -318,16 +319,13 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                 return true;
             });
 
-            // 2) загружаем все заголовки
+            // 2) собираем заголовки из вложенного p.post (без дополнительных запросов)
             const titles = new Map<string, string>();
-            await Promise.all(
-                pre.map(async p => {
-                    if (!titles.has(p.post_id)) {
-                        const post = await getPost(p.post_id);
-                        titles.set(p.post_id, post.name);
-                    }
-                })
-            );
+            for (const p of pre) {
+                if (!titles.has(p.post_id) && p.post?.name) {
+                    titles.set(p.post_id, p.post.name);
+                }
+            }
 
             const map: Record<string, EventItem[]> = {};
             const now = new Date();
@@ -392,6 +390,8 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
         } catch (err) {
             console.error(err);
             alert("Не удалось загрузить отправленные посты");
+        } finally {
+            setIsLoading(false);
         }
     }, [managerFilter, chatTypeFilter, chatFilter]);
 
@@ -947,7 +947,13 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                     </div>
 
 
-                    {Object.keys(schedule)
+                    {isLoading && (
+                        <div className="flex justify-center py-10">
+                            <div className="h-10 w-10 border-4 border-brand border-t-transparent rounded-full animate-spin" aria-label="Загрузка расписания"/>
+                        </div>
+                    )}
+
+                    {!isLoading && Object.keys(schedule)
                         .sort()
                         .map((iso) => {
                             const label = new Date(iso).toLocaleDateString("ru-RU", {

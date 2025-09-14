@@ -36,8 +36,6 @@ async def publish(post_id: UUID) -> None:
     try:
         child_requests: list[UUID] = []
         for chat in post.chats:
-            logger.info(f"создание CreateSendPostRequestDTO")
-            logger.info(f"{post.responsible_manager_id}")
             post_request_dto = CreateSendPostRequestDTO(
                 post_id=post.post_id,
                 chat_id=chat.id,
@@ -51,7 +49,6 @@ async def publish(post_id: UUID) -> None:
             )
 
             new = await post_requests_repository.create(post_request_dto)
-            logger.info(f"Post request created: {new}")
             child_requests.append(new)
 
     except Exception as e:

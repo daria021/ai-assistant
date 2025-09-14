@@ -98,7 +98,6 @@ class TelegramService(
 
         request = await client.send_code_request(phone)
         self.phone_code_hashes[phone] = (request.phone_code_hash, datetime.now())
-        logger.info(self.phone_code_hashes)
 
     async def get_session_string(
             self,
@@ -107,7 +106,6 @@ class TelegramService(
             proxy: Optional[str] = None,
             password: Optional[str] = None,
     ) -> str:
-        logger.info(self.phone_code_hashes)
         client = TelegramClient(
             session=phone,
             api_id=self.api_id,

@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Optional
+    # todo: stories
 from uuid import UUID
 
 from shared.abstractions.repositories import SendPostRequestRepositoryInterface
@@ -33,10 +33,7 @@ class SendingRequestsService(SendingRequestsServiceInterface):
 
     async def register_sent_message(self, message: WorkerMessage) -> None:
         messages = await self.messages_repository.get_messages_from_same_request(message.id)
-        logger.info(f'messages: {messages}')
-        if done := all(map(lambda x: x.status == WorkerMessageStatus.SENT, messages)):
-            logger.info(f'done: {done}')
-            logger.info(f'type: {message.type}')
+        if all(map(lambda x: x.status == WorkerMessageStatus.SENT, messages)):
             if message.type == WorkerMessageType.POST:
                 update_request_dto = UpdateSendPostRequestDTO(
                     status=SendPostRequestStatus.SENT,
@@ -51,5 +48,4 @@ class SendingRequestsService(SendingRequestsServiceInterface):
                 request = await self.get_request(message.request_id, PublicationType.POST)
 
                 await self.publication_service.register_finished_request(request)
-
-            # todo: stories
+from datetime import datetime

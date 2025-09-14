@@ -1,35 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {getPosts, updatePost} from '../services/api';
+import type { Post } from '../services/api';
 import {on} from "@telegram-apps/sdk";
 
-export interface MessageEntityDTO {
-    type:
-    | "custom_emoji"
-    | "bold"
-    | "italic"
-    | "underline"
-    | "strikethrough"
-    | "text_link";
-    offset: number;
-    length: number;
-    custom_emoji_id?: string;
-    url?: string;
-}
-
-export interface Post {
-  id: string;
-  name: string;
-  text: string;
-  responsible_manager_id: string;
-  image_path: string | null;
-  html?: string | null;
-  entities?: MessageEntityDTO[];
-  is_template: boolean;
-}
+// Используем типы из services/api
 
 export default function PostTemplatesPage() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate();
 
   const handleDeleteTemplate = async (post: Post) => {
@@ -50,11 +29,14 @@ export default function PostTemplatesPage() {
   useEffect(() => {
     (async () => {
       try {
+        setLoading(true);
         const data = await getPosts();
         setPosts(data.filter(p => p.is_template));
       } catch (err) {
         console.error('Ошибка при загрузке шаблонов:', err);
-        alert('Не удалось загрузить список шаблонов.');
+        // уведомление уже показано ретраями внутри getPosts; оставим мягкое сообщение
+      } finally {
+        setLoading(false);
       }
     })();
   }, []);
@@ -91,7 +73,12 @@ export default function PostTemplatesPage() {
   ))}
 </div>
       <h1 className="text-2xl font-semibold text-brand mb-6">Шаблоны постов</h1>
-      {posts.length === 0 ? (
+      {loading && (
+        <div className="flex justify-center py-10">
+          <div className="h-10 w-10 border-4 border-brand border-t-transparent rounded-full animate-spin" aria-label="Загрузка шаблонов"/>
+        </div>
+      )}
+      {!loading && (posts.length === 0 ? (
         <div className="text-gray-500 italic">Шаблоны не найдены.</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -130,7 +117,7 @@ export default function PostTemplatesPage() {
             </div>
           ))}
         </div>
-      )}
+      ))}
     </div>
   );
 }

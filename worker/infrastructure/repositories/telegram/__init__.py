@@ -73,6 +73,12 @@ class TelethonTelegramMessagesRepository(
             retry: int = 0,
     ) -> int:
         if not self.api_id or not self.api_hash or not self.worker.session_string:
+            logger.info(
+                f"One of required parameters "
+                f"(api_id={self.api_id}, api_hash={self.api_hash}, "
+                f"worker={self.worker.session_string[:5]}...{self.worker.session_string[-5:]}) "
+                f"is missing, aborting sending message"
+            )
             raise ValueError("api_id, api_hash and session_string are required")
 
         client = Client(

@@ -65,8 +65,6 @@ class AuthService(AuthServiceInterface):
         # Step 3: Create final HMAC-SHA256 signature using the previous step result as the key
         computed_hash = hmac.new(secret_key, sorted_data_string.encode(), hashlib.sha256).hexdigest()
 
-        logger.info(f"Computed Hash: {computed_hash}, Received Hash: {received_hash}, InitData: {init_data}")
-
         # Step 4: Validate hash
         if computed_hash != received_hash:
             raise InvalidTokenException("Invalid init data hash")

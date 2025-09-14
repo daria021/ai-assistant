@@ -49,7 +49,6 @@ class UserService(UserServiceInterface):
         if isinstance(dto.telegram_username, str):
             dto.telegram_username = dto.telegram_username.lstrip('@') or None
         user = await self.user_repository.get_by_telegram_id(dto.telegram_id)
-        logger.info(f"User {dto.telegram_id} is {user}")
         if not user:
             user_id = await self.create_user(dto)
             user = await self.user_repository.get(user_id)

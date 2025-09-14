@@ -1,4 +1,4 @@
-from datetime import date, time
+from datetime import date, time, datetime
 from typing import Optional
 from uuid import UUID
 
@@ -24,5 +24,7 @@ class PostToPublish(Model):
     responsible_manager: User
     chats: list[Chat] = []
     post: Post
+
+    deleted_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)

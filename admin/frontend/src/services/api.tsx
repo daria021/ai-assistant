@@ -1,4 +1,4 @@
-import {apiClient} from "./apiClient";
+import {apiClient, getWithRetry} from "./apiClient";
 import type {MeResponse} from "../types/MeResponse";
 import type {UserRole} from "../types/UserRole";
 
@@ -308,19 +308,20 @@ export async function deleteUser(userId: string) {
 }
 
 export async function getPostsToPublish(): Promise<PostToPublish[]> {
-    return (await apiClient.get("/post-to-publish/all")).data;
+    // с ретраями для проблемной сети/телеги/интернета
+    return await getWithRetry<PostToPublish[]>("/post-to-publish/all");
 }
 
 export async function getPost(postId: string): Promise<Post> {
-    return (await apiClient.get("post", {params: {post_id: postId}})).data;
+    return await getWithRetry<Post>("post", {params: {post_id: postId}});
 }
 
 export async function getPosts(): Promise<Post[]> {
-    return (await apiClient.get("post/all")).data;
+    return await getWithRetry<Post[]>("post/all");
 }
 
 export async function getChats(): Promise<ChatItem[]> {
-    return (await apiClient.get("chat")).data;
+    return await getWithRetry<ChatItem[]>("chat");
 }
 
 export type CreateChatByLinkDTO = {

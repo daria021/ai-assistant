@@ -9,12 +9,15 @@ from .post_to_publish import MessageEntityDTO
 RHINO = '🦏'
 
 
-def _validate_entities(entities: List[MessageEntityDTO], info: FieldValidationInfo) -> List[MessageEntityDTO]:
+def _validate_entities(entities: List[MessageEntityDTO], info: FieldValidationInfo) -> Optional[List[MessageEntityDTO]]:
     txt = info.data.get("text", "")
     if not txt:
         return entities
 
     custom_emojis, newlines = 0, txt.count('\n') * 2
+    if not entities:
+        return None
+
     for e in entities:
         if e.type == 'custom_emoji':
             custom_emojis += 1
