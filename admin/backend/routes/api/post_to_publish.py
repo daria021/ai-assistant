@@ -23,36 +23,39 @@ router = APIRouter(
 @router.post('')
 async def create_post_to_publish(request: Request, post_to_publish: CreatePostToPublishDTO) -> UUID:
     """
-    Создаёт запись для публикации, предварительно клонируя текущий пост.
-    Это фиксирует контент на момент нажатия кнопки, чтобы последующие правки
-    исходного шаблона не затрагивали уже запланированные отправки.
+    Создаёт запись для публикации. Логика клонирования:
+    - Если передан ID шаблона (is_template=True) — создаём клон (freeze) и используем его.
+    - Если передан ID не шаблона — считаем, что это уже клон, используем его без доп. копирования.
+    Это исключает дублирование постов и сохраняет фото из шаблона.
     """
     user_id = get_user_id_from_request(request)
 
     logger.info(f"Creating post to publish, user_id={user_id}, dto={post_to_publish}")
 
-    # 1) Получаем исходный пост без преобразования image_path в URL
     post_repository = get_post_repository()
-    original_post = await post_repository.get(post_to_publish.post_id)
-    logger.info(f"Original post: {original_post}")
+    source_post = await post_repository.get(post_to_publish.post_id)
+    logger.info(f"Source post: {source_post}")
 
-    # 2) Клонируем пост (image_path оставляем как есть — путь в сторе)
-    post_service = get_post_service()
-    clone_dto = CreatePostDTO(
-        name=original_post.name,
-        text=original_post.text,
-        is_template=False,              # клон — не шаблон
-        image_path=original_post.image_path,
-        html=original_post.html,
-        entities=original_post.entities,
-    )
-    logger.info(f"Cloning post DTO: {clone_dto}")
-    cloned_post_id = await post_service.create_post(post=clone_dto, author_id=user_id)
-    logger.info(f"Cloned post ID: {cloned_post_id}")
+    post_id_for_publication = source_post.id
 
-    # 3) Подменяем post_id на клон и сохраняем запись публикации
+    if source_post.is_template:
+        # Клонируем только если исходник — шаблон
+        post_service = get_post_service()
+        clone_dto = CreatePostDTO(
+            name=source_post.name,
+            text=source_post.text,
+            is_template=False,
+            image_path=source_post.image_path,
+            html=source_post.html,
+            entities=source_post.entities,
+        )
+        logger.info(f"Cloning from template, DTO: {clone_dto}")
+        post_id_for_publication = await post_service.create_post(post=clone_dto, author_id=user_id)
+        logger.info(f"Cloned post ID: {post_id_for_publication}")
+
+    # Сохраняем запись публикации
     post_to_publish.creator_id = user_id
-    post_to_publish.post_id = cloned_post_id
+    post_to_publish.post_id = post_id_for_publication
 
     logger.info(f"Creating PostToPublish with DTO: {post_to_publish}")
 

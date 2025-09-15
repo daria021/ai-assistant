@@ -212,6 +212,7 @@ export async function createPost(
     html: string,
     entities: MessageEntityDTO[],
     imageFile?: File,
+    imagePath?: string,
 ): Promise<string> {
     const form = new FormData();
     form.append("name", name);
@@ -220,9 +221,10 @@ export async function createPost(
     form.append("html", html);
     form.append("entities", JSON.stringify(entities));
     if (imageFile) form.append("image", imageFile);
+    if (!imageFile && imagePath) form.append("image_path", imagePath);
 
     console.log('API_OUT', JSON.stringify(text), entities);
-    console.group('%cupdatePost FormData', 'color: purple; font-weight: bold;');
+    console.group('%ccreatePost FormData', 'color: purple; font-weight: bold;');
     for (const [key, value] of Array.from(form.entries())) {
         console.log(key, value);
     }
@@ -375,5 +377,4 @@ export async function getPostToPublish(
         })
     ).data;
 }
-
 

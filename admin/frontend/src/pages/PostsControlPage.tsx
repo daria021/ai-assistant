@@ -471,13 +471,15 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                 }
 
                 // Создаём копию под отправку (заморозка контента)
+                // Если новый файл не выбран, передадим image_path шаблона для сохранения фото
                 postId = await createPost(
                     title,
                     editorText,
                     false, // клон для отправки не является шаблоном
                     editorHtml,
                     editorEntities,
-                    photoFile ?? undefined
+                    photoFile ?? undefined,
+                    (!photoFile && template.image_path) ? template.image_path : undefined,
                 );
             } else {
                 // создаём обычный пост (как было)
@@ -487,7 +489,8 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                     isTemplate,
                     editorHtml,
                     editorEntities,
-                    photoFile ?? undefined
+                    photoFile ?? undefined,
+                    undefined,
                 );
             }
             let scheduled_date: string | null = null;

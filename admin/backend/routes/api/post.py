@@ -31,22 +31,29 @@ async def create_post(
         is_template: bool = Form(...),
         entities: str = Form(...),
         image: Optional[UploadFile] = File(None),
+        # allow cloning existing image by passing its stored filename
+        image_path: Optional[str] = Form(None),
         upload_service: UploadServiceInterface = Depends(get_upload_service),
 ) -> UUID:
     author_id = get_user_id_from_request(request)
     post_service = get_post_service()
-    image_path = None
+    image_filename: Optional[str] = None
     if image is not None:
         try:
             extension = upload_service.get_extension(image.filename)
-            image_path = await upload_service.upload(image.file.read(), extension)
+            image_filename = await upload_service.upload(image.file.read(), extension)
         except Exception as e:
             raise HTTPException(
                 status_code=500,
                 detail="Не удалось сохранить файл"
             ) from e
-    else:
-        logger.error("ATTENTION!!! IMAGE IS NONE")
+    elif image_path:
+        # clone existing stored filename (no upload). Accept raw filename or full URL.
+        try:
+            # avoid importing os.path just for basename; simple split works
+            image_filename = image_path.split('/')[-1]
+        except Exception:
+            image_filename = image_path
 
     dsrslzd_entities = json.loads(entities)
     entities = [MessageEntityDTO.model_validate(e) for e in dsrslzd_entities]
@@ -55,7 +62,7 @@ async def create_post(
         name=name,
         text=text,
         is_template=is_template,
-        image_path=image_path,
+        image_path=image_filename,
         html=html,
         entities=entities,
     )
