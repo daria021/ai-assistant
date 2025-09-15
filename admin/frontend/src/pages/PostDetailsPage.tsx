@@ -383,9 +383,6 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
     />
     <span>Сделать шаблоном</span>
   </label>
-  <p className="text-xs text-gray-500 mt-1">
-    Если включено — пост сохранится как шаблон (флаг is_template в /post/:id).
-  </p>
 </div>
 
 

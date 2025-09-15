@@ -12,12 +12,30 @@ class EnvironmentSettings(BaseSettings):
 
     @property
     def api_host(self) -> str:
-        host = self.host
+        """
+        Returns a fully-qualified base URL for backend API, ensuring:
+        - Scheme is present (defaults to https if missing)
+        - Single `/api` prefix appended (does not duplicate if already present)
+        - No trailing slash guaranteed (consistent with callers building paths)
+        """
+        host = (self.host or '').strip()
+
+        # Ensure scheme
+        if not (host.startswith('http://') or host.startswith('https://')):
+            host = f'https://{host}'
+
+        # Ensure trailing slash for urljoin behavior
         if not host.endswith('/'):
             host += '/'
 
-        result = urljoin(host, 'api')
-        return result
+        # Join with `api` (urljoin with a relative path avoids duplicating when base already ends with `api/`)
+        api_base = urljoin(host, 'api')
+
+        # Normalize: drop trailing slash for consistency
+        if api_base.endswith('/'):
+            api_base = api_base[:-1]
+
+        return api_base
 
     @property
     def is_debug(self) -> bool:
