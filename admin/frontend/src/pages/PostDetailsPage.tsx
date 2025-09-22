@@ -17,6 +17,7 @@ import {
 import {useAuth} from "../contexts/auth";
 import {on} from "@telegram-apps/sdk";
 import {EmojiPicker} from "../components/EmojiPicker";
+import {normalizeLineBreaksToDivBr} from "../utils/normalizeHtml";
 
 interface PostDetailsPageProps {
     emojis: Emoji[]
@@ -51,6 +52,25 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
     const [editorEntities, setEditorEntities] = useState<MessageEntityDTO[]>([]);
     const [pickerOpen, setPickerOpen] = useState(false)
     const richEditorRef = useRef<RichEditorHandle>(null)
+
+    // ↑ твои импорты…
+const DEBUG = true;
+
+const dbg = (...args: unknown[]) => {
+  if (DEBUG) console.log('[PostDetails]', ...args);
+};
+
+const warn = (...args: unknown[]) => {
+  if (DEBUG) console.warn('[PostDetails][WARN]', ...args);
+};
+
+const errl = (...args: unknown[]) => {
+  if (DEBUG) console.error('[PostDetails][ERROR]', ...args);
+};
+
+const preview = (s?: string, n = 220) =>
+  (s ?? '').replace(/\n/g, '⏎').slice(0, n);
+
     // const [activeTab, setActiveTab] = useState<"schedule" | "create" | "templates">(
     //     "schedule"
     // );
@@ -102,44 +122,80 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
             prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
         );
 
-    // Загрузка одной записи PostToPublish (вместе с entry.post и entry.chats)
-    useEffect(() => {
-        if (!postToPublishId) return;
-        (async () => {
-            try {
-                const e = await getPostToPublish(postToPublishId);
-                setEntry(e);
+// Загрузка одной записи PostToPublish (вместе с entry.post и entry.chats)
+useEffect(() => {
+  if (!postToPublishId) return;
+  (async () => {
+    dbg('route param postToPublishId =', postToPublishId);
+    try {
+      dbg('getPostToPublish: start', { postToPublishId });
+      const e = await getPostToPublish(postToPublishId);
+      dbg('getPostToPublish: OK', {
+        id: e?.id,
+        hasPost: !!e?.post,
+        postId: e?.post?.id,
+        chats: e?.chats?.length,
+        scheduled_type: e?.scheduled_type,
+        scheduled_date: e?.scheduled_date,
+        scheduled_time: e?.scheduled_time,
+      });
 
-                // 1) Заполняем поля поста из вложенного entry.post
-                setTitle(e.post.name);
-                setEditorHtml(e.post.html || e.post.text); // если бекенд хранит HTML
-                setEditorText(e.post.text);
-                setIsTemplate(e.post.is_template)
-                setEditorEntities(e.post.entities || []);
+      setEntry(e);
 
-                if (e.post.image_path) setPhotoPreview(e.post.image_path);
+      // 1) Поля поста
+      setTitle(e.post.name);
 
-                // 2) Тип рассылки и дата/время
-                setScheduleType(e.scheduled_type === "single" ? "once" : "daily");
-                if (e.scheduled_type === "single" && e.scheduled_date) {
-                    setScheduledAt(
-                        new Date(`${e.scheduled_date}T${e.scheduled_time}`)
-                    );
-                } else {
-                    const now = new Date();
-                    const [h, m] = e.scheduled_time.split(":").map(Number);
-                    now.setHours(h, m, 0, 0);
-                    setTimeOnly(now);
-                }
+const loadedHtml = e.post.html || e.post.text || "";
+dbg('loadedHtml (from API)', { length: loadedHtml.length, preview: preview(loadedHtml) });
 
-                // 3) Отмечаем чаты из entry.chats (список объектов Chat)
-                setSelectedChats(e.chats.map((c) => c.id));
-            } catch {
-                alert("Не удалось загрузить данные для редактирования");
-                navigate(-1);
-            }
-        })();
-    }, [postToPublishId, navigate]);
+setEditorHtml(loadedHtml); // ← без normalize тут
+
+
+      if (loadedHtml && !loadedHtml) {
+        warn('Normalizer produced EMPTY html on non-empty input at LOAD phase!');
+      }
+
+      setEditorHtml(loadedHtml);
+      setEditorText(e.post.text);
+      setIsTemplate(e.post.is_template);
+      setEditorEntities(e.post.entities || []);
+
+      if (e.post.image_path) setPhotoPreview(e.post.image_path);
+
+      // 2) Тип рассылки и дата/время
+      setScheduleType(e.scheduled_type === "single" ? "once" : "daily");
+      if (e.scheduled_type === "single" && e.scheduled_date) {
+        const dt = new Date(`${e.scheduled_date}T${e.scheduled_time}`);
+        dbg('parsed single schedule', { dt: dt.toISOString() });
+        setScheduledAt(dt);
+      } else {
+        const now = new Date();
+        const [h, m] = e.scheduled_time.split(":").map(Number);
+        now.setHours(h, m, 0, 0);
+        dbg('parsed daily schedule (time only)', { h, m });
+        setTimeOnly(now);
+      }
+
+      // 3) Чаты
+      const chatIds = e.chats.map(c => c.id);
+      dbg('chats selected', { count: chatIds.length, ids: chatIds });
+      setSelectedChats(chatIds);
+} catch (error: unknown) {
+  if (error instanceof Error) {
+    errl('getPostToPublish FAILED', {
+      postToPublishId,
+      message: error.message,
+      stack: error.stack,
+    });
+  } else {
+    errl('getPostToPublish FAILED (non-Error)', error);
+  }
+  alert("Не удалось загрузить данные для редактирования");
+  navigate(-1);
+}
+  })();
+}, [postToPublishId, navigate]);
+
 
     useEffect(() => {
         return on("back_button_pressed", () => navigate(-1));
@@ -158,72 +214,103 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
         return `${h}:${m}:00`;          // "HH:mm:ss"
     }
 
-    const handleSave = async () => {
-        const e = entry;
-        const uid = userId;
-        if (!e || !uid) {
-            console.log('handleSave: early return', {hasEntry: !!e, hasUser: !!uid});
-            return;
-        }
+const handleSave = async () => {
+  const e = entry;
+  const uid = userId;
+  if (!e || !uid) {
+    errl('handleSave: early return', { hasEntry: !!e, hasUser: !!uid });
+    return;
+  }
 
-        const entitiesChanged =
-            JSON.stringify(editorEntities ?? []) !== JSON.stringify(e.post.entities ?? []);
-        const htmlBaseline = e.post.html ?? e.post.text;
-        const isTemplateChanged = is_template !== e.post.is_template;
+  dbg('handleSave: start', { postToPublishId: e.id, postId: e.post.id });
 
-        try {
-            // 1) обновляем сам пост (всегда PATCH /post/:id)
+  // ✳️ нормализуем HTML
+  const normalizedHtml = normalizeLineBreaksToDivBr(editorHtml || "");
+  const htmlBaseline = e.post.html ?? e.post.text ?? "";
+  const entitiesChanged =
+    JSON.stringify(editorEntities ?? []) !== JSON.stringify(e.post.entities ?? []);
+  const isTemplateChanged = is_template !== e.post.is_template;
 
-            await updatePost(
-                e.post.id,
-                title !== e.post.name ? title : undefined,
-                isTemplateChanged ? is_template : undefined,
-                editorText !== e.post.text ? editorText : undefined,
-                editorHtml !== htmlBaseline ? editorHtml : undefined,
-                entitiesChanged ? editorEntities : undefined,
-                photoFile ?? undefined
-            );
+  dbg('normalize at SAVE', {
+    inputLen: (editorHtml || '').length,
+    outputLen: normalizedHtml.length,
+    baselineLen: htmlBaseline.length,
+    changedFromInput: normalizedHtml !== (editorHtml || ''),
+    changedFromBaseline: normalizedHtml !== htmlBaseline,
+    inputPreview: preview(editorHtml),
+    outputPreview: preview(normalizedHtml),
+  });
 
-            // 2) собираем payload расписания
-            let scheduled_date: string | null = null;
-            let scheduled_time: string;
+  try {
+    // 1) контент поста — через updatePost
+    const willSendHtml = normalizedHtml !== htmlBaseline ? normalizedHtml : undefined;
+    dbg('updatePost payload flags', {
+      titleChanged: title !== e.post.name,
+      isTemplateChanged,
+      textChanged: editorText !== e.post.text,
+      htmlChanged: !!willSendHtml,
+      entitiesChanged,
+      photoFile: !!photoFile,
+    });
 
-            if (scheduleType === "once" && scheduledAt) {
-                scheduled_date = formatLocalDate(scheduledAt);
-                scheduled_time = formatLocalTime(scheduledAt);
-            } else if (scheduleType === "daily" && timeOnly) {
-                scheduled_time = formatLocalTime(timeOnly);
-            } else {
-                alert("Выберите дату и время");
-                return;
-            }
+    const upRes = await updatePost(
+      e.post.id,
+      title !== e.post.name ? title : undefined,
+      isTemplateChanged ? is_template : undefined,
+      editorText !== e.post.text ? editorText : undefined,
+      willSendHtml,
+      entitiesChanged ? editorEntities : undefined,
+      photoFile ?? undefined
+    );
+    dbg('updatePost OK', upRes);
 
-            const payload = {
-                post_id: e.post.id,
-                manager_id: uid,
-                scheduled_type: scheduleType === "once" ? "single" : "everyday",
-                scheduled_date,
-                scheduled_time,
-                chat_ids: selectedChats,
-                status: e.status,
-            } as const;
+    // 2) расписание
+    let scheduled_date: string | null = null;
+    let scheduled_time: string;
 
-            // 3) create vs update для PostToPublish
-            if (e.id) {
-                await updatePostToPublish(e.id, payload);   // PATCH /post-to-publish/:id
-            } else {
-                await createPostToPublish(payload);         // POST  /post-to-publish
-            }
+    if (scheduleType === "once" && scheduledAt) {
+      scheduled_date = formatLocalDate(scheduledAt);
+      scheduled_time = formatLocalTime(scheduledAt);
+    } else if (scheduleType === "daily" && timeOnly) {
+      scheduled_time = formatLocalTime(timeOnly);
+    } else {
+      warn('schedule missing', { scheduleType, scheduledAt, timeOnly });
+      alert("Выберите дату и время");
+      return;
+    }
 
-            alert("Изменения сохранены");
-            navigate(-1);
-        } catch (err) {
-            console.error('handleSave error', err);
-            alert('Не удалось сохранить изменения');
-        }
-    };
+    const payload = {
+      post_id: e.post.id,
+      manager_id: uid,
+      scheduled_type: scheduleType === "once" ? "single" : "everyday",
+      scheduled_date,
+      scheduled_time,
+      chat_ids: selectedChats,
+      status: e.status,
+    } as const;
 
+    dbg('postToPublish payload', payload);
 
+    if (e.id) {
+      const updRes = await updatePostToPublish(e.id, payload);
+      dbg('updatePostToPublish OK', updRes);
+    } else {
+      const crtRes = await createPostToPublish(payload);
+      dbg('createPostToPublish OK', crtRes);
+    }
+
+    alert("Изменения сохранены");
+    navigate(-1);
+} catch (error: unknown) {
+  if (error instanceof Error) {
+    errl('handleSave FAILED', { message: error.message, stack: error.stack });
+  } else {
+    errl('handleSave FAILED (non-Error)', error);
+  }
+  alert('Не удалось сохранить изменения');
+}
+
+};
 
 
 
@@ -266,15 +353,22 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
                     😊
                 </button>
                 <RichEditor
-                    ref={richEditorRef}
-                    emojis={emojis}
-                    initialContent={editorHtml}
-                    onChange={({html, text, entities}) => {
-                        setEditorHtml(html);
-                        setEditorText(text);
-                        setEditorEntities(entities);
-                    }}
-                />
+  ref={richEditorRef}
+  emojis={emojis}
+  initialContent={editorHtml}
+  onChange={({ html, text, entities }) => {
+    dbg('editor.onChange', {
+      htmlLen: (html || '').length,
+      htmlPreview: preview(html),
+      textLen: (text || '').length,
+      entities: (entities || []).length,
+    });
+    setEditorHtml(html);
+    setEditorText(text);
+    setEditorEntities(entities);
+  }}
+/>
+
                 {pickerOpen && (
 
                     <EmojiPicker
@@ -384,8 +478,6 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
     <span>Сделать шаблоном</span>
   </label>
 </div>
-
-
             <div className="flex justify-end">
                 <button
                     onClick={handleSave}
