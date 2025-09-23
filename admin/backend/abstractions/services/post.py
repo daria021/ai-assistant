@@ -13,6 +13,10 @@ class PostServiceInterface(ABC):
         ...
 
     @abstractmethod
+    async def get_templates(self) -> List[post]:
+        ...
+
+    @abstractmethod
     async def create_post(self, post: CreatePostDTO, author_id: UUID) -> UUID:
         ...
 

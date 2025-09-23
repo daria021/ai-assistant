@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {getPosts, updatePost} from '../services/api';
+import {getTemplates, updatePost} from '../services/api';
 import type { Post } from '../services/api';
 import {on} from "@telegram-apps/sdk";
 
@@ -30,11 +30,11 @@ export default function PostTemplatesPage() {
     (async () => {
       try {
         setLoading(true);
-        const data = await getPosts();
-        setPosts(data.filter(p => p.is_template));
+        const data = await getTemplates();
+        setPosts(data);
       } catch (err) {
         console.error('Ошибка при загрузке шаблонов:', err);
-        // уведомление уже показано ретраями внутри getPosts; оставим мягкое сообщение
+        // уведомление уже показано ретраями внутри getTemplates; оставим мягкое сообщение
       } finally {
         setLoading(false);
       }

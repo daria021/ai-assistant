@@ -15,5 +15,9 @@ class PostRepositoryInterface(
         ...
 
     @abstractmethod
+    async def get_templates(self, limit: int = 100, offset: int = 0, joined: bool = True) -> list[Post]:
+        ...
+
+    @abstractmethod
     async def update(self, obj_id: UUID, obj: UpdatePostDTO) -> Post:
         ...

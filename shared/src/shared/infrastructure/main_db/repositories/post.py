@@ -57,6 +57,27 @@ class PostRepository(
 
             return [self.entity_to_model(entity) for entity in objs]
 
+    async def get_templates(self, limit: int = 100, offset: int = 0, joined: bool = True) -> list[Post]:
+        async with self.session_maker() as session:
+            stmt = (
+                select(self.entity)
+                .where(self.entity.deleted_at.is_(None))
+                .where(self.entity.is_template == True)
+                .limit(limit)
+                .offset(offset)
+            )
+            if joined and self.options:
+                stmt = stmt.options(*self.options)
+
+            res = await session.execute(stmt)
+
+            if self.options:
+                res = res.unique()
+
+            objs = res.scalars().all()
+
+            return [self.entity_to_model(entity) for entity in objs]
+
 
     def create_dto_to_entity(self, dto: CreatePostDTO) -> Post:
         return Post(

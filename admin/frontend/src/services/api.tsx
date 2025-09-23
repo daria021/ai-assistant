@@ -328,6 +328,10 @@ export async function getPosts(): Promise<Post[]> {
     return await getWithRetry<Post[]>("post/all");
 }
 
+export async function getTemplates(): Promise<Post[]> {
+    return await getWithRetry<Post[]>("post/templates");
+}
+
 export async function getChats(): Promise<ChatItem[]> {
     return await getWithRetry<ChatItem[]>("chat");
 }

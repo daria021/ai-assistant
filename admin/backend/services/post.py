@@ -22,6 +22,9 @@ class PostService(PostServiceInterface):
     async def get_all_posts(self) -> List[Post]:
         return await self.post_repository.get_all()
 
+    async def get_templates(self) -> List[Post]:
+        return await self.post_repository.get_templates()
+
     async def create_post(self, post: CreatePostDTO, author_id: UUID) -> UUID:
         update_post = CreateUpdatePostDTO(
             post_id = post.id,

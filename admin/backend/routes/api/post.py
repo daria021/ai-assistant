@@ -75,6 +75,12 @@ async def get_post():
     return await post_service.get_all_posts()
 
 
+@router.get('/templates')
+async def get_templates():
+    post_service = get_post_service()
+    return await post_service.get_templates()
+
+
 @router.get('')
 async def get_post(post_id: UUID):
     post_service = get_post_service()
