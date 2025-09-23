@@ -247,6 +247,7 @@ export async function updatePost(
     editorEntities?: MessageEntityDTO[] | null,
     photoFile?: File | null
 ) {
+    console.log('API updatePost called with:', { postId, title, is_template, editorText, editorHtml, hasEntities: !!editorEntities, hasPhoto: !!photoFile });
     const form = new FormData()
     if (title) form.append("name", title);
     if (editorText) form.append("text", editorText);
@@ -254,9 +255,12 @@ export async function updatePost(
     if (editorHtml) form.append("html", editorHtml);
     if (editorEntities) form.append('entities', JSON.stringify(editorEntities));
     if (photoFile) form.append('image', photoFile);
-    return apiClient.patch(`/post/${postId}`, form, {
+    console.log('API updatePost sending request to:', `/post/${postId}`);
+    const result = await apiClient.patch(`/post/${postId}`, form, {
         headers: {"Content-Type": "multipart/form-data"},
     });
+    console.log('API updatePost response:', result);
+    return result;
 }
 
 export async function deleteChat(
@@ -273,7 +277,9 @@ export async function createPostToPublish(dto: CreatePostToPublishDTO): Promise<
 }
 
 export async function updatePostToPublish(id: string, payload: UpdatePostToPublishDTO): Promise<void> {
-    await apiClient.patch(`/post-to-publish/${id}`, payload);
+    console.log('API updatePostToPublish called with:', { id, payload });
+    const result = await apiClient.patch(`/post-to-publish/${id}`, payload);
+    console.log('API updatePostToPublish response:', result);
 }
 
 export async function deletePostToPublish(postToPublishId: string) {

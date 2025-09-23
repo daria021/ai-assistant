@@ -27,7 +27,9 @@ export default function PostDetailsPage({emojis}: PostDetailsPageProps) {
     // ...
     const {postToPublishId} = useParams<{ postToPublishId: string }>();
     const navigate = useNavigate();
-    const {userId} = useAuth();
+    const {userId, loading: authLoading} = useAuth();
+
+    console.log('PostDetailsPage render', { postToPublishId, userId, authLoading });
 
     // форма самого поста
     const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -124,12 +126,17 @@ const preview = (s?: string, n = 220) =>
 
 // Загрузка одной записи PostToPublish (вместе с entry.post и entry.chats)
 useEffect(() => {
-  if (!postToPublishId) return;
+  if (!postToPublishId) {
+    console.warn('PostDetailsPage: postToPublishId is not defined');
+    return;
+  }
   (async () => {
+    console.log('PostDetailsPage: starting data load for postToPublishId:', postToPublishId);
     dbg('route param postToPublishId =', postToPublishId);
     try {
       dbg('getPostToPublish: start', { postToPublishId });
       const e = await getPostToPublish(postToPublishId);
+      console.log('PostDetailsPage: getPostToPublish returned:', e);
       dbg('getPostToPublish: OK', {
         id: e?.id,
         hasPost: !!e?.post,
@@ -141,6 +148,7 @@ useEffect(() => {
       });
 
       setEntry(e);
+      console.log('PostDetailsPage: entry set to:', e);
 
       // 1) Поля поста
       setTitle(e.post.name);
@@ -217,8 +225,10 @@ setEditorHtml(loadedHtml); // ← без normalize тут
 const handleSave = async () => {
   const e = entry;
   const uid = userId;
+  console.log('handleSave called', { hasEntry: !!e, hasUserId: !!uid, entry: e, userId: uid });
   if (!e || !uid) {
     errl('handleSave: early return', { hasEntry: !!e, hasUser: !!uid });
+    alert(`Ошибка: ${!e ? 'Данные поста не загружены' : ''} ${!uid ? 'Пользователь не авторизован' : ''}`);
     return;
   }
 
@@ -312,10 +322,16 @@ const handleSave = async () => {
 
 };
 
+    if (authLoading) {
+        return <div>Проверка авторизации…</div>;
+    }
 
+    if (!userId) {
+        return <div>Пользователь не авторизован</div>;
+    }
 
     if (!entry) {
-        return <div>Загрузка…</div>;
+        return <div>Загрузка данных поста…</div>;
     }
     return (
         <div className="container mx-auto p-4 bg-brandlight min-h-screen relative">

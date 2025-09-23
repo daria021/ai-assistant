@@ -16,6 +16,26 @@ logger = logging.getLogger(__name__)
 async def main():
     init_db(settings.db.url)
 
+    # Test Telegram connection before starting consumer
+    logger.info("Testing Telegram connection...")
+    try:
+        from telethon import TelegramClient
+        from telethon.sessions import StringSession
+
+        client = TelegramClient(
+            session=StringSession(settings.user.session_string),
+            api_id=settings.api_id,
+            api_hash=settings.api_hash,
+        )
+
+        await client.connect()
+        logger.info("Telegram connection test successful")
+        await client.disconnect()
+    except Exception as e:
+        logger.error(f"Telegram connection test failed: {e}")
+        logger.error("Worker cannot connect to Telegram. Check network, proxy settings, or session validity.")
+        exit(1)
+
     consumer = get_message_consumer()
 
     try:
