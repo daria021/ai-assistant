@@ -297,10 +297,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             const { mutateDom = false } = options;
             const clone = el.cloneNode(true) as HTMLDivElement;
 
-            // 0) склеиваем соседние текстовые узлы
-            clone.normalize();
-
-            // 0.1) ← ДОБАВЬ: все не-DIV корневые узлы группируем в DIV-блоки
+            // 0.1) Сначала группируем в DIV-блоки
             (function ensureDivBlocks(root: HTMLElement) {
                 const nodes = Array.from(root.childNodes);
                 const frag = document.createDocumentFragment();
@@ -322,6 +319,9 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 root.appendChild(frag);
             })(clone);
 
+            // 0) Теперь нормализуем внутри каждого DIV-блока
+            clone.normalize();
+
             // Перерисовка DOM может сбивать каретку — делаем её опциональной
             if (mutateDom) {
                 el.innerHTML = clone.innerHTML;
@@ -340,20 +340,31 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
 
             function blankBreaksCount(div: HTMLElement): number {
                 if (div.tagName !== 'DIV' || div.parentElement !== clone) return 0;
-                const hasText = (div.textContent ?? '').replace(/\u00A0/g, ' ').trim().length > 0;
+
                 const hasEmojis = div.querySelector('img[data-custom-emoji-id],video[data-custom-emoji-id]');
-                if (hasText || hasEmojis) return 0;
+                if (hasEmojis) return 0; // Если есть эмодзи, не пустой
 
-                // Проверяем, содержит ли div только пробельные символы (пробелы, табы, переносы)
-                const textContent = div.textContent ?? '';
-                const onlyWhitespace = textContent.length > 0 && !/\S/.test(textContent);
+                // Проверяем все текстовые узлы в блоке
+                const textNodes = Array.from(div.childNodes).filter(node =>
+                    node.nodeType === Node.TEXT_NODE
+                ) as Text[];
 
-                if (onlyWhitespace) {
-                    // Если только пробельные символы, считаем как пустую строку с 1 переносом
-                    return 1;
+                const hasNonEmptyText = textNodes.some(node => {
+                    const text = node.data.replace(/\u00A0/g, ' ').trim();
+                    return text.length > 0;
+                });
+
+                if (hasNonEmptyText) return 0; // Есть непустой текст
+
+                // Проверяем, есть ли пробельные текстовые узлы
+                const hasWhitespaceNodes = textNodes.some(node => /\s/.test(node.data));
+
+                if (hasWhitespaceNodes) {
+                    return 1; // Есть пробельные узлы - считаем как пустую строку
                 }
 
-                return div.querySelectorAll('br').length; // ← считаем количество <br>
+                // Считаем <br> элементы для остальных случаев
+                return div.querySelectorAll('br').length;
               }              
 
             // ← ТВОЙ emitInline, но с фильтром пробельных узлов
