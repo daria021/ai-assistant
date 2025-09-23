@@ -57,7 +57,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 .replace(/[\uFFFC\uFFFD\uFE0E\uFE0F]/g, '') // Object/Replacement + variation selectors
                 .replace(/[\uE000-\uF8FF]/g, '')
                 .replace(/^\n+|\n+$/g, '')
-                .replace(/\n{3,}/g, '\n\n')
+                .replace(/\n{5,}/g, '\n\n\n\n')
                 .replace(/<([a-z][\w-]*)\b[^>]*>🦏<\/\1>/gi, ' ');
         }
 
@@ -338,13 +338,13 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             const NL = USING_FORMDATA ? '\r\n' : '\n';
             const NL_LEN = NL.length;
 
-            function isBlankLineDiv(div: HTMLElement): boolean {
-                if (div.tagName !== 'DIV' || div.parentElement !== clone) return false;
+            function blankBreaksCount(div: HTMLElement): number {
+                if (div.tagName !== 'DIV' || div.parentElement !== clone) return 0;
                 const hasText = (div.textContent ?? '').replace(/\u00A0/g, ' ').trim().length > 0;
-                if (hasText) return false;
-                if (div.querySelector('img[data-custom-emoji-id],video[data-custom-emoji-id]')) return false;
-                return !!div.querySelector('br');
-            }
+                if (hasText) return 0;
+                if (div.querySelector('img[data-custom-emoji-id],video[data-custom-emoji-id]')) return 0;
+                return div.querySelectorAll('br').length; // ← считаем количество <br>
+              }              
 
             // ← ТВОЙ emitInline, но с одним нюансом: игнорим whitespace-only
             function emitInline(node: Node) {
@@ -406,26 +406,35 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
 
             // 2) теперь корень гарантированно состоит из DIV-блоков → твоя логика переносов не меняется
             const blocks = Array.from(clone.children) as HTMLElement[];
-            for (let i = 0; i < blocks.length; i++) {
-                const div = blocks[i];
+for (let i = 0; i < blocks.length; i++) {
+  const div = blocks[i];
 
-                if (isBlankLineDiv(div)) {
-                    if (i < blocks.length - 1) {
-                        text += NL;
-                        offset += NL_LEN;
-                    }
-                    continue;
-                }
+  const brCount = blankBreaksCount(div);     // ← счётчик пустых строк внутри блока
+  if (brCount > 0) {
+    // Добавляем столько переносов, сколько <br> внутри DIV.
+    // Если хочешь ограничить, например максимумом 3, сделай:
+    // const n = Math.min(brCount, 3);
+    const n = brCount;
 
-                const before = offset;
-                emitInline(div);
+    if (i < blocks.length - 1) {
+      for (let k = 0; k < n; k++) {
+        text += NL;
+        offset += NL_LEN;
+      }
+    }
+    continue;
+  }
 
-                // Перенос между блоками — только если блок не закончился на <br>
-                if (i < blocks.length - 1 && offset > before && !text.endsWith(NL)) {
-                    text += NL;
-                    offset += NL_LEN;
-                }
-            }
+  const before = offset;
+  emitInline(div);
+
+  // Перенос между непустыми блоками — только если блок не закончился на <br>
+  if (i < blocks.length - 1 && offset > before && !text.endsWith(NL)) {
+    text += NL;
+    offset += NL_LEN;
+  }
+}
+
 
             entities.sort((a, b) => a.offset - b.offset);
             const cleanEntities = entities.map((e) => {

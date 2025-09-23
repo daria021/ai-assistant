@@ -96,6 +96,8 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
     const [photoFile, setPhotoFile] = useState<File | null>(null);
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
     const [title, setTitle] = useState("");
+    const [titleError, setTitleError] = useState("");
+    const [textError, setTextError] = useState("");
     const [scheduleType, setScheduleType] = useState<"once" | "daily">("once");
     const [isTemplate, setIsTemplate] = useState(false);
     const [updateTemplate, setUpdateTemplate] = useState(false);
@@ -161,6 +163,7 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
 
 
     const richEditorRef = useRef<RichEditorHandle>(null)
+    const titleInputRef = useRef<HTMLInputElement>(null)
     const [pickerOpen, setPickerOpen] = useState(false)
 
     /* ───────── Template pre-fill ───────── */
@@ -429,9 +432,19 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
 
     /* ───────── Save Post ───────── */
     const handleSave = async () => {
-        if (!title.trim() || !editorText.trim()) {
-            alert("Введите название и текст поста");
-            return;
+        // Сбрасываем предыдущие ошибки
+        setTitleError("");
+        setTextError("");
+
+        // Валидация
+        let hasErrors = false;
+        if (!title.trim()) {
+            setTitleError("Введите название поста");
+            hasErrors = true;
+        }
+        if (!editorText.trim()) {
+            setTextError("Введите текст поста");
+            hasErrors = true;
         }
         if (scheduleType === "once" && !scheduledAt) {
             alert("Выберите дату и время");
@@ -447,6 +460,14 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
         }
         if (!responsibleManagerId) {
             alert("Выберите ответственного менеджера");
+            return;
+        }
+
+        if (hasErrors) {
+            // Фокусируемся на первом поле с ошибкой
+            if (!title.trim() && titleInputRef.current) {
+                titleInputRef.current.focus();
+            }
             return;
         }
 
@@ -521,6 +542,8 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
             setPhotoFile(null);
             setPhotoPreview(null);
             setTitle("");
+            setTitleError("");
+            setTextError("");
             setEditorText("");
             setEditorHtml("");
             setEditorEntities([]);
@@ -600,11 +623,22 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                     <div>
                         <label className="block mb-2 font-medium">Название поста</label>
                         <input
+                            ref={titleInputRef}
                             type="text"
                             value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            className="w-full border border-brand rounded p-2 focus:outline-none focus:ring-2 focus:ring-brand"
+                            onChange={(e) => {
+                                setTitle(e.target.value);
+                                if (titleError) setTitleError(""); // Сбрасываем ошибку при вводе
+                            }}
+                            className={`w-full border rounded p-2 focus:outline-none focus:ring-2 ${
+                                titleError
+                                    ? "border-red-500 focus:ring-red-500"
+                                    : "border-brand focus:ring-brand"
+                            }`}
                         />
+                        {titleError && (
+                            <p className="mt-1 text-sm text-red-600">{titleError}</p>
+                        )}
                     </div>
 
                     {/* Текст */}
@@ -629,8 +663,12 @@ export default function PostsControlPage({emojis}: PostsControlPageProps) {
                                 setEditorHtml(html)
                                 setEditorText(text)
                                 setEditorEntities(entities)
+                                if (textError) setTextError(""); // Сбрасываем ошибку при вводе
                             }}
                         />
+                        {textError && (
+                            <p className="mt-1 text-sm text-red-600">{textError}</p>
+                        )}
                         {pickerOpen && (
 
                             <EmojiPicker
