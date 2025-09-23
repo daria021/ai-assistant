@@ -341,16 +341,26 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             function blankBreaksCount(div: HTMLElement): number {
                 if (div.tagName !== 'DIV' || div.parentElement !== clone) return 0;
                 const hasText = (div.textContent ?? '').replace(/\u00A0/g, ' ').trim().length > 0;
-                if (hasText) return 0;
-                if (div.querySelector('img[data-custom-emoji-id],video[data-custom-emoji-id]')) return 0;
+                const hasEmojis = div.querySelector('img[data-custom-emoji-id],video[data-custom-emoji-id]');
+                if (hasText || hasEmojis) return 0;
+
+                // Проверяем, содержит ли div только пробельные символы (пробелы, табы, переносы)
+                const textContent = div.textContent ?? '';
+                const onlyWhitespace = textContent.length > 0 && !/\S/.test(textContent);
+
+                if (onlyWhitespace) {
+                    // Если только пробельные символы, считаем как пустую строку с 1 переносом
+                    return 1;
+                }
+
                 return div.querySelectorAll('br').length; // ← считаем количество <br>
               }              
 
-            // ← ТВОЙ emitInline, но с одним нюансом: игнорим whitespace-only
+            // ← ТВОЙ emitInline, но с фильтром пробельных узлов
             function emitInline(node: Node) {
                 if (node.nodeType === Node.TEXT_NODE) {
                     const raw = (node as Text).data.replace(/\u00A0/g, ' ');
-                    if (/\S/.test(raw)) {             // ← добавили фильтр: только если есть непробельные символы
+                    if (/\S/.test(raw)) {             // ← фильтр: только если есть непробельные символы
                         text += raw;
                         offset += raw.length;
                     }
