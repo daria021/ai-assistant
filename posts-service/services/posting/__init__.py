@@ -29,7 +29,7 @@ class PostingService(
             case ScheduledType.SINGLE:
                 logger.info("Found single scheduled post, scheduling it")
                 self._schedule_post(
-                    post_id=post.post_id,
+                    post_id=post.id,
                     schedule_at=datetime.combine(
                         post.scheduled_date,
                         post.scheduled_time,
@@ -43,7 +43,7 @@ class PostingService(
                     callback=publish,
                     hour=run_hour,
                     minute=run_minute,
-                    args=(post.post_id, ),
+                    args=(post.id, ),
                     job_id=f"post_daily_{post.id}",
                 )
 
