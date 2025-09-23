@@ -43,7 +43,7 @@ class PostingService(
                     callback=publish,
                     hour=run_hour,
                     minute=run_minute,
-                    args=(post.id, ),
+                    args=(post.post_id, ),
                     job_id=f"post_daily_{post.id}",
                 )
 
