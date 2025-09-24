@@ -72,8 +72,14 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             const frag = document.createDocumentFragment();
             const lines = text.split('\n'); // уже нормализовано
             lines.forEach((line, i) => {
-                frag.appendChild(document.createTextNode(line));
-                if (i < lines.length - 1) frag.appendChild(document.createElement('br'));
+                if (line.length > 0) {
+                    // Непустая строка - создаем TextNode + <br>
+                    frag.appendChild(document.createTextNode(line));
+                    if (i < lines.length - 1) frag.appendChild(document.createElement('br'));
+                } else {
+                    // Пустая строка - просто <br>
+                    frag.appendChild(document.createElement('br'));
+                }
             });
 
             range.insertNode(frag);                               // MDN: Range.insertNode
