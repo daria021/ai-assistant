@@ -311,6 +311,10 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             const html = mutateDom ? el.innerHTML : clone.innerHTML;
             console.log('Serialize - html result:', html);
 
+            // Используем innerText для получения текста с переносами строк
+            const rawText = clone.innerText.replace(/\u00A0/g, ' ');
+            console.log('Raw innerText:', rawText.replace(/\n/g, '\\n').replace(/\r/g, '\\r'));
+
             const entities: MessageEntityDTO[] = [];
             let text = '';
             let offset = 0;
@@ -318,8 +322,8 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             const USING_FORMDATA = true;
             const NL = USING_FORMDATA ? '\r\n' : '\n';
 
-            // ПРОСТАЯ сериализация: проходим по всем узлам и собираем текст
-            function processNode(node: Node) {
+            // Обрабатываем эмодзи, заменяя их на 🦏 в тексте
+            function processNodeForEmojis(node: Node) {
                 if (node.nodeType === Node.TEXT_NODE) {
                     const raw = (node as Text).data.replace(/\u00A0/g, ' ');
                     text += raw;
@@ -344,19 +348,26 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                         return;
                     }
 
-                    if (eln.tagName === 'BR') {
-                        text += NL;
-                        offset += NL.length;
-                        return;
-                    }
+                    // Для блочных элементов добавляем перенос строки
+                    const isBlockElement = ['DIV', 'P'].includes(eln.tagName);
 
-                    // Для других элементов - рекурсивно обрабатываем детей
-                    eln.childNodes.forEach(child => processNode(child));
+                    eln.childNodes.forEach(child => processNodeForEmojis(child));
+
+                    // Добавляем перенос строки после блочных элементов
+                    if (isBlockElement) {
+                        text += '\n';
+                        offset += 1;
+                    }
                 }
             }
 
-            // Обрабатываем весь клон
-            processNode(clone);
+            // Обрабатываем для эмодзи
+            processNodeForEmojis(clone);
+
+            // Нормализуем переносы строк в финальном тексте
+            const normalizedText = text.replace(/\n/g, NL);
+
+            console.log('Serialize - final text:', normalizedText.replace(/\r\n/g, '\\r\\n').replace(/\n/g, '\\n'));
 
             entities.sort((a, b) => a.offset - b.offset);
             const cleanEntities = entities.map((e) => {
