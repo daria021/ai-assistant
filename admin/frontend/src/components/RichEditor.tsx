@@ -56,8 +56,8 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 // eslint-disable-next-line no-misleading-character-class
                 .replace(/[\uFFFC\uFFFD\uFE0E\uFE0F]/g, '') // Object/Replacement + variation selectors
                 .replace(/[\uE000-\uF8FF]/g, '')
-                // Убираем только очень длинные последовательности переносов (макс 4 подряд)
-                .replace(/\n{5,}/g, '\n\n\n\n')
+                // § МАРКЕРЫ: заменяем пустые строки на маркеры для надежного сохранения
+                .replace(/\n{2,}/g, (match) => '§'.repeat(match.length - 1) + '\n')
                 .replace(/<([a-z][\w-]*)\b[^>]*>🦏<\/\1>/gi, ' ');
         }
 
@@ -410,9 +410,11 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             function emitInline(node: Node) {
                 if (node.nodeType === Node.TEXT_NODE) {
                     const raw = (node as Text).data.replace(/\u00A0/g, ' ');
-                    if (/\S/.test(raw)) {             // ← фильтр: только если есть непробельные символы
-                        text += raw;
-                        offset += raw.length;
+                    // § МАРКЕРЫ: обратно преобразуем маркеры в пустые строки
+                    const withNewlines = raw.replace(/§+/g, (match) => '\n'.repeat(match.length));
+                    if (/\S/.test(withNewlines)) {    // ← фильтр: только если есть непробельные символы
+                        text += withNewlines;
+                        offset += withNewlines.length;
                     }
                     return;
                 }
