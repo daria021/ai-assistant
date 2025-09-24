@@ -56,10 +56,8 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 // eslint-disable-next-line no-misleading-character-class
                 .replace(/[\uFFFC\uFFFD\uFE0E\uFE0F]/g, '') // Object/Replacement + variation selectors
                 .replace(/[\uE000-\uF8FF]/g, '')
-                // Убираем только лишние начальные/конечные переносы (оставляем по 1)
-                .replace(/^\n{2,}/, '\n')
-                .replace(/\n{2,}$/, '\n')
-                .replace(/\n{6,}/g, '\n\n\n\n\n')
+                // Убираем только очень длинные последовательности переносов (макс 4 подряд)
+                .replace(/\n{5,}/g, '\n\n\n\n')
                 .replace(/<([a-z][\w-]*)\b[^>]*>🦏<\/\1>/gi, ' ');
         }
 
