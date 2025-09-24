@@ -306,21 +306,21 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 el.innerHTML = clone.innerHTML;
             }
 
-            // ПРОСТОЕ РЕШЕНИЕ: используем innerText, который сохраняет ВСЕ переносы строк как есть
+            idsRef.current.length = 0;
+
+            const html = mutateDom ? el.innerHTML : clone.innerHTML;
+            const entities: MessageEntityDTO[] = [];
+            let text = '';
+            let offset = 0;
+
             const USING_FORMDATA = true;
             const NL = USING_FORMDATA ? '\r\n' : '\n';
 
-            // Теперь обрабатываем эмодзи отдельно
-            idsRef.current.length = 0;
-            const entities: MessageEntityDTO[] = [];
-            let finalText = '';
-            let offset = 0;
-
-            // Функция для обработки узлов и поиска эмодзи
+            // ПРОСТАЯ сериализация: проходим по всем узлам и собираем текст
             function processNode(node: Node) {
                 if (node.nodeType === Node.TEXT_NODE) {
                     const raw = (node as Text).data.replace(/\u00A0/g, ' ');
-                    finalText += raw;
+                    text += raw;
                     offset += raw.length;
                     return;
                 }
@@ -331,7 +331,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                     if ((eln.tagName === 'IMG' || eln.tagName === 'VIDEO') && eln.hasAttribute('data-custom-emoji-id')) {
                         const id = eln.getAttribute('data-custom-emoji-id')!;
                         idsRef.current.push(id);
-                        finalText += RHINO;
+                        text += RHINO;
                         entities.push({
                             type: 'custom_emoji',
                             offset,
@@ -342,16 +342,19 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                         return;
                     }
 
+                    if (eln.tagName === 'BR') {
+                        text += NL;
+                        offset += NL.length;
+                        return;
+                    }
+
                     // Для других элементов - рекурсивно обрабатываем детей
                     eln.childNodes.forEach(child => processNode(child));
                 }
             }
 
-            // Обрабатываем весь клон для поиска эмодзи
+            // Обрабатываем весь клон
             processNode(clone);
-
-            // Заменяем переносы строк на правильный формат
-            const normalizedText = finalText.replace(/\n/g, NL);
 
             entities.sort((a, b) => a.offset - b.offset);
             const cleanEntities = entities.map((e) => {
@@ -360,7 +363,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 return base;
             });
 
-            return {html: clone.innerHTML, text: normalizedText, entities: cleanEntities};
+            return {html, text, entities: cleanEntities};
         };
 
 
