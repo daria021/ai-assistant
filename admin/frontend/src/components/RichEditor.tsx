@@ -309,6 +309,8 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             idsRef.current.length = 0;
 
             const html = mutateDom ? el.innerHTML : clone.innerHTML;
+            console.log('Serialize - html result:', html);
+
             const entities: MessageEntityDTO[] = [];
             let text = '';
             let offset = 0;
@@ -360,8 +362,12 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             const cleanEntities = entities.map((e) => {
                 const base: MessageEntityDTO = {type: e.type, offset: e.offset, length: e.length};
                 if (e.type === 'custom_emoji' && e.custom_emoji_id) base.custom_emoji_id = e.custom_emoji_id;
+                // Ensure entity doesn't go out of bounds
+                if (base.offset + base.length > text.length) {
+                    base.length = Math.max(0, text.length - base.offset);
+                }
                 return base;
-            });
+            }).filter(e => e.length > 0);
 
             return {html, text, entities: cleanEntities};
         };
