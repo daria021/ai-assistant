@@ -56,8 +56,6 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 // eslint-disable-next-line no-misleading-character-class
                 .replace(/[\uFFFC\uFFFD\uFE0E\uFE0F]/g, '') // Object/Replacement + variation selectors
                 .replace(/[\uE000-\uF8FF]/g, '')
-                // § МАРКЕРЫ: заменяем пустые строки на маркеры для надежного сохранения
-                .replace(/\n{2,}/g, (match) => '§'.repeat(match.length - 1) + '\n')
                 .replace(/<([a-z][\w-]*)\b[^>]*>🦏<\/\1>/gi, ' ');
         }
 
@@ -303,119 +301,27 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             const { mutateDom = false } = options;
             const clone = el.cloneNode(true) as HTMLDivElement;
 
-            // 0.1) Сначала группируем в DIV-блоки и разбиваем по <br>
-            (function ensureDivBlocks(root: HTMLElement) {
-                const nodes = Array.from(root.childNodes);
-                const frag = document.createDocumentFragment();
-
-                for (const n of nodes) {
-                    if (n.nodeType === Node.ELEMENT_NODE && (n as HTMLElement).tagName === 'DIV') {
-                        // Разбиваем DIV с <br> на отдельные блоки
-                        const divBlocks = splitDivByBr(n as HTMLDivElement);
-                        divBlocks.forEach(block => frag.appendChild(block));
-                    } else {
-                        // Создаем новый блок для не-DIV элементов
-                        const newDiv = document.createElement('div');
-                        newDiv.appendChild(n.cloneNode(true));
-                        frag.appendChild(newDiv);
-                    }
-                }
-                root.innerHTML = '';
-                root.appendChild(frag);
-
-                // Функция разбиения DIV'а по <br>
-                function splitDivByBr(div: HTMLDivElement): HTMLElement[] {
-                    const result: HTMLElement[] = [];
-                    const children = Array.from(div.childNodes);
-                    let currentDiv: HTMLDivElement | null = null;
-
-                    for (const child of children) {
-                        if (child.nodeType === Node.ELEMENT_NODE && (child as HTMLElement).tagName === 'BR') {
-                            // Закрываем текущий блок
-                            if (currentDiv) {
-                                result.push(currentDiv);
-                            }
-                            // Создаем блок с <br> для пустой строки
-                            const emptyDiv = document.createElement('div');
-                            emptyDiv.appendChild(document.createElement('br'));
-                            result.push(emptyDiv);
-                            currentDiv = null;
-                        } else {
-                            // Добавляем элемент в текущий блок
-                            if (!currentDiv) {
-                                currentDiv = document.createElement('div');
-                            }
-                            currentDiv.appendChild(child.cloneNode(true));
-                        }
-                    }
-
-                    // Добавляем последний блок
-                    if (currentDiv && currentDiv.childNodes.length > 0) {
-                        result.push(currentDiv);
-                    }
-
-                    return result.length > 0 ? result : [div.cloneNode(true) as HTMLElement];
-                }
-            })(clone);
-
-            // 0) Теперь нормализуем внутри каждого DIV-блока
-            clone.normalize();
-
             // Перерисовка DOM может сбивать каретку — делаем её опциональной
             if (mutateDom) {
                 el.innerHTML = clone.innerHTML;
             }
 
-            idsRef.current.length = 0;
-
-            const html = mutateDom ? el.innerHTML : clone.innerHTML;
-            const entities: MessageEntityDTO[] = [];
-            let text = '';
-            let offset = 0;
-
+            // ПРОСТОЕ РЕШЕНИЕ: используем innerText, который сохраняет ВСЕ переносы строк как есть
             const USING_FORMDATA = true;
             const NL = USING_FORMDATA ? '\r\n' : '\n';
-            const NL_LEN = NL.length;
 
-            function blankBreaksCount(div: HTMLElement): number {
-                if (div.tagName !== 'DIV' || div.parentElement !== clone) return 0;
+            // Теперь обрабатываем эмодзи отдельно
+            idsRef.current.length = 0;
+            const entities: MessageEntityDTO[] = [];
+            let finalText = '';
+            let offset = 0;
 
-                const hasEmojis = div.querySelector('img[data-custom-emoji-id],video[data-custom-emoji-id]');
-                if (hasEmojis) return 0; // Если есть эмодзи, не пустой
-
-                // Проверяем все текстовые узлы в блоке
-                const textNodes = Array.from(div.childNodes).filter(node =>
-                    node.nodeType === Node.TEXT_NODE
-                ) as Text[];
-
-                const hasNonEmptyText = textNodes.some(node => {
-                    const text = node.data.replace(/\u00A0/g, ' ').trim();
-                    return text.length > 0;
-                });
-
-                if (hasNonEmptyText) return 0; // Есть непустой текст
-
-                // Проверяем, есть ли пробельные текстовые узлы
-                const hasWhitespaceNodes = textNodes.some(node => /\s/.test(node.data));
-
-                if (hasWhitespaceNodes) {
-                    return 1; // Есть пробельные узлы - считаем как пустую строку
-                }
-
-                // Считаем <br> элементы для остальных случаев
-                return div.querySelectorAll('br').length;
-              }              
-
-            // ← ТВОЙ emitInline, но с фильтром пробельных узлов
-            function emitInline(node: Node) {
+            // Функция для обработки узлов и поиска эмодзи
+            function processNode(node: Node) {
                 if (node.nodeType === Node.TEXT_NODE) {
                     const raw = (node as Text).data.replace(/\u00A0/g, ' ');
-                    // § МАРКЕРЫ: обратно преобразуем маркеры в пустые строки
-                    const withNewlines = raw.replace(/§+/g, (match) => '\n'.repeat(match.length));
-                    if (/\S/.test(withNewlines)) {    // ← фильтр: только если есть непробельные символы
-                        text += withNewlines;
-                        offset += withNewlines.length;
-                    }
+                    finalText += raw;
+                    offset += raw.length;
                     return;
                 }
 
@@ -425,7 +331,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                     if ((eln.tagName === 'IMG' || eln.tagName === 'VIDEO') && eln.hasAttribute('data-custom-emoji-id')) {
                         const id = eln.getAttribute('data-custom-emoji-id')!;
                         idsRef.current.push(id);
-                        text += RHINO;
+                        finalText += RHINO;
                         entities.push({
                             type: 'custom_emoji',
                             offset,
@@ -436,77 +342,25 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                         return;
                     }
 
-                    if (eln.tagName === 'BR') {
-                        text += NL;
-                        offset += NL_LEN;
-                        return;
-                    }
-
-                    let type: MessageEntityDTO['type'] | null = null;
-                    if (eln.tagName === 'B') type = 'bold';
-                    else if (eln.tagName === 'I') type = 'italic';
-                    else if (eln.tagName === 'U') type = 'underline';
-                    else if (eln.tagName === 'S') type = 'strikethrough';
-                    else if (eln.tagName === 'A') type = 'text_link';
-                    else if (eln.tagName === 'BLOCKQUOTE') type = 'blockquote';
-
-                    const start = offset;
-                    eln.childNodes.forEach((child) => emitInline(child));
-                    const len = offset - start;
-
-                    if (type && len > 0) {
-                        const slice = text.slice(start, start + len);
-                        const cleanLen = slice.replace(/\r?\n+$/g, '').length;
-                        if (cleanLen > 0) {
-                            const ent: MessageEntityDTO = {type, offset: start, length: cleanLen};
-                            if (type === 'text_link') ent.url = eln.getAttribute('href') || undefined;
-                            entities.push(ent);
-                        }
-                    }
+                    // Для других элементов - рекурсивно обрабатываем детей
+                    eln.childNodes.forEach(child => processNode(child));
                 }
             }
 
-            // 2) теперь корень гарантированно состоит из DIV-блоков → твоя логика переносов не меняется
-            const blocks = Array.from(clone.children) as HTMLElement[];
-for (let i = 0; i < blocks.length; i++) {
-  const div = blocks[i];
+            // Обрабатываем весь клон для поиска эмодзи
+            processNode(clone);
 
-  const brCount = blankBreaksCount(div);     // ← счётчик пустых строк внутри блока
-  if (brCount > 0) {
-    // Добавляем столько переносов, сколько <br> внутри DIV.
-    // Если хочешь ограничить, например максимумом 3, сделай:
-    // const n = Math.min(brCount, 3);
-    const n = brCount;
-
-    if (i < blocks.length - 1) {
-      for (let k = 0; k < n; k++) {
-        text += NL;
-        offset += NL_LEN;
-      }
-    }
-    continue;
-  }
-
-  const before = offset;
-  emitInline(div);
-
-  // Перенос между непустыми блоками — только если блок не закончился на <br>
-  if (i < blocks.length - 1 && offset > before && !text.endsWith(NL)) {
-    text += NL;
-    offset += NL_LEN;
-  }
-}
-
+            // Заменяем переносы строк на правильный формат
+            const normalizedText = finalText.replace(/\n/g, NL);
 
             entities.sort((a, b) => a.offset - b.offset);
             const cleanEntities = entities.map((e) => {
                 const base: MessageEntityDTO = {type: e.type, offset: e.offset, length: e.length};
-                if (e.type === 'text_link' && e.url) base.url = e.url;
                 if (e.type === 'custom_emoji' && e.custom_emoji_id) base.custom_emoji_id = e.custom_emoji_id;
                 return base;
             });
 
-            return {html, text, entities: cleanEntities};
+            return {html: clone.innerHTML, text: normalizedText, entities: cleanEntities};
         };
 
 
