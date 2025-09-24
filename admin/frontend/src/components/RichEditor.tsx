@@ -297,26 +297,57 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             const { mutateDom = false } = options;
             const clone = el.cloneNode(true) as HTMLDivElement;
 
-            // 0.1) Сначала группируем в DIV-блоки
+            // 0.1) Сначала группируем в DIV-блоки и разбиваем по <br>
             (function ensureDivBlocks(root: HTMLElement) {
                 const nodes = Array.from(root.childNodes);
                 const frag = document.createDocumentFragment();
-                let cur: HTMLDivElement | null = null;
 
                 for (const n of nodes) {
                     if (n.nodeType === Node.ELEMENT_NODE && (n as HTMLElement).tagName === 'DIV') {
-                        cur = null;
-                        frag.appendChild(n);             // готовый блок остаётся как есть
+                        // Разбиваем DIV с <br> на отдельные блоки
+                        const divBlocks = splitDivByBr(n as HTMLDivElement);
+                        divBlocks.forEach(block => frag.appendChild(block));
                     } else {
-                        if (!cur) {                      // начинаем новый искусственный блок
-                            cur = document.createElement('div');
-                            frag.appendChild(cur);
-                        }
-                        cur.appendChild(n);              // переносим IMG/VIDEO/BR/текст внутрь блока
+                        // Создаем новый блок для не-DIV элементов
+                        const newDiv = document.createElement('div');
+                        newDiv.appendChild(n.cloneNode(true));
+                        frag.appendChild(newDiv);
                     }
                 }
                 root.innerHTML = '';
                 root.appendChild(frag);
+
+                // Функция разбиения DIV'а по <br>
+                function splitDivByBr(div: HTMLDivElement): HTMLElement[] {
+                    const result: HTMLElement[] = [];
+                    const children = Array.from(div.childNodes);
+                    let currentDiv: HTMLDivElement | null = null;
+
+                    for (const child of children) {
+                        if (child.nodeType === Node.ELEMENT_NODE && (child as HTMLElement).tagName === 'BR') {
+                            // Закрываем текущий блок и создаем новый
+                            if (currentDiv) {
+                                result.push(currentDiv);
+                            }
+                            // Создаем пустой блок для <br> (пустая строка)
+                            result.push(document.createElement('div'));
+                            currentDiv = null;
+                        } else {
+                            // Добавляем элемент в текущий блок
+                            if (!currentDiv) {
+                                currentDiv = document.createElement('div');
+                            }
+                            currentDiv.appendChild(child.cloneNode(true));
+                        }
+                    }
+
+                    // Добавляем последний блок
+                    if (currentDiv && currentDiv.childNodes.length > 0) {
+                        result.push(currentDiv);
+                    }
+
+                    return result.length > 0 ? result : [div.cloneNode(true) as HTMLElement];
+                }
             })(clone);
 
             // 0) Теперь нормализуем внутри каждого DIV-блока
