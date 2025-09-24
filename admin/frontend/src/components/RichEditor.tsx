@@ -331,12 +331,14 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
 
                     for (const child of children) {
                         if (child.nodeType === Node.ELEMENT_NODE && (child as HTMLElement).tagName === 'BR') {
-                            // Закрываем текущий блок и создаем новый
+                            // Закрываем текущий блок
                             if (currentDiv) {
                                 result.push(currentDiv);
                             }
-                            // Создаем пустой блок для <br> (пустая строка)
-                            result.push(document.createElement('div'));
+                            // Создаем блок с <br> для пустой строки
+                            const emptyDiv = document.createElement('div');
+                            emptyDiv.appendChild(document.createElement('br'));
+                            result.push(emptyDiv);
                             currentDiv = null;
                         } else {
                             // Добавляем элемент в текущий блок
