@@ -373,7 +373,21 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 }
             }
 
+            // Теперь заменяем \n на \r\n и корректируем offsets
+            const nlPositions: number[] = [];
+            let pos = 0;
+            while ((pos = finalText.indexOf('\n', pos)) !== -1) {
+                nlPositions.push(pos);
+                pos++;
+            }
+
             finalText = finalText.replace(/\n/g, NL);
+
+            // Для каждого entity, добавляем количество \n до его offset
+            for (const entity of sortedEntities) {
+                const nlCountBefore = nlPositions.filter(p => p < entity.offset).length;
+                entity.offset += nlCountBefore;
+            }
 
             console.log('Serialize - final text:', finalText.replace(/\r\n/g, '\\r\\n').replace(/\n/g, '\\n'));
 
