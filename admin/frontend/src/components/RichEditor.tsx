@@ -311,83 +311,65 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             const html = mutateDom ? el.innerHTML : clone.innerHTML;
             console.log('Serialize - html result:', html);
 
-            // Используем innerText для текста (правильные переносы строк)
-            let rawText = clone.innerText.replace(/\u00A0/g, ' ');
+            // Получаем innerText как основу
+            const rawText = clone.innerText.replace(/\u00A0/g, ' ');
+            console.log('Serialize - rawText (innerText):', rawText.replace(/\n/g, '\\n'));
             const USING_FORMDATA = true;
             const NL = USING_FORMDATA ? '\r\n' : '\n';
 
-            // Теперь рассчитываем entities, проходя по DOM и находя позиции в innerText
-            const entities: MessageEntityDTO[] = [];
-            let textPos = 0; // Позиция в rawText
+            // Собираем информацию об эмодзи
+            const emojiElements = Array.from(clone.querySelectorAll('img[data-custom-emoji-id], video[data-custom-emoji-id]')) as HTMLElement[];
+            const emojiData = emojiElements.map(eln => ({
+                element: eln,
+                alt: eln.getAttribute('alt') || '',
+                id: eln.getAttribute('data-custom-emoji-id')!
+            }));
+            console.log('Serialize - emojiData:', emojiData.map(e => ({ alt: e.alt, id: e.id })));
 
-            function findEntities(node: Node) {
-                if (node.nodeType === Node.TEXT_NODE) {
-                    const raw = (node as Text).data.replace(/\u00A0/g, ' ');
-                    textPos += raw.length;
-                    return;
-                }
+            idsRef.current.push(...emojiData.map(e => e.id));
 
-                if (node.nodeType === Node.ELEMENT_NODE) {
-                    const eln = node as HTMLElement;
-
-                    if ((eln.tagName === 'IMG' || eln.tagName === 'VIDEO') && eln.hasAttribute('data-custom-emoji-id')) {
-                        const id = eln.getAttribute('data-custom-emoji-id')!;
-                        idsRef.current.push(id);
-                        const altText = eln.getAttribute('alt') || '';
-                        const emojiStart = textPos;
-                        entities.push({
-                            type: 'custom_emoji',
-                            offset: emojiStart,
-                            length: altText.length,
-                            custom_emoji_id: id,
-                        } as MessageEntityDTO);
-                        textPos += altText.length;
-                        return;
-                    }
-
-                    // Рекурсивно обрабатываем детей
-                    for (const child of eln.childNodes) {
-                        findEntities(child);
-                    }
-                }
-            }
-
-            // Находим entities
-            findEntities(clone);
-
-            // Теперь заменяем alt тексты на 🦏 в тексте и корректируем offsets
+            // Строим текст и entities
             let finalText = rawText;
+            const entities: MessageEntityDTO[] = [];
             let offsetCorrection = 0;
-            const sortedEntities = entities.sort((a, b) => a.offset - b.offset);
 
-            for (const entity of sortedEntities) {
-                if (entity.type === 'custom_emoji') {
-                    const altLength = entity.length;
-                    const rhinoLength = RHINO_LEN;
-                    const start = entity.offset + offsetCorrection;
-                    const end = start + altLength;
+            console.log('Serialize - before emoji replacement, finalText:', finalText.replace(/\n/g, '\\n'));
+
+            // Обрабатываем эмодзи по порядку их появления в тексте
+            emojiData.forEach(({ alt, id }, index) => {
+                const start = finalText.indexOf(alt);
+                console.log(`Serialize - emoji ${index}: alt="${alt}", start=${start}`);
+                if (start !== -1) {
+                    const end = start + alt.length;
                     finalText = finalText.slice(0, start) + RHINO + finalText.slice(end);
-                    entity.offset += offsetCorrection;
-                    entity.length = rhinoLength;
-                    offsetCorrection += rhinoLength - altLength;
+                    entities.push({
+                        type: 'custom_emoji',
+                        offset: start,
+                        length: RHINO_LEN,
+                        custom_emoji_id: id,
+                    } as MessageEntityDTO);
+                    offsetCorrection += RHINO_LEN - alt.length;
+                    console.log(`Serialize - after replacement: offset=${start}, finalText length=${finalText.length}`);
                 }
-            }
+            });
 
-            // Теперь заменяем \n на \r\n и корректируем offsets
-            const nlPositions: number[] = [];
-            let pos = 0;
-            while ((pos = finalText.indexOf('\n', pos)) !== -1) {
-                nlPositions.push(pos);
-                pos++;
-            }
+            console.log('Serialize - after all emoji replacements, finalText:', finalText.replace(/\n/g, '\\n'));
+            console.log('Serialize - entities after emoji:', entities.map(e => ({ offset: e.offset, length: e.length, id: e.custom_emoji_id })));
 
+            // Теперь finalText имеет 🦏 и правильные \n
+            // Заменяем \n на \r\n
+            const nlCount = (finalText.match(/\n/g) || []).length;
+            console.log('Serialize - nlCount before \\r\\n replacement:', nlCount);
             finalText = finalText.replace(/\n/g, NL);
 
-            // Для каждого entity, добавляем количество \n до его offset
-            for (const entity of sortedEntities) {
-                const nlCountBefore = nlPositions.filter(p => p < entity.offset).length;
-                entity.offset += nlCountBefore;
-            }
+            console.log('Serialize - after \\r\\n replacement, finalText:', finalText.replace(/\r\n/g, '\\r\\n'));
+
+            // Корректируем offsets entities на nlCount (поскольку каждый \n добавил 1 символ)
+            entities.forEach((entity, index) => {
+                console.log(`Serialize - entity ${index} before offset correction: offset=${entity.offset}`);
+                entity.offset += nlCount;
+                console.log(`Serialize - entity ${index} after offset correction: offset=${entity.offset}`);
+            });
 
             console.log('Serialize - final text:', finalText.replace(/\r\n/g, '\\r\\n').replace(/\n/g, '\\n'));
 
