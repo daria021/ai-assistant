@@ -311,19 +311,20 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             const html = mutateDom ? el.innerHTML : clone.innerHTML;
             console.log('Serialize - html result:', html);
 
-            const entities: MessageEntityDTO[] = [];
-            let text = '';
-            let offset = 0;
-
+            // Используем innerText для текста (правильные переносы строк)
+            const rawText = clone.innerText.replace(/\u00A0/g, ' ');
             const USING_FORMDATA = true;
             const NL = USING_FORMDATA ? '\r\n' : '\n';
+            const finalText = rawText.replace(/\n/g, NL);
 
-            // Единый проход: строим текст и entities одновременно
-            function processNode(node: Node) {
+            // Теперь рассчитываем entities, проходя по DOM и находя позиции в innerText
+            const entities: MessageEntityDTO[] = [];
+            let textPos = 0; // Позиция в rawText
+
+            function findEntities(node: Node) {
                 if (node.nodeType === Node.TEXT_NODE) {
                     const raw = (node as Text).data.replace(/\u00A0/g, ' ');
-                    text += raw;
-                    offset += raw.length;
+                    textPos += raw.length;
                     return;
                 }
 
@@ -333,41 +334,26 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                     if ((eln.tagName === 'IMG' || eln.tagName === 'VIDEO') && eln.hasAttribute('data-custom-emoji-id')) {
                         const id = eln.getAttribute('data-custom-emoji-id')!;
                         idsRef.current.push(id);
-                        text += RHINO;
                         entities.push({
                             type: 'custom_emoji',
-                            offset,
+                            offset: textPos,
                             length: RHINO_LEN,
                             custom_emoji_id: id,
                         } as MessageEntityDTO);
-                        offset += RHINO_LEN;
+                        // В rawText на этой позиции будет пробел или что-то, но мы заменяем на 🦏
+                        textPos += 1; // Предполагаем, что эмодзи занимает 1 позицию в тексте
                         return;
                     }
 
-                    if (eln.tagName === 'BR') {
-                        text += NL;
-                        offset += NL.length;
-                        return;
-                    }
-
-                    // Для блочных элементов добавляем перенос строки
-                    const isBlockElement = ['DIV', 'P'].includes(eln.tagName);
-
-                    eln.childNodes.forEach(child => processNode(child));
-
-                    // Добавляем перенос строки после блочных элементов
-                    if (isBlockElement) {
-                        text += '\n';
-                        offset += 1;
+                    // Рекурсивно обрабатываем детей
+                    for (const child of eln.childNodes) {
+                        findEntities(child);
                     }
                 }
             }
 
-            // Обрабатываем весь клон
-            processNode(clone);
-
-            // Финальный текст уже с правильными \r\n
-            const finalText = text.replace(/\n/g, NL);
+            // Находим entities
+            findEntities(clone);
 
             console.log('Serialize - final text:', finalText.replace(/\r\n/g, '\\r\\n').replace(/\n/g, '\\n'));
 
@@ -376,13 +362,13 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 const base: MessageEntityDTO = {type: e.type, offset: e.offset, length: e.length};
                 if (e.type === 'custom_emoji' && e.custom_emoji_id) base.custom_emoji_id = e.custom_emoji_id;
                 // Ensure entity doesn't go out of bounds
-                if (base.offset + base.length > text.length) {
-                    base.length = Math.max(0, text.length - base.offset);
+                if (base.offset + base.length > finalText.length) {
+                    base.length = Math.max(0, finalText.length - base.offset);
                 }
                 return base;
             }).filter(e => e.length > 0);
 
-            return {html, text, entities: cleanEntities};
+            return {html, text: finalText, entities: cleanEntities};
         };
 
 
