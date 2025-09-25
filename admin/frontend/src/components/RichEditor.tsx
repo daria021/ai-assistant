@@ -311,8 +311,6 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             const html = mutateDom ? el.innerHTML : clone.innerHTML;
             console.log('Serialize - html result:', html);
 
-            // Получаем innerText как основу
-            const rawText = clone.innerText.replace(/\u00A0/g, ' ');
             const USING_FORMDATA = true;
             const NL = USING_FORMDATA ? '\r\n' : '\n';
 
@@ -326,26 +324,62 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
 
             idsRef.current.push(...emojiData.map(e => e.id));
 
-            // Строим текст и entities
-            let finalText = rawText;
+            // Строим текст и entities через tree walk
+            let finalText = '';
             const entities: MessageEntityDTO[] = [];
+            let currentOffset = 0;
 
-            // Обрабатываем эмодзи
-            const emojiReplacements = emojiData.map(({ alt, id }, index) => {
-                const start = finalText.indexOf(alt);
-                const found = start !== -1;
-                if (found) {
-                    const end = start + alt.length;
-                    finalText = finalText.slice(0, start) + RHINO + finalText.slice(end);
-                    entities.push({
-                        type: 'custom_emoji',
-                        offset: start,
-                        length: RHINO_LEN,
-                        custom_emoji_id: id,
-                    } as MessageEntityDTO);
+            function walk(node: Node) {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const text = (node as Text).data.replace(/\u00A0/g, ' ');
+                    finalText += text;
+                    currentOffset += text.length;
+                } else if (node.nodeType === Node.ELEMENT_NODE) {
+                    const eln = node as HTMLElement;
+                    if ((eln.tagName === 'IMG' || eln.tagName === 'VIDEO') && eln.hasAttribute('data-custom-emoji-id')) {
+                        const id = eln.getAttribute('data-custom-emoji-id')!;
+                        finalText += RHINO;
+                        entities.push({
+                            type: 'custom_emoji',
+                            offset: currentOffset,
+                            length: RHINO_LEN,
+                            custom_emoji_id: id,
+                        } as MessageEntityDTO);
+                        currentOffset += RHINO_LEN;
+                    } else if (eln.tagName === 'BR') {
+                        finalText += '\n';
+                        currentOffset += 1;
+                    } else if (eln.tagName === 'DIV' || eln.tagName === 'P') {
+                        // Добавляем \n перед блочным элементом, кроме первого
+                        if (finalText.length > 0 && !finalText.endsWith('\n')) {
+                            finalText += '\n';
+                            currentOffset += 1;
+                        }
+                        // Рекурсивно обрабатываем детей
+                        for (const child of eln.childNodes) {
+                            walk(child);
+                        }
+                        // После блочного элемента добавляем \n, если не последний
+                        if (!finalText.endsWith('\n')) {
+                            finalText += '\n';
+                            currentOffset += 1;
+                        }
+                    } else {
+                        // Для других элементов обрабатываем детей
+                        for (const child of eln.childNodes) {
+                            walk(child);
+                        }
+                    }
                 }
-                return { index, alt: JSON.stringify(alt), start, found, id };
-            });
+            }
+
+            // Проходим по всем детям clone
+            for (const child of clone.childNodes) {
+                walk(child);
+            }
+
+            // Убираем лишние \n в конце
+            finalText = finalText.replace(/\n+$/, '');
 
             // Находим позиции \n
             const nlPositions: number[] = [];
@@ -367,11 +401,9 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             });
 
             console.log('Serialize DEBUG:', {
-                rawText: JSON.stringify(rawText),
                 emojiData: emojiData.map(e => ({ alt: JSON.stringify(e.alt), id: e.id })),
-                emojiReplacements,
-                finalTextAfterEmoji: finalText.replace(/\n/g, '\\n'),
-                entitiesAfterEmoji: entities.map(e => ({ offset: e.offset, length: e.length, id: e.custom_emoji_id })),
+                finalTextAfterWalk: finalText.replace(/\n/g, '\\n'),
+                entitiesAfterWalk: entities.map(e => ({ offset: e.offset, length: e.length, id: e.custom_emoji_id })),
                 nlPositions,
                 finalTextAfterNL: finalText.replace(/\r\n/g, '\\r\\n'),
                 entityCorrections,
