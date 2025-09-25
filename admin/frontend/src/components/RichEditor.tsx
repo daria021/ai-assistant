@@ -312,10 +312,9 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             console.log('Serialize - html result:', html);
 
             // Используем innerText для текста (правильные переносы строк)
-            const rawText = clone.innerText.replace(/\u00A0/g, ' ');
+            let rawText = clone.innerText.replace(/\u00A0/g, ' ');
             const USING_FORMDATA = true;
             const NL = USING_FORMDATA ? '\r\n' : '\n';
-            const finalText = rawText.replace(/\n/g, NL);
 
             // Теперь рассчитываем entities, проходя по DOM и находя позиции в innerText
             const entities: MessageEntityDTO[] = [];
@@ -334,14 +333,15 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                     if ((eln.tagName === 'IMG' || eln.tagName === 'VIDEO') && eln.hasAttribute('data-custom-emoji-id')) {
                         const id = eln.getAttribute('data-custom-emoji-id')!;
                         idsRef.current.push(id);
+                        const altText = eln.getAttribute('alt') || '';
+                        const emojiStart = textPos;
                         entities.push({
                             type: 'custom_emoji',
-                            offset: textPos,
-                            length: RHINO_LEN,
+                            offset: emojiStart,
+                            length: altText.length,
                             custom_emoji_id: id,
                         } as MessageEntityDTO);
-                        // В rawText на этой позиции будет пробел или что-то, но мы заменяем на 🦏
-                        textPos += 1; // Предполагаем, что эмодзи занимает 1 позицию в тексте
+                        textPos += altText.length;
                         return;
                     }
 
@@ -354,6 +354,26 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
 
             // Находим entities
             findEntities(clone);
+
+            // Теперь заменяем alt тексты на 🦏 в тексте и корректируем offsets
+            let finalText = rawText;
+            let offsetCorrection = 0;
+            const sortedEntities = entities.sort((a, b) => a.offset - b.offset);
+
+            for (const entity of sortedEntities) {
+                if (entity.type === 'custom_emoji') {
+                    const altLength = entity.length;
+                    const rhinoLength = RHINO_LEN;
+                    const start = entity.offset + offsetCorrection;
+                    const end = start + altLength;
+                    finalText = finalText.slice(0, start) + RHINO + finalText.slice(end);
+                    entity.offset += offsetCorrection;
+                    entity.length = rhinoLength;
+                    offsetCorrection += rhinoLength - altLength;
+                }
+            }
+
+            finalText = finalText.replace(/\n/g, NL);
 
             console.log('Serialize - final text:', finalText.replace(/\r\n/g, '\\r\\n').replace(/\n/g, '\\n'));
 
