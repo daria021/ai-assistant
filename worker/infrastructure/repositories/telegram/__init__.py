@@ -115,7 +115,7 @@ class TelethonTelegramMessagesRepository(
                     f"TELETHON_SEND text={sending_args.get("message", "")[:200]} "
                     f"ENT={sending_args.get('formatting_entities', [])[:8]}",
                 )
-                sending_args['link_preview'] = False
+                # link_preview убираем, чтобы не ломать отправку файлов
 
             logger.info(f"Sending {sending_args}")
             message = await client.send_message(**sending_args)
