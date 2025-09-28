@@ -349,7 +349,47 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                     } else if (eln.tagName === 'BR') {
                         finalText += '\n';
                         currentOffset += 1;
-                    } else if (eln.tagName === 'DIV' || eln.tagName === 'P') {
+
+                    } else if (
+                        eln.tagName === 'B' || eln.tagName === 'STRONG' ||
+                        eln.tagName === 'I' || eln.tagName === 'EM' ||
+                        eln.tagName === 'U' ||
+                        eln.tagName === 'S' || eln.tagName === 'DEL' ||
+                        eln.tagName === 'A'
+                    ) {
+                        const tag = eln.tagName;
+                        const start = currentOffset;
+
+                        // обойти детей, чтобы набрать текст и увеличить offset
+                        for (const child of eln.childNodes) {
+                            walk(child);
+                        }
+
+                        const length = currentOffset - start;
+                        if (length > 0) {
+                            let type: MessageEntityDTO['type'] | null = null;
+                            if (tag === 'B' || tag === 'STRONG') type = 'bold';
+                            else if (tag === 'I' || tag === 'EM') type = 'italic';
+                            else if (tag === 'U') type = 'underline';
+                            else if (tag === 'S' || tag === 'DEL') type = 'strikethrough';
+                            else if (tag === 'A') type = 'text_link';
+
+                            if (type) {
+                                const ent: any = { type, offset: start, length };
+                                if (type === 'text_link') {
+                                    const href = (eln.getAttribute('href') || '').trim();
+                                    if (!href) {
+                                        // нет href — не создаём entity
+                                    } else {
+                                        ent.url = href;
+                                        entities.push(ent as MessageEntityDTO);
+                                    }
+                                } else {
+                                    entities.push(ent as MessageEntityDTO);
+                                }
+                            }
+                        }
+                    } else if (eln.tagName === 'DIV' || eln.tagName === 'P' || eln.tagName === 'BLOCKQUOTE') {
                         // Добавляем \n перед блочным элементом, кроме первого
                         if (finalText.length > 0 && !finalText.endsWith('\n')) {
                             finalText += '\n';
@@ -412,15 +452,17 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             });
 
             entities.sort((a, b) => a.offset - b.offset);
-            const cleanEntities = entities.map((e) => {
-                const base: MessageEntityDTO = {type: e.type, offset: e.offset, length: e.length};
+            const cleanEntities = entities.map((e: any) => {
+                const base: any = { type: e.type, offset: e.offset, length: e.length };
                 if (e.type === 'custom_emoji' && e.custom_emoji_id) base.custom_emoji_id = e.custom_emoji_id;
+                if (e.type === 'text_link' && e.url) base.url = e.url; // <- сохраняем URL
                 // Ensure entity doesn't go out of bounds
                 if (base.offset + base.length > finalText.length) {
                     base.length = Math.max(0, finalText.length - base.offset);
                 }
-                return base;
+                return base as MessageEntityDTO;
             }).filter(e => e.length > 0);
+            
 
             return {html, text: finalText, entities: cleanEntities};
         };
