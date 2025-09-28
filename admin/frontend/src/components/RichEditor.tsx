@@ -343,7 +343,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                             type: 'custom_emoji',
                             offset: currentOffset,
                             length: RHINO_LEN,
-                            custom_emoji_id: parseInt(id),
+                            custom_emoji_id: id,
                         } as MessageEntityDTO);
                         currentOffset += RHINO_LEN;
                     } else if (eln.tagName === 'BR') {
@@ -364,91 +364,6 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                             finalText += '\n';
                             currentOffset += 1;
                         }
-                    } else if (eln.tagName === 'B' || eln.tagName === 'STRONG') {
-                        // Жирный текст
-                        const startOffset = currentOffset;
-                        for (const child of eln.childNodes) {
-                            walk(child);
-                        }
-                        const length = currentOffset - startOffset;
-                        if (length > 0) {
-                            entities.push({
-                                type: 'bold',
-                                offset: startOffset,
-                                length: length,
-                            } as MessageEntityDTO);
-                        }
-                    } else if (eln.tagName === 'I' || eln.tagName === 'EM') {
-                        // Курсив
-                        const startOffset = currentOffset;
-                        for (const child of eln.childNodes) {
-                            walk(child);
-                        }
-                        const length = currentOffset - startOffset;
-                        if (length > 0) {
-                            entities.push({
-                                type: 'italic',
-                                offset: startOffset,
-                                length: length,
-                            } as MessageEntityDTO);
-                        }
-                    } else if (eln.tagName === 'U') {
-                        // Подчёркивание
-                        const startOffset = currentOffset;
-                        for (const child of eln.childNodes) {
-                            walk(child);
-                        }
-                        const length = currentOffset - startOffset;
-                        if (length > 0) {
-                            entities.push({
-                                type: 'underline',
-                                offset: startOffset,
-                                length: length,
-                            } as MessageEntityDTO);
-                        }
-                    } else if (eln.tagName === 'S' || eln.tagName === 'STRIKE') {
-                        // Зачёркивание
-                        const startOffset = currentOffset;
-                        for (const child of eln.childNodes) {
-                            walk(child);
-                        }
-                        const length = currentOffset - startOffset;
-                        if (length > 0) {
-                            entities.push({
-                                type: 'strikethrough',
-                                offset: startOffset,
-                                length: length,
-                            } as MessageEntityDTO);
-                        }
-                    } else if (eln.tagName === 'A') {
-                        // Ссылка
-                        const href = eln.getAttribute('href');
-                        if (href && href.trim()) {
-                            const startOffset = currentOffset;
-                            for (const child of eln.childNodes) {
-                                walk(child);
-                            }
-                            const length = currentOffset - startOffset;
-                            if (length > 0) {
-                                entities.push({
-                                    type: 'text_link',
-                                    offset: startOffset,
-                                    length: length,
-                                    url: href,
-                                } as MessageEntityDTO);
-                            }
-                        } else {
-                            // Если href пустой, обрабатываем как обычный текст
-                            for (const child of eln.childNodes) {
-                                walk(child);
-                            }
-                        }
-                    } else if (eln.tagName === 'BLOCKQUOTE') {
-                        // Цитата - обрабатываем как обычный текст
-                        for (const child of eln.childNodes) {
-                            walk(child);
-                        }
-                        // В Telegram нет специального типа для цитат, так что просто текст
                     } else {
                         // Для других элементов обрабатываем детей
                         for (const child of eln.childNodes) {

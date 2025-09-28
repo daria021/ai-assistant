@@ -15,7 +15,6 @@ from telethon.tl.types import (
     MessageEntityUnderline,
     MessageEntityStrike,
     MessageEntityTextUrl,
-    MessageEntityBlockquote,   # ← добавили
     TypeMessageEntity
 )
 
@@ -115,7 +114,6 @@ class TelethonTelegramMessagesRepository(
                     f"TELETHON_SEND text={sending_args.get("message", "")[:200]} "
                     f"ENT={sending_args.get('formatting_entities', [])[:8]}",
                 )
-                # link_preview убираем, чтобы не ломать отправку файлов
 
             logger.info(f"Sending {sending_args}")
             message = await client.send_message(**sending_args)
@@ -213,17 +211,10 @@ class TelethonTelegramMessagesRepository(
                     )
                     entities.append(entity_to_add)
                 case 'text_link':
-                    if raw_entity.url and raw_entity.url.strip():
-                        entity_to_add = MessageEntityTextUrl(
-                            offset=raw_entity.offset,
-                            length=raw_entity.length,
-                            url=raw_entity.url,
-                        )
-                        entities.append(entity_to_add)
-                case 'blockquote':                                  # ← добавили
-                    entity_to_add = MessageEntityBlockquote(
+                    entity_to_add = MessageEntityTextUrl(
                         offset=raw_entity.offset,
                         length=raw_entity.length,
+                        url=raw_entity.url,
                     )
                     entities.append(entity_to_add)
 
