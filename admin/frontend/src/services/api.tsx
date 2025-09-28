@@ -118,7 +118,7 @@ export interface MessageEntityDTO {
         | "blockquote";
     offset: number;
     length: number;
-    custom_emoji_id?: string;
+    custom_emoji_id?: number;
     url?: string;
 }
 

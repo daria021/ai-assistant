@@ -213,12 +213,13 @@ class TelethonTelegramMessagesRepository(
                     )
                     entities.append(entity_to_add)
                 case 'text_link':
-                    entity_to_add = MessageEntityTextUrl(
-                        offset=raw_entity.offset,
-                        length=raw_entity.length,
-                        url=raw_entity.url,
-                    )
-                    entities.append(entity_to_add)
+                    if raw_entity.url and raw_entity.url.strip():
+                        entity_to_add = MessageEntityTextUrl(
+                            offset=raw_entity.offset,
+                            length=raw_entity.length,
+                            url=raw_entity.url,
+                        )
+                        entities.append(entity_to_add)
                 case 'blockquote':                                  # ← добавили
                     entity_to_add = MessageEntityBlockquote(
                         offset=raw_entity.offset,

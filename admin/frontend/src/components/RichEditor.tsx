@@ -422,18 +422,26 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                         }
                     } else if (eln.tagName === 'A') {
                         // Ссылка
-                        const startOffset = currentOffset;
-                        for (const child of eln.childNodes) {
-                            walk(child);
-                        }
-                        const length = currentOffset - startOffset;
-                        if (length > 0) {
-                            entities.push({
-                                type: 'text_link',
-                                offset: startOffset,
-                                length: length,
-                                url: eln.getAttribute('href') || '',
-                            } as MessageEntityDTO);
+                        const href = eln.getAttribute('href');
+                        if (href && href.trim()) {
+                            const startOffset = currentOffset;
+                            for (const child of eln.childNodes) {
+                                walk(child);
+                            }
+                            const length = currentOffset - startOffset;
+                            if (length > 0) {
+                                entities.push({
+                                    type: 'text_link',
+                                    offset: startOffset,
+                                    length: length,
+                                    url: href,
+                                } as MessageEntityDTO);
+                            }
+                        } else {
+                            // Если href пустой, обрабатываем как обычный текст
+                            for (const child of eln.childNodes) {
+                                walk(child);
+                            }
                         }
                     } else if (eln.tagName === 'BLOCKQUOTE') {
                         // Цитата - обрабатываем как обычный текст
