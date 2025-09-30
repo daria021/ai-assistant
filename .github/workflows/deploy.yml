@@ -51,6 +51,11 @@ jobs:
             echo "APP_HOST=${DOMAIN}" >> .env
             echo "MINIAPP_URL=${DOMAIN}" >> .env
             echo "HOST_UPLOAD_DIR=/root/upload" >> .env
+          
+            echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}" >> .env
+            echo "SERVICE_BOT_TOKEN=${{ secrets.SERVICE_BOT_TOKEN }}" >> .env
+            echo "SA_SESSION_STRING=${{ secrets.SA_SESSION_STRING }}" >> .env
+            echo "POSTING_BOT_TOKEN=${{ secrets.SERVICE_BOT_TOKEN }}" >> .env
 
             echo "VITE_API_BASE=${DOMAIN}/api" > admin/frontend/.env
 

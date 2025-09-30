@@ -11,7 +11,7 @@
     "stale_threshold_minutes": 60
   },
   "posting_bot": {
-    "token": "7833321728:AAEBMG-lLmEBBufoDMcot4haB-0EAs_X6xs",
+    "token": "",
     "username": "avocado_mpstats_bot"
   },
   "environment": {

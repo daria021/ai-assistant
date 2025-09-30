@@ -28,8 +28,8 @@
   "service_account": {
     "api_id": 27878010,
     "api_hash": "a8c3c7628be9f25001bd387bd713f6f8",
-    "session_string": "1ApWapzMBu2cYndhWbRI_kOwEI-y7UvOwE3jcie7KCKvk2UZeRqkWf2drejqvXs_IfgIIWQfRYzXj5X4JNXY0S56xcylcTykX8uP8_36_gLw6Nm58VEeTJBdh2qI-70gkYHJF-JeNiE50s2FABdezQaUPuugkXKomVAPaROPftacRLxLRhXRhZQRlpsUT0qa5eZOUKApEZ3qwD-W78-7JNbBhcUS3fXbFkMwHroLhQ4nAIYNmIHrKHxtyVCdRLvvmfwxqJOf6p1ciesnfP5qLq5qK1YVahwpBMDauKX4Oab0V36A2Gunf4jlTuBbt5U3lPqKzvfQaB10npJuo5MZr-R4CSPXzeJg=",
-    "service_bot_token": "7782070677:AAHtu78aPEQSf15dYsXJbBhcbfMoz7bDXQg",
+    "session_string": "",
+    "service_bot_token": "",
     "use_bot_for_service": false
   }
 }
