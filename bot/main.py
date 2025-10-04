@@ -25,7 +25,7 @@ from shared.infrastructure.main_db.entities import EmojiFormat
 
 from dependencies.service.upload import get_upload_service
 from settings import settings
-from utils import convert_webm_to_webp
+from utils import convert_webm_to_webp, convert_tgs_to_webm
 
 # ——— Logging & Bot setup —————————————————————————————————————
 logging.basicConfig(
@@ -179,9 +179,13 @@ async def process_sticker(msg: types.Message, state: FSMContext):
 
     # ---------- конвертация ----------
     if ext == "tgs":
-        # Пропускаем конвертацию .tgs из-за багов в lottie
-        # Сохраняем как lottie формат
-        emoji_format = EmojiFormat.lottie
+        try:
+            content = await convert_tgs_to_webm(content)
+            ext = "webm"
+            emoji_format = EmojiFormat.video
+        except Exception:
+            # безопасный fallback — сохраняем как lottie, чтобы не падать
+            emoji_format = EmojiFormat.lottie
 
 
     elif ext == "webm":
@@ -271,9 +275,12 @@ async def process_sticker_pack(msg: types.Message, state: FSMContext):
 
         # ---------- конвертация ----------
         if ext == "tgs":
-            # Пропускаем конвертацию .tgs из-за багов в lottie
-            # Сохраняем как lottie формат
-            pass  # ext остается "tgs", emoji_format будет установлен ниже
+            try:
+                content = await convert_tgs_to_webm(content)
+                ext = "webm"
+            except Exception:
+                # fallback — сохраняем как есть
+                pass
 
 
         elif ext == "webm":
