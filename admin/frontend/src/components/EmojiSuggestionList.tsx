@@ -27,18 +27,45 @@ const LottieEmoji: React.FC<LottieEmojiProps> = ({ src, className = "w-6 h-6" })
             try {
                 const resp = await fetch(src, { cache: 'no-store' })
                 const buf = await resp.arrayBuffer()
-                const decompressed = ungzip(new Uint8Array(buf), { to: 'string' }) as unknown as string
-                const json = JSON.parse(decompressed)
+                const bytes = new Uint8Array(buf)
+
+                let jsonStr: string | null = null
+                if (bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b) {
+                    try {
+                        jsonStr = ungzip(bytes, { to: 'string' }) as unknown as string
+                    } catch (e) {
+                        console.warn('ungzip failed, try as text', e)
+                    }
+                }
+                if (!jsonStr) {
+                    try {
+                        jsonStr = new TextDecoder('utf-8').decode(bytes)
+                    } catch {
+                        jsonStr = null
+                    }
+                }
+                if (!jsonStr) return
+
+                let json: any
+                try {
+                    json = JSON.parse(jsonStr)
+                } catch (e) {
+                    console.error('Invalid Lottie JSON', e)
+                    return
+                }
+
                 if (aborted || !containerRef.current) return
+                containerRef.current.innerHTML = ''
                 animationRef.current = lottie.loadAnimation({
                     container: containerRef.current,
                     renderer: 'svg',
                     loop: true,
                     autoplay: true,
                     animationData: json,
+                    rendererSettings: { preserveAspectRatio: 'xMidYMid meet' },
                 })
             } catch (e) {
-                // ignore
+                console.error('Lottie load failed', e)
             }
         }
         load()
