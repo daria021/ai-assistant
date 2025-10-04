@@ -1,6 +1,40 @@
-import React from 'react'
+import React, {useEffect, useRef} from 'react'
 import type {Emoji} from '../services/api'
 import {nanoid} from 'nanoid'
+import lottie from 'lottie-web'
+
+interface LottieEmojiProps {
+    src: string
+    className?: string
+}
+
+/** Компонент для отображения Lottie анимаций (.tgs файлы) */
+const LottieEmoji: React.FC<LottieEmojiProps> = ({ src, className = "w-8 h-8" }) => {
+    const containerRef = useRef<HTMLDivElement>(null)
+    const animationRef = useRef<any>(null)
+
+    useEffect(() => {
+        if (containerRef.current) {
+            // Загружаем Lottie анимацию из URL
+            animationRef.current = lottie.loadAnimation({
+                container: containerRef.current,
+                renderer: 'svg',
+                loop: true,
+                autoplay: true,
+                path: src,
+            })
+
+            // Очищаем анимацию при размонтировании
+            return () => {
+                if (animationRef.current) {
+                    animationRef.current.destroy()
+                }
+            }
+        }
+    }, [src])
+
+    return <div ref={containerRef} className={className} />
+}
 
 interface EmojiPickerProps {
     /** Список эмодзи из БД */
@@ -28,6 +62,7 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = (
         >
             {emojis.map((emoji) => {
                 const isVideo = emoji.format === 'video' || emoji.img_url.toLowerCase().endsWith('.webm');
+                const isLottie = emoji.format === 'lottie';
 
                 return (
                     <button
@@ -45,6 +80,11 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = (
                                 className="w-8 h-8"
                                 onError={e => (e.currentTarget.style.display = 'none')}
                             />
+                        ) : isLottie ? (
+                            <LottieEmoji
+                                src={emoji.img_url}
+                                className="w-8 h-8"
+                            />
                         ) : (
                             <img
                                 src={emoji.img_url}
@@ -52,8 +92,6 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = (
                                 onError={e => (e.currentTarget.style.display = 'none')}
                             />
                         )}
-
-
                     </button>
                 )
             })}

@@ -550,6 +550,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
             const isVideo =
                 emoji.format === 'video' ||
                 emoji.img_url.toLowerCase().endsWith('.webm');
+            const isLottie = emoji.format === 'lottie';
 
             const node: HTMLElement = isVideo
                 ? (() => {
@@ -561,6 +562,16 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                     v.playsInline = true;
                     v.width = v.height = 24;
                     return v;
+                })()
+                : isLottie
+                ? (() => {
+                    // Для Lottie в тексте используем img как fallback
+                    // Полноценная Lottie анимация в contentEditable слишком сложная
+                    const i = document.createElement('img');
+                    i.src = emoji.img_url;
+                    i.alt = emoji.name;
+                    i.width = i.height = 24;
+                    return i;
                 })()
                 : (() => {
                     const i = document.createElement('img');
