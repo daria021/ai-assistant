@@ -194,16 +194,19 @@ def _sync_convert_tgs_to_webm_bytes(tgs_bytes: bytes) -> Optional[bytes]:
         # 1) tgs → animated webp
         webp_path = tmp / f"{uuid4()}.webp"
         try:
+            logger.info("rlottie: start → %s", webp_path)
             run(convMultLottie([FileMap(LottieFile(str(src)), {str(webp_path)})]))
         except Exception as e:
-            logger.warning("PyRlottie webp export failed: %s", e)
+            logger.exception("PyRlottie webp export failed: %s", e)
             return None
         if not webp_path.exists():
+            logger.warning("rlottie: webp not created")
             return None
 
         # 2) animated webp → webm
         output_webm = tmp / f"{uuid4()}.webm"
         try:
+            logger.info("ffmpeg(imageio): webp→webm → %s", output_webm)
             reader = imageio.get_reader(str(webp_path))
             meta = reader.get_meta_data()
             fps = meta.get('fps', 24)
@@ -213,12 +216,15 @@ def _sync_convert_tgs_to_webm_bytes(tgs_bytes: bytes) -> Optional[bytes]:
             writer.close()
             reader.close()
         except Exception as e:
-            logger.warning("webp→webm failed: %s", e)
+            logger.exception("webp→webm failed: %s", e)
             return None
 
         if not output_webm.exists():
+            logger.warning("ffmpeg: webm not created")
             return None
-        return output_webm.read_bytes()
+        data = output_webm.read_bytes()
+        logger.info("tgs→webm: done, size=%d", len(data))
+        return data
 
 
 async def convert_tgs_to_webm(tgs_bytes: bytes) -> bytes:
