@@ -50,4 +50,7 @@ COPY --from=builder /install /usr/local
 # copy your service code
 COPY bot/ .
 
+# ensure pyrlottie bundled binaries are executable
+RUN /bin/sh -lc 'chmod +x /usr/local/lib/python*/site-packages/pyrlottie/linux_*/* 2>/dev/null || true'
+
 ENTRYPOINT ["python3", "main.py"]
