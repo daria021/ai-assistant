@@ -11,3 +11,5 @@ data/
 data/**
 posts.csv
 posts_to_publish.csv
+.env
+login_script.py

@@ -12,6 +12,8 @@ services:
     depends_on:
       - db
       - migrator
+    env_file:
+      - .env
 
   db:
     image: postgres:17
@@ -41,6 +43,8 @@ services:
     depends_on:
       - db
       - migrator
+    env_file:
+      - .env
 
   admin-frontend:
     build:

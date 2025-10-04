@@ -25,7 +25,7 @@ from shared.infrastructure.main_db.entities import EmojiFormat
 
 from dependencies.service.upload import get_upload_service
 from settings import settings
-from utils import convert_webm_to_webp, convert_tgs_to_webp
+from utils import convert_webm_to_webp
 
 # ——— Logging & Bot setup —————————————————————————————————————
 logging.basicConfig(
@@ -179,9 +179,9 @@ async def process_sticker(msg: types.Message, state: FSMContext):
 
     # ---------- конвертация ----------
     if ext == "tgs":
-        content = await convert_tgs_to_webp(content)  # bytes ← новая функция
-        ext = "webp"
-        emoji_format = EmojiFormat.static
+        # Пропускаем конвертацию .tgs из-за багов в lottie
+        # Сохраняем как lottie формат
+        emoji_format = EmojiFormat.lottie
 
 
     elif ext == "webm":
@@ -271,12 +271,9 @@ async def process_sticker_pack(msg: types.Message, state: FSMContext):
 
         # ---------- конвертация ----------
         if ext == "tgs":
-            try:
-                content = await convert_tgs_to_webp(content)
-            except RuntimeError:
-                failed += 1
-                raise
-            ext = "webp"
+            # Пропускаем конвертацию .tgs из-за багов в lottie
+            # Сохраняем как lottie формат
+            pass  # ext остается "tgs", emoji_format будет установлен ниже
 
 
         elif ext == "webm":
@@ -290,12 +287,20 @@ async def process_sticker_pack(msg: types.Message, state: FSMContext):
         filename   = await upload_service.upload(content, extension=ext)
         public_url = upload_service.get_file_url(filename)
 
+        # Определяем формат на основе расширения
+        if ext == "webm":
+            emoji_format = EmojiFormat.video
+        elif ext == "tgs":
+            emoji_format = EmojiFormat.lottie
+        else:
+            emoji_format = EmojiFormat.static
+
         name = f"{st.emoji or ''}_{entity.set_name}_{st.custom_emoji_id}"
         dto  = CreateEmojiDTO(
             name=name,
             img_url=public_url,
             custom_emoji_id=st.custom_emoji_id,
-            format=EmojiFormat.video if ext == "webm" else EmojiFormat.static,
+            format=emoji_format,
         )
         await emoji_service.create_emoji(dto)
         added += 1
