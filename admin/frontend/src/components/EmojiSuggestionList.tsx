@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import lottie from 'lottie-web'
+import { ungzip } from 'pako'
 
 interface EmojiAttrs {
     id: string
@@ -20,22 +21,30 @@ const LottieEmoji: React.FC<LottieEmojiProps> = ({ src, className = "w-6 h-6" })
     const animationRef = useRef<any>(null)
 
     useEffect(() => {
-        if (containerRef.current) {
-            // Загружаем Lottie анимацию из URL
-            animationRef.current = lottie.loadAnimation({
-                container: containerRef.current,
-                renderer: 'svg',
-                loop: true,
-                autoplay: true,
-                path: src,
-            })
-
-            // Очищаем анимацию при размонтировании
-            return () => {
-                if (animationRef.current) {
-                    animationRef.current.destroy()
-                }
+        let aborted = false
+        async function load() {
+            if (!containerRef.current) return
+            try {
+                const resp = await fetch(src, { cache: 'no-store' })
+                const buf = await resp.arrayBuffer()
+                const decompressed = ungzip(new Uint8Array(buf), { to: 'string' }) as unknown as string
+                const json = JSON.parse(decompressed)
+                if (aborted || !containerRef.current) return
+                animationRef.current = lottie.loadAnimation({
+                    container: containerRef.current,
+                    renderer: 'svg',
+                    loop: true,
+                    autoplay: true,
+                    animationData: json,
+                })
+            } catch (e) {
+                // ignore
             }
+        }
+        load()
+        return () => {
+            aborted = true
+            if (animationRef.current) animationRef.current.destroy()
         }
     }, [src])
 

@@ -2,6 +2,7 @@ import React, {useEffect, useRef} from 'react'
 import type {Emoji} from '../services/api'
 import {nanoid} from 'nanoid'
 import lottie from 'lottie-web'
+import { ungzip } from 'pako'
 
 interface LottieEmojiProps {
     src: string
@@ -14,21 +15,37 @@ const LottieEmoji: React.FC<LottieEmojiProps> = ({ src, className = "w-8 h-8" })
     const animationRef = useRef<any>(null)
 
     useEffect(() => {
-        if (containerRef.current) {
-            // Загружаем Lottie анимацию из URL
-            animationRef.current = lottie.loadAnimation({
-                container: containerRef.current,
-                renderer: 'svg',
-                loop: true,
-                autoplay: true,
-                path: src,
-            })
+        let aborted = false
 
-            // Очищаем анимацию при размонтировании
-            return () => {
-                if (animationRef.current) {
-                    animationRef.current.destroy()
-                }
+        async function load() {
+            if (!containerRef.current) return
+
+            try {
+                // .tgs — это gzip JSON. Качаем как ArrayBuffer, распаковываем, парсим
+                const resp = await fetch(src, { cache: 'no-store' })
+                const buf = await resp.arrayBuffer()
+                const decompressed = ungzip(new Uint8Array(buf), { to: 'string' }) as unknown as string
+                const json = JSON.parse(decompressed)
+
+                if (aborted || !containerRef.current) return
+                animationRef.current = lottie.loadAnimation({
+                    container: containerRef.current,
+                    renderer: 'svg',
+                    loop: true,
+                    autoplay: true,
+                    animationData: json,
+                })
+            } catch (e) {
+                // в случае ошибки ничего не рендерим
+            }
+        }
+
+        load()
+
+        return () => {
+            aborted = true
+            if (animationRef.current) {
+                animationRef.current.destroy()
             }
         }
     }, [src])
