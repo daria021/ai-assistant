@@ -19,11 +19,11 @@ idna==3.10
 imageio==2.37.0
 imageio-ffmpeg==0.6.0
 lottie==0.7.2
-PyRlottie
+pyrlottie==2024.0.1
 magic-filter==1.0.12
 multidict==6.4.3
 numpy==2.3.1
-pillow==11.3.0
+pillow==10.3.0
 propcache==0.3.1
 pycairo==1.28.0
 pycparser==2.22
