@@ -16,6 +16,8 @@
     "axios-auth-refresh": "^3.3.6",
     "date-fns": "^4.1.0",
     "eruda": "^3.4.1",
+    "lottie-react": "^2.4.1",
+    "lottie-web": "^5.13.0",
     "nanoid": "^5.1.5",
     "react": "^19.1.0",
     "react-datepicker": "^8.4.0",
