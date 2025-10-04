@@ -179,13 +179,11 @@ async def process_sticker(msg: types.Message, state: FSMContext):
 
     # ---------- конвертация ----------
     if ext == "tgs":
-        try:
-            content = await convert_tgs_to_webm(content)
-            ext = "webm"
-            emoji_format = EmojiFormat.video
-        except Exception:
-            # безопасный fallback — сохраняем как lottie, чтобы не падать
-            emoji_format = EmojiFormat.lottie
+        logger.info("miniapp: tgs→webm(single) start, bytes=%d", len(content))
+        content = await convert_tgs_to_webm(content)
+        logger.info("miniapp: tgs→webm(single) done, bytes=%d", len(content))
+        ext = "webm"
+        emoji_format = EmojiFormat.video
 
 
     elif ext == "webm":
@@ -203,6 +201,7 @@ async def process_sticker(msg: types.Message, state: FSMContext):
     upload = get_upload_service()
     filename   = await upload.upload(content, extension=ext)
     public_url = upload.get_file_url(filename)
+    logger.info("miniapp: uploaded(single) ext=%s url=%s", ext, public_url)
 
     name = f"{entity.emoji or ''}_{entity.set_name}_{sticker.custom_emoji_id}"
     dto  = CreateEmojiDTO(
@@ -275,12 +274,10 @@ async def process_sticker_pack(msg: types.Message, state: FSMContext):
 
         # ---------- конвертация ----------
         if ext == "tgs":
-            try:
-                content = await convert_tgs_to_webm(content)
-                ext = "webm"
-            except Exception:
-                # fallback — сохраняем как есть
-                pass
+            logger.info("miniapp: tgs→webm(pack) start, bytes=%d", len(content))
+            content = await convert_tgs_to_webm(content)
+            logger.info("miniapp: tgs→webm(pack) done, bytes=%d", len(content))
+            ext = "webm"
 
 
         elif ext == "webm":
@@ -293,6 +290,7 @@ async def process_sticker_pack(msg: types.Message, state: FSMContext):
 
         filename   = await upload_service.upload(content, extension=ext)
         public_url = upload_service.get_file_url(filename)
+        logger.info("miniapp: uploaded(pack) ext=%s url=%s", ext, public_url)
 
         # Определяем формат на основе расширения
         if ext == "webm":
