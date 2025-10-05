@@ -136,11 +136,13 @@ export const EmojiSuggestionList: React.FC<Props> = ({ items, command }) => {
               src={`${it.src}?t=${Date.now()}`}
               width={24}
               height={24}
-              preload="metadata"
+              preload="auto"
               autoPlay
               loop
               muted
               playsInline
+              onCanPlay={e => e.currentTarget.play().catch(() => {})}
+              onLoadedData={e => e.currentTarget.play().catch(() => {})}
               ref={el => {
                 if (el) vidsRef.current[idx] = el
               }}

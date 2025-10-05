@@ -94,7 +94,11 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = (
                                 loop
                                 muted
                                 playsInline
+                                autoPlay
+                                preload="auto"
                                 className="w-8 h-8"
+                                onCanPlay={e => e.currentTarget.play().catch(() => {})}
+                                onLoadedData={e => e.currentTarget.play().catch(() => {})}
                                 onError={e => (e.currentTarget.style.display = 'none')}
                             />
                         ) : isLottie ? (
