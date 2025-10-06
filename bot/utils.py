@@ -181,7 +181,7 @@ def _sync_convert_tgs_to_webm_bytes(tgs_bytes: bytes) -> Optional[bytes]:
     Возвращает байты .webm или None при неудаче.
     """
     try:
-        from pyrlottie import LottieFile, FileMap, convMultLottie
+        from pyrlottie import convLottie
     except Exception as e:
         logger.warning("PyRlottie недоступен: %s", e)
         return None
@@ -195,8 +195,8 @@ def _sync_convert_tgs_to_webm_bytes(tgs_bytes: bytes) -> Optional[bytes]:
         webp_path = tmp / f"{uuid4()}.webp"
         try:
             logger.info("rlottie: start → %s", webp_path)
-            # Явно создаём event loop в этом треде
-            asyncio.run(convMultLottie([FileMap(LottieFile(str(src)), {str(webp_path)})]))
+            # Используем синхронный API pyrlottie
+            convLottie(str(src), str(webp_path))
         except Exception as e:
             logger.exception("PyRlottie webp export failed: %s", e)
             return None
