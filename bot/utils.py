@@ -176,62 +176,54 @@ async def convert_tgs_to_webp(tgs_bytes: bytes) -> bytes:
         raise RuntimeError("Ошибка конвертации .tgs → .webp (см. лог)")
 
 
-def _sync_convert_tgs_to_webm_bytes(tgs_bytes: bytes) -> Optional[bytes]:
-    """Конвертация .tgs → .webm через PyRlottie (tgs→webp) + imageio(ffmpeg) webp→webm.
-    Возвращает байты .webm или None при неудаче.
-    """
-    try:
-        from pyrlottie import convLottie
-    except Exception as e:
-        logger.warning("PyRlottie недоступен: %s", e)
-        return None
-
-    with tempfile.TemporaryDirectory() as td:
-        tmp = pathlib.Path(td)
-        src = tmp / f"{uuid4()}.tgs"
-        src.write_bytes(tgs_bytes)
-
-        # 1) tgs → animated webp
-        webp_path = tmp / f"{uuid4()}.webp"
-        try:
-            logger.info("rlottie: start → %s", webp_path)
-            # Используем синхронный API pyrlottie
-            convLottie(str(src), str(webp_path))
-        except Exception as e:
-            logger.exception("PyRlottie webp export failed: %s", e)
-            return None
-        if not webp_path.exists():
-            logger.warning("rlottie: webp not created")
-            return None
-
-        # 2) animated webp → webm
-        output_webm = tmp / f"{uuid4()}.webm"
-        try:
-            logger.info("ffmpeg(imageio): webp→webm → %s", output_webm)
-            reader = imageio.get_reader(str(webp_path))
-            meta = reader.get_meta_data()
-            fps = meta.get('fps', 24)
-            writer = imageio.get_writer(str(output_webm), format='FFMPEG', mode='I', fps=fps, codec='libvpx-vp9')
-            for frame in reader:
-                writer.append_data(frame)
-            writer.close()
-            reader.close()
-        except Exception as e:
-            logger.exception("webp→webm failed: %s", e)
-            return None
-
-        if not output_webm.exists():
-            logger.warning("ffmpeg: webm not created")
-            return None
-        data = output_webm.read_bytes()
-        logger.info("tgs→webm: done, size=%d", len(data))
-        return data
+def _sync_webp_to_webm(input_webp: str) -> bytes:
+    output_webm_path = pathlib.Path(input_webp).with_suffix('.webm')
+    logger.info("ffmpeg(imageio): webp→webm → %s", output_webm_path)
+    reader = imageio.get_reader(str(input_webp))
+    meta = reader.get_meta_data()
+    fps = meta.get('fps', 24)
+    writer = imageio.get_writer(str(output_webm_path), format='FFMPEG', mode='I', fps=fps, codec='libvpx-vp9')
+    for frame in reader:
+        writer.append_data(frame)
+    writer.close()
+    reader.close()
+    return output_webm_path.read_bytes()
 
 
 async def convert_tgs_to_webm(tgs_bytes: bytes) -> bytes:
-    """Async-обёртка вокруг _sync_convert_tgs_to_webm_bytes."""
-    loop = asyncio.get_running_loop()
-    data = await loop.run_in_executor(None, _sync_convert_tgs_to_webm_bytes, tgs_bytes)
-    if not data:
+    """
+    Конвертация .tgs → .webm без конфликтов event loop:
+    - В основном event loop: await pyrlottie.convMultLottie для рендера .webp
+    - В executor: webp → webm через imageio/ffmpeg
+    """
+    try:
+        from pyrlottie import convMultLottie, FileMap, LottieFile
+    except Exception as e:
+        logger.warning("PyRlottie недоступен: %s", e)
         raise RuntimeError("Не удалось конвертировать .tgs → .webm")
-    return data
+
+    with tempfile.TemporaryDirectory() as td:
+        tmp_dir = pathlib.Path(td)
+        src = tmp_dir / f"{uuid4()}.tgs"
+        webp_path = tmp_dir / f"{uuid4()}.webp"
+        src.write_bytes(tgs_bytes)
+
+        try:
+            logger.info("rlottie(convMultLottie): start → %s", webp_path)
+            await convMultLottie([FileMap(LottieFile(str(src)), {str(webp_path)})])
+        except Exception as e:
+            logger.exception("PyRlottie convMultLottie failed: %s", e)
+            raise RuntimeError("Не удалось конвертировать .tgs → .webm")
+
+        if not webp_path.exists():
+            logger.error("rlottie: webp not created")
+            raise RuntimeError("Не удалось конвертировать .tgs → .webm")
+
+        loop = asyncio.get_running_loop()
+        try:
+            webm_bytes = await loop.run_in_executor(None, _sync_webp_to_webm, str(webp_path))
+            logger.info("tgs→webm: done, size=%d", len(webm_bytes))
+            return webm_bytes
+        except Exception as e:
+            logger.exception("webp→webm failed: %s", e)
+            raise RuntimeError("Не удалось конвертировать .tgs → .webm")
